@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Phone, Mail, Sparkles } from "lucide-react";
+import { Phone, Mail } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPlatformTheme, getPlatformIcon } from "@/lib/platformThemes";
 
@@ -184,17 +183,6 @@ export default function LandingPage() {
               <span>Call: {profile.phone}</span>
             </a>
           )}
-        </div>
-
-        {/* Master Samiti / Event Dashboard Direct Link */}
-        <div className="pt-2">
-          <Link
-            to="/samiti"
-            className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>🚩 दुर्गा पूजा एवं उत्सव समिति मास्टर डैशबोर्ड</span>
-          </Link>
         </div>
 
         {/* Footer */}
