@@ -55,11 +55,22 @@ export default {
           light: "hsl(var(--saffron-light))",
           dark: "hsl(var(--saffron-dark))",
         },
+        "victory-saffron": {
+          DEFAULT: "hsl(var(--saffron))",
+          light: "hsl(var(--saffron-light))",
+          dark: "hsl(var(--saffron-dark))",
+        },
         navy: {
           DEFAULT: "hsl(var(--navy))",
           light: "hsl(var(--navy-light))",
           dark: "hsl(var(--navy-dark))",
         },
+        "victory-navy": {
+          DEFAULT: "hsl(var(--navy))",
+          light: "hsl(var(--navy-light))",
+          dark: "hsl(var(--navy-dark))",
+        },
+        "victory-gold": "#F59E0B",
         "indian-green": {
           DEFAULT: "hsl(var(--indian-green))",
           light: "hsl(var(--indian-green-light))",

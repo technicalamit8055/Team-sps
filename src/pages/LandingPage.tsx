@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Phone, Mail } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getPlatformTheme, getPlatformIcon } from "@/lib/platformThemes";
+import { Navbar } from "@/components/landing/Navbar";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { AboutSection } from "@/components/landing/AboutSection";
+import { InitiativesSection } from "@/components/landing/InitiativesSection";
+import { JoinTeamSection } from "@/components/landing/JoinTeamSection";
+import { ConnectSection } from "@/components/landing/ConnectSection";
+import { Footer } from "@/components/landing/Footer";
 
 interface CandidateProfile {
   id: string;
@@ -51,7 +55,7 @@ export default function LandingPage() {
           }
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching candidate data:", error);
       } finally {
         setLoading(false);
       }
@@ -60,138 +64,68 @@ export default function LandingPage() {
     fetchData();
   }, []);
 
+  // Graceful defaults for Suraj Pratap
+  const displayName = profile?.name && !profile.name.includes('विशाल') ? profile.name : "सुरज प्रताप";
+  const displayTitle = profile?.title || "संस्थापक एवं मुख्य मार्गदर्शक - Team SPS";
+  const displayPhone = profile?.phone || "+91 9430588888";
+  const displayEmail = profile?.email || "teamsurajpratap@gmail.com";
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-victory-saffron/30 via-background to-indian-green/20 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm backdrop-blur-xl bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10 rounded-3xl p-6 shadow-2xl">
-          <div className="flex flex-col items-center space-y-4">
-            <Skeleton className="w-28 h-28 rounded-full bg-white/20" />
-            <Skeleton className="h-7 w-40 bg-white/20" />
-            <Skeleton className="h-4 w-52 bg-white/20" />
-          </div>
-          <div className="space-y-3 mt-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-xl bg-white/20" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-victory-saffron/30 via-background to-indian-green/20 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm backdrop-blur-xl bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10 rounded-3xl p-6 shadow-2xl flex items-center justify-center min-h-[400px]">
-          <p className="text-muted-foreground">Profile not available</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-victory-saffron border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-semibold text-muted-foreground animate-pulse">
+            Team SPS पोर्टल लोड हो रहा है...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-victory-saffron/30 via-background to-indian-green/20 flex items-center justify-center p-4">
-      {/* Glassmorphism Card */}
-      <div className="w-full max-w-sm backdrop-blur-xl bg-white/10 dark:bg-black/20 border border-white/20 dark:border-white/10 rounded-3xl p-6 shadow-2xl">
-        {/* Profile Header */}
-        <div className="flex flex-col items-center mb-6">
-          {/* Avatar with tricolor ring */}
-          <div className="relative mb-4">
-            <div
-              className="w-28 h-28 rounded-full p-1"
-              style={{
-                background: "linear-gradient(135deg, hsl(30,100%,50%) 0%, hsl(30,100%,50%) 33%, hsl(0,0%,100%) 33%, hsl(0,0%,100%) 66%, hsl(142,70%,35%) 66%)"
-              }}
-            >
-              <div className="w-full h-full rounded-full bg-background/80 backdrop-blur-sm p-0.5">
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.name}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-victory-saffron/20 to-indian-green/20 flex items-center justify-center">
-                    <span className="text-3xl font-bold text-foreground/70">
-                      {profile.name.charAt(0)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-victory-saffron selection:text-white">
+      {/* Sticky Navigation Bar */}
+      <Navbar phone={displayPhone} />
 
-          {/* Name */}
-          <h1 className="text-2xl font-bold text-foreground mb-1 text-center">
-            {profile.name}
-          </h1>
+      {/* Main Content Area */}
+      <main className="flex-1">
+        {/* Hero Section with Suraj Pratap's portrait, statement, CTAs, and impact stats */}
+        <HeroSection
+          name={displayName}
+          title={displayTitle}
+          phone={displayPhone}
+        />
 
-          {/* Title */}
-          {profile.title && (
-            <p className="text-base text-victory-saffron font-medium text-center">
-              {profile.title}
-            </p>
-          )}
+        {/* About Section: Story, Vision, Core Pillars */}
+        <AboutSection
+          name={displayName}
+          title={displayTitle}
+        />
+
+        {/* Initiatives & Public Programs: Janta Portal, Youth Cell, Health, Infra, Samiti */}
+        <div id="vision-section">
+          <InitiativesSection />
         </div>
 
-        {/* Social Links */}
-        <div className="space-y-2.5 mb-6">
-          {links.map((link) => {
-            const theme = getPlatformTheme(link.platform);
-            return (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex items-center justify-center gap-2.5 w-full py-3 px-4 rounded-xl font-semibold text-base transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] ${theme.className}`}
-              >
-                <span className="flex items-center gap-2.5">
-                  {getPlatformIcon(link.platform)}
-                  {link.label}
-                </span>
-              </a>
-            );
-          })}
-        </div>
+        {/* Join Team SPS Volunteer Form */}
+        <JoinTeamSection phone={displayPhone} />
 
-        {/* Contact Section */}
-        <div className="space-y-2.5">
-          {/* Email */}
-          {profile.email && (
-            <div className="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl p-3">
-              <div className="flex items-center justify-center gap-2 text-muted-foreground mb-1">
-                <Mail className="w-4 h-4" />
-                <span className="text-xs">Email:</span>
-              </div>
-              <a
-                href={`mailto:${profile.email}`}
-                className="block text-center text-foreground text-sm font-medium hover:text-victory-saffron transition-colors"
-              >
-                {profile.email}
-              </a>
-            </div>
-          )}
+        {/* Connect & Social Channels, Helpline & Message Form */}
+        <ConnectSection
+          name={displayName}
+          email={displayEmail}
+          phone={displayPhone}
+          links={links}
+        />
+      </main>
 
-          {/* Phone */}
-          {profile.phone && (
-            <a
-              href={`tel:${profile.phone}`}
-              className="flex items-center justify-center gap-2.5 w-full py-3 px-4 rounded-xl font-semibold text-base backdrop-blur-md bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-            >
-              <Phone className="w-5 h-5 text-indian-green" />
-              <span>Call: {profile.phone}</span>
-            </a>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-muted-foreground/60">
-            Powered by Victory OS
-          </p>
-        </div>
-      </div>
+      {/* Footer */}
+      <Footer
+        name={displayName}
+        phone={displayPhone}
+        email={displayEmail}
+      />
     </div>
   );
 }
