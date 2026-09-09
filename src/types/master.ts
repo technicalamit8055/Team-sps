@@ -1,6 +1,6 @@
-export type MasterRole = 'admin' | 'manager' | 'accountant' | 'karyakarta' | 'observer';
+export type MasterRole = 'admin' | 'manager' | 'accountant' | 'karyakarta' | 'collector' | 'observer';
 
-export type WorkspaceAccessLevel = 'full_control' | 'editor' | 'viewer' | 'no_access';
+export type WorkspaceAccessLevel = 'full_control' | 'editor' | 'viewer' | 'collector' | 'no_access';
 
 export interface ModuleAccess {
   votersCRM: boolean;       // Election CRM, voter lists, surveys
@@ -36,6 +36,14 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     karyakartaMgmt: false,
     exportData: false,
   },
+  collector: {
+    votersCRM: false,
+    donationsLedger: true,  // Can add donations and view entries made
+    expenses: false,         // Strictly hidden
+    analytics: false,        // Strictly hidden
+    karyakartaMgmt: false,   // Strictly hidden
+    exportData: false,       // Strictly hidden
+  },
   no_access: {
     votersCRM: false,
     donationsLedger: false,
@@ -58,6 +66,7 @@ export interface MasterStaff {
   phone: string;
   email?: string;
   username: string;
+  password?: string;
   primaryRole: MasterRole;
   designation: string; // e.g. "मुख्य प्रशासक", "वॉर रूम हेड", "कोषाध्यक्ष"
   status: 'active' | 'inactive';

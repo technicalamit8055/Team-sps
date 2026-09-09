@@ -196,11 +196,10 @@ ${balanceText}
                   </p>
                 </div>
                 <div
-                  className={`p-2 rounded-lg border ${
-                    donation.balanceAmount > 0
+                  className={`p-2 rounded-lg border ${donation.balanceAmount > 0
                       ? 'bg-rose-50 border-rose-300 text-rose-800'
                       : 'bg-slate-50 border-slate-200 text-slate-600'
-                  }`}
+                    }`}
                 >
                   <span className="font-semibold text-[10px] uppercase block">
                     शेष बकाया (Balance Due)

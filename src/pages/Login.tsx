@@ -23,13 +23,16 @@ export default function Login() {
       return;
     }
     setIsLoading(true);
-    const { error, role } = await signIn(username, password);
+    const { error, role, assignedWorkspaceId, isCollector } = await signIn(username, password);
     setIsLoading(false);
     if (error) {
       toast.error(error);
     } else {
       toast.success('स्वागत है! Login सफल।');
-      if (role === 'admin') {
+      if (isCollector || assignedWorkspaceId) {
+        // Directly redirect assigned collector worker to their unit (e.g. Durga Puja Unit)
+        navigate('/samiti');
+      } else if (role === 'admin') {
         navigate('/master');
       } else if (role === 'citizen') {
         navigate('/janta');

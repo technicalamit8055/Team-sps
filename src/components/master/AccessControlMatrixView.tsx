@@ -55,6 +55,12 @@ const ACCESS_CONFIG: Record<
     icon: <Eye className="w-3.5 h-3.5 text-navy" />,
     desc: 'Read-only access to ledgers, reports, and lists',
   },
+  collector: {
+    label: 'Donation Only',
+    color: 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100',
+    icon: <Receipt className="w-3.5 h-3.5 text-amber-600" />,
+    desc: 'Only add & view donations in this unit; all dashboards & expenses hidden',
+  },
   no_access: {
     label: 'No Access',
     color: 'bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200',
@@ -298,6 +304,9 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                               </SelectItem>
                               <SelectItem value="editor" className="text-xs font-bold text-amber-700">
                                 ✏️ Editor
+                              </SelectItem>
+                              <SelectItem value="collector" className="text-xs font-bold text-amber-800">
+                                🎟️ Donation Only (चंदा संग्रह)
                               </SelectItem>
                               <SelectItem value="viewer" className="text-xs font-bold text-blue-700">
                                 👁️ Viewer

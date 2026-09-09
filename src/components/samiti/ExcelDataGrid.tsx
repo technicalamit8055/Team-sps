@@ -24,6 +24,7 @@ import {
   HandCoins,
   ShieldCheck,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,8 +36,23 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-export const ExcelDataGrid: React.FC = () => {
-  const { currentEntity, currentEvent, donations, updateDonation, deleteDonation } = useSamiti();
+interface ExcelDataGridProps {
+  isCollectorMode?: boolean;
+  collectorName?: string;
+}
+
+export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
+  isCollectorMode: propCollectorMode,
+  collectorName: propCollectorName,
+}) => {
+  const { currentEntity, currentEvent, donations, updateDonation, deleteDonation, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
+  const { profile } = useAuth();
+
+  const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
+  const workerName = propCollectorName || profile?.full_name || currentStaffMember?.name || 'सुनील वर्मा';
+
+  // Toggle between worker's own entries vs all unit entries
+  const [collectorScope, setCollectorScope] = useState<'MINE' | 'ALL'>('MINE');
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,6 +89,18 @@ export const ExcelDataGrid: React.FC = () => {
   const filteredDonations = useMemo(() => {
     return donations
       .filter(d => {
+        // In collector mode, filter by worker's own collections when scope is 'MINE'
+        if (isCollector && collectorScope === 'MINE') {
+          const cName = (d.collectorName || '').toLowerCase();
+          const wName = workerName.toLowerCase();
+          const isMine =
+            cName.includes(wName) ||
+            wName.includes(cName) ||
+            cName.includes('सुनील') ||
+            cName.includes('कार्यकर्ता');
+          if (!isMine) return false;
+        }
+
         if (searchTerm.trim()) {
           const term = searchTerm.toLowerCase();
           const match =
@@ -166,11 +194,10 @@ export const ExcelDataGrid: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setViewMode('cards')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
-                  viewMode === 'cards'
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${viewMode === 'cards'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
                 title="कार्ड दृश्य (Mobile Touch Friendly)"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
@@ -179,11 +206,10 @@ export const ExcelDataGrid: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
-                  viewMode === 'grid'
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${viewMode === 'grid'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
-                }`}
+                  }`}
                 title="एक्सेल स्प्रेडशीट ग्रिड"
               >
                 <Table className="w-3.5 h-3.5" />
@@ -193,10 +219,53 @@ export const ExcelDataGrid: React.FC = () => {
 
             {/* Desktop Add Button */}
             <div className="hidden sm:block">
-              <QuickDonationDialog />
+              <QuickDonationDialog
+                isCollectorMode={isCollector}
+                defaultCollectorName={workerName}
+              />
             </div>
           </div>
         </div>
+
+        {/* Collector Scope Toggle (Mine vs All) */}
+        {isCollector && (
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-300/70 rounded-2xl">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                <span>👤</span>
+                <span>प्रविष्टि दृश्य:</span>
+              </span>
+              <div className="inline-flex bg-white/90 p-0.5 rounded-xl border border-amber-300 text-xs shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setCollectorScope('MINE')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${collectorScope === 'MINE'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'text-amber-900 hover:text-amber-950'
+                    }`}
+                >
+                  मेरी प्रविष्टियाँ (My Entries)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCollectorScope('ALL')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${collectorScope === 'ALL'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'text-amber-900 hover:text-amber-950'
+                    }`}
+                >
+                  समस्त यूनिट प्रविष्टियाँ (All Unit Entries)
+                </button>
+              </div>
+            </div>
+            <div className="text-[11px] text-amber-800 font-medium flex items-center gap-1">
+              <span>संग्रहकर्ता:</span>
+              <strong className="text-slate-900 bg-white/80 px-2 py-0.5 rounded-md border border-amber-200">
+                {workerName}
+              </strong>
+            </div>
+          </div>
+        )}
 
         {/* Clean, Segmented Filter Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2.5 border-t border-slate-100 text-xs">
@@ -206,11 +275,10 @@ export const ExcelDataGrid: React.FC = () => {
             <button
               type="button"
               onClick={() => setCategoryFilter('ALL')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all ${
-                categoryFilter === 'ALL'
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all ${categoryFilter === 'ALL'
                   ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+                }`}
             >
               सभी ({donations.length})
             </button>
@@ -224,11 +292,10 @@ export const ExcelDataGrid: React.FC = () => {
                   key={catKey}
                   type="button"
                   onClick={() => setCategoryFilter(catKey)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all flex items-center gap-1 border ${
-                    isSelected
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all flex items-center gap-1 border ${isSelected
                       ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   <span>{cat.code}</span>
                   <span className="text-[10px] opacity-70">({count})</span>
@@ -244,27 +311,24 @@ export const ExcelDataGrid: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setBalanceFilter('ALL')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
-                  balanceFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
-                }`}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${balanceFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+                  }`}
               >
                 सभी
               </button>
               <button
                 type="button"
                 onClick={() => setBalanceFilter('DUE')}
-                className={`px-2 py-0.5 rounded-md font-semibold transition-all flex items-center gap-1 ${
-                  balanceFilter === 'DUE' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600'
-                }`}
+                className={`px-2 py-0.5 rounded-md font-semibold transition-all flex items-center gap-1 ${balanceFilter === 'DUE' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600'
+                  }`}
               >
                 बकाया
               </button>
               <button
                 type="button"
                 onClick={() => setBalanceFilter('PAID')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
-                  balanceFilter === 'PAID' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
-                }`}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${balanceFilter === 'PAID' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
+                  }`}
               >
                 चुकता
               </button>
@@ -275,27 +339,24 @@ export const ExcelDataGrid: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setModeFilter('ALL')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
-                  modeFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
-                }`}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${modeFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+                  }`}
               >
                 सभी
               </button>
               <button
                 type="button"
                 onClick={() => setModeFilter('CASH')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
-                  modeFilter === 'CASH' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
-                }`}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${modeFilter === 'CASH' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+                  }`}
               >
                 💵 नकद
               </button>
               <button
                 type="button"
                 onClick={() => setModeFilter('ONL')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
-                  modeFilter === 'ONL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
-                }`}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${modeFilter === 'ONL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+                  }`}
               >
                 📲 UPI
               </button>
@@ -326,9 +387,8 @@ export const ExcelDataGrid: React.FC = () => {
                 return (
                   <div
                     key={row.id}
-                    className={`bg-white border rounded-2xl p-4 shadow-xs transition-all flex flex-col justify-between gap-3 relative hover:shadow-md ${
-                      isVip ? 'border-amber-400/90 ring-1 ring-amber-400/30' : 'border-slate-200'
-                    }`}
+                    className={`bg-white border rounded-2xl p-4 shadow-xs transition-all flex flex-col justify-between gap-3 relative hover:shadow-md ${isVip ? 'border-amber-400/90 ring-1 ring-amber-400/30' : 'border-slate-200'
+                      }`}
                   >
                     {/* Top Row: S.NUM, Category & Mode */}
                     <div className="flex items-center justify-between gap-2">
@@ -349,11 +409,10 @@ export const ExcelDataGrid: React.FC = () => {
 
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md ${
-                            row.paymentMode === 'ONL'
+                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md ${row.paymentMode === 'ONL'
                               ? 'bg-blue-50 text-blue-700 border border-blue-200'
                               : 'bg-slate-100 text-slate-700 border border-slate-200'
-                          }`}
+                            }`}
                         >
                           {row.paymentMode}
                         </span>
@@ -411,11 +470,10 @@ export const ExcelDataGrid: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => toggleHandover(row)}
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-all inline-flex items-center gap-1 border ${
-                            row.isHandoverDone
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-all inline-flex items-center gap-1 border ${row.isHandoverDone
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                               : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
-                          }`}
+                            }`}
                           title="रोकड़ संदूक मिलान स्थिति बदलें"
                         >
                           <HandCoins className="w-2.5 h-2.5" />
@@ -460,6 +518,8 @@ export const ExcelDataGrid: React.FC = () => {
                       <div className="flex items-center gap-1">
                         <QuickDonationDialog
                           initialData={row}
+                          isCollectorMode={isCollector}
+                          defaultCollectorName={workerName}
                           triggerButton={
                             <Button
                               size="sm"
@@ -472,15 +532,17 @@ export const ExcelDataGrid: React.FC = () => {
                           }
                         />
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setDeletingId(row.id)}
-                          className="h-8 w-8 p-0 rounded-xl border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                          title="हटाएँ"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {!isCollector && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setDeletingId(row.id)}
+                            className="h-8 w-8 p-0 rounded-xl border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                            title="हटाएँ"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -614,9 +676,8 @@ export const ExcelDataGrid: React.FC = () => {
                     return (
                       <tr
                         key={row.id}
-                        className={`hover:bg-amber-50/40 transition-colors ${
-                          isVip ? 'bg-amber-50/20' : index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
-                        }`}
+                        className={`hover:bg-amber-50/40 transition-colors ${isVip ? 'bg-amber-50/20' : index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                          }`}
                       >
                         {/* S.NUM */}
                         <td className="p-3 border-r border-slate-100 text-center font-mono font-bold text-amber-950 text-xs">
@@ -691,11 +752,10 @@ export const ExcelDataGrid: React.FC = () => {
                         {/* CASH/ONL */}
                         <td className="p-3 border-r border-slate-100 text-center">
                           <span
-                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
-                              row.paymentMode === 'ONL'
+                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${row.paymentMode === 'ONL'
                                 ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                 : 'bg-slate-100 text-slate-700 border border-slate-200'
-                            }`}
+                              }`}
                           >
                             {row.paymentMode}
                           </span>
@@ -706,11 +766,10 @@ export const ExcelDataGrid: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => toggleHandover(row)}
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
-                              row.isHandoverDone
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all ${row.isHandoverDone
                                 ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                                 : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
-                            }`}
+                              }`}
                           >
                             {row.isHandoverDone ? 'जमा ✓' : 'बाकी'}
                           </button>
@@ -731,6 +790,8 @@ export const ExcelDataGrid: React.FC = () => {
 
                             <QuickDonationDialog
                               initialData={row}
+                              isCollectorMode={isCollector}
+                              defaultCollectorName={workerName}
                               triggerButton={
                                 <Button
                                   size="sm"
@@ -743,15 +804,17 @@ export const ExcelDataGrid: React.FC = () => {
                               }
                             />
 
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setDeletingId(row.id)}
-                              title="हटाएँ"
-                              className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                            {!isCollector && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setDeletingId(row.id)}
+                                title="हटाएँ"
+                                className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -796,30 +859,32 @@ export const ExcelDataGrid: React.FC = () => {
       />
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
-        <AlertDialogContent className="max-w-[92vw] sm:max-w-lg rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>क्या आप यह चंदा प्रविष्टि हटाना चाहते हैं?</AlertDialogTitle>
-            <AlertDialogDescription>
-              यह प्रविष्टि स्थायी रूप से हटा दी जाएगी और वित्तीय योग स्वतः पुनः गणना हो जाएगा।
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row justify-end gap-2">
-            <AlertDialogCancel className="rounded-xl">रद्द करें</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deletingId) {
-                  deleteDonation(deletingId);
-                  setDeletingId(null);
-                }
-              }}
-              className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl"
-            >
-              हाँ, हटाएँ
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {!isCollector && (
+        <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+          <AlertDialogContent className="max-w-[92vw] sm:max-w-lg rounded-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>क्या आप यह चंदा प्रविष्टि हटाना चाहते हैं?</AlertDialogTitle>
+              <AlertDialogDescription>
+                यह प्रविष्टि स्थायी रूप से हटा दी जाएगी और वित्तीय योग स्वतः पुनः गणना हो जाएगा।
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row justify-end gap-2">
+              <AlertDialogCancel className="rounded-xl">रद्द करें</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (deletingId) {
+                    deleteDonation(deletingId);
+                    setDeletingId(null);
+                  }
+                }}
+                className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl"
+              >
+                हाँ, हटाएँ
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };

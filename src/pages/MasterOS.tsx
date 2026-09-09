@@ -41,10 +41,13 @@ export const MasterOS: React.FC = () => {
     mainWorkspace,
   } = useSamiti();
 
-  const { profile, role, signOut } = useAuth();
+  const { profile, role, isCollector, assignedWorkspaceId, signOut } = useAuth();
 
   // null = Master Hub overview; string = active dedicated workspace view
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(() => {
+    if (isCollector || assignedWorkspaceId) {
+      return assignedWorkspaceId || 'ent-durga-narayanpur';
+    }
     if (
       typeof window !== 'undefined' &&
       (window.location.pathname.includes('/samiti') || window.location.pathname.includes('/events'))
@@ -54,13 +57,21 @@ export const MasterOS: React.FC = () => {
     return null;
   });
 
-  // Auto-open Durga Puja unit if URL is /samiti
+  // Force activeWorkspaceId to assigned unit if collector
   useEffect(() => {
-    if (location.pathname.includes('/samiti') && activeWorkspaceId === null) {
+    if (isCollector || assignedWorkspaceId) {
+      const targetUnit = assignedWorkspaceId || 'ent-durga-narayanpur';
+      if (activeWorkspaceId !== targetUnit) {
+        setActiveWorkspaceId(targetUnit);
+      }
+      if (currentEntity.id !== targetUnit) {
+        setCurrentEntityId(targetUnit);
+      }
+    } else if (location.pathname.includes('/samiti') && activeWorkspaceId === null) {
       setCurrentEntityId('ent-durga-narayanpur');
       setActiveWorkspaceId('ent-durga-narayanpur');
     }
-  }, [location.pathname, activeWorkspaceId, setCurrentEntityId]);
+  }, [location.pathname, activeWorkspaceId, isCollector, assignedWorkspaceId, currentEntity.id, setCurrentEntityId]);
   const [activeTab, setActiveTab] = useState<'chanda' | 'kharcha' | 'analytics' | 'import_export'>('chanda');
 
   // Master OS Navigation & Modal States
@@ -165,6 +176,10 @@ export const MasterOS: React.FC = () => {
   // -------------------------------------------------------------
   // VIEW 2: DEDICATED FESTIVAL / BUSINESS / SAMITI WORKSPACE
   // -------------------------------------------------------------
+  if (isCollector || assignedWorkspaceId) {
+    return <DurgaPujaUnitView isCollectorMode={true} />;
+  }
+
   if (activeWorkspaceId && currentEntity.type !== 'election') {
     return <DurgaPujaUnitView onBackToMaster={() => setActiveWorkspaceId(null)} />;
   }

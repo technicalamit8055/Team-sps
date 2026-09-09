@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import {
   MasterEntity,
   SamitiEvent,
@@ -481,16 +482,17 @@ const DEFAULT_STAFF_LIST: MasterStaff[] = [
     name: 'सुनील वर्मा',
     phone: '9470123456',
     username: 'sunil_collector',
-    primaryRole: 'karyakarta',
-    designation: 'फील्ड संग्रहकर्ता एवं जनसंपर्क',
+    password: 'demo123',
+    primaryRole: 'collector',
+    designation: 'फील्ड संग्रहकर्ता (चंदा संग्रह)',
     status: 'active',
     joinedDate: '2024-05-20',
     avatarColor: 'bg-amber-600',
     workspacePermissions: {
       'ent-durga-narayanpur': {
         workspaceId: 'ent-durga-narayanpur',
-        accessLevel: 'editor',
-        modules: { ...DEFAULT_MODULE_ACCESS_MAP.editor },
+        accessLevel: 'collector',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.collector },
       },
     },
   },
@@ -550,6 +552,8 @@ interface SamitiContextType {
   updateStaffPermission: (staffId: string, workspaceId: string, accessLevel: WorkspaceAccessLevel, modules?: Partial<ModuleAccess>) => void;
   grantAllWorkspaces: (staffId: string, accessLevel: WorkspaceAccessLevel) => void;
   resetToSampleData: () => void;
+  isCollectorMode: boolean;
+  currentStaffMember: MasterStaff | null;
 }
 
 const SamitiContext = createContext<SamitiContextType | undefined>(undefined);
@@ -566,6 +570,7 @@ const STORAGE_KEYS = {
 };
 
 export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const auth = useAuth();
   // Load Entities safely
   const [entities, setEntities] = useState<MasterEntity[]>(() => {
     try {
@@ -703,6 +708,31 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     return DEFAULT_STAFF_LIST;
   });
+
+  // Identify logged-in staff member
+  const currentStaffMember = useMemo(() => {
+    const cleanUser = (auth?.profile?.username || '').toLowerCase().trim();
+    if (!cleanUser) return null;
+    return staffList.find(s => s?.username?.toLowerCase() === cleanUser) || null;
+  }, [auth?.profile?.username, staffList]);
+
+  // Is current logged in user restricted to collector mode?
+  const isCollectorMode = useMemo(() => {
+    if (auth?.isCollector) return true;
+    if (currentStaffMember) {
+      if (currentStaffMember.primaryRole === 'collector') return true;
+      const perm = currentStaffMember.workspacePermissions?.[currentEntityId];
+      if (perm?.accessLevel === 'collector') return true;
+    }
+    return false;
+  }, [auth?.isCollector, currentStaffMember, currentEntityId]);
+
+  // Auto-lock current entity for assigned collector
+  useEffect(() => {
+    if (auth?.assignedWorkspaceId && currentEntityId !== auth.assignedWorkspaceId) {
+      setCurrentEntityId(auth.assignedWorkspaceId);
+    }
+  }, [auth?.assignedWorkspaceId, currentEntityId]);
 
   // Persist to local storage
   useEffect(() => {
@@ -888,10 +918,17 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   // Delete donation
-  const deleteDonation = useCallback((id: string) => {
-    setDonations(prev => prev.filter(item => item.id !== id));
-    toast.info('दान प्रविष्टि हटा दी गई!');
-  }, []);
+  const deleteDonation = useCallback(
+    (id: string) => {
+      if (isCollectorMode) {
+        toast.error('संग्रहकर्ता को चंदा प्रविष्टि हटाने की अनुमति नहीं है।');
+        return;
+      }
+      setDonations(prev => prev.filter(item => item.id !== id));
+      toast.info('दान प्रविष्टि हटा दी गई!');
+    },
+    [isCollectorMode]
+  );
 
   // Add expense
   const addExpense = useCallback(
@@ -1178,6 +1215,8 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateStaffPermission,
         grantAllWorkspaces,
         resetToSampleData,
+        isCollectorMode,
+        currentStaffMember,
       }}
     >
       {children}

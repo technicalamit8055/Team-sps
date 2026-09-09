@@ -183,11 +183,10 @@ export const DailyCashierSheetModal: React.FC<DailyCashierSheetModalProps> = ({
                         </td>
                         <td className="p-2 border-r border-slate-100 text-center font-mono text-[10px]">
                           <span
-                            className={`px-1.5 py-0.2 rounded font-bold ${
-                              row.paymentMode === 'ONL'
+                            className={`px-1.5 py-0.2 rounded font-bold ${row.paymentMode === 'ONL'
                                 ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                 : 'bg-slate-100 text-slate-700'
-                            }`}
+                              }`}
                           >
                             {row.paymentMode}
                           </span>

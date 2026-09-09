@@ -33,6 +33,8 @@ interface QuickDonationDialogProps {
   initialData?: SamitiDonation | null;
   onSuccess?: () => void;
   triggerButton?: React.ReactNode;
+  defaultCollectorName?: string;
+  isCollectorMode?: boolean;
 }
 
 const PRESET_AMOUNTS = [
@@ -78,8 +80,13 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   initialData,
   onSuccess,
   triggerButton,
+  defaultCollectorName,
+  isCollectorMode: propCollectorMode,
 }) => {
-  const { addDonation, updateDonation, currentEvent, currentEntity, donations, staffList } = useSamiti();
+  const { addDonation, updateDonation, currentEvent, currentEntity, donations, staffList, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
+
+  const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
+  const workerCollectorName = defaultCollectorName || currentStaffMember?.name || 'सुनील वर्मा';
 
   const [isOpen, setIsOpen] = useState(false);
   const [createdDonation, setCreatedDonation] = useState<SamitiDonation | null>(null);
@@ -100,7 +107,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
     initialData?.receivedAmount ? String(initialData.receivedAmount) : '2100'
   );
   const [paymentMode, setPaymentMode] = useState<PaymentMode>(initialData?.paymentMode || 'CASH');
-  const [collectorName, setCollectorName] = useState(initialData?.collectorName || 'कार्यकर्ता प्रतिनिधि');
+  const [collectorName, setCollectorName] = useState(initialData?.collectorName || (isCollector ? workerCollectorName : 'कार्यकर्ता प्रतिनिधि'));
   const [remarks, setRemarks] = useState(initialData?.remarks || '');
   const [openReceiptAfterSave, setOpenReceiptAfterSave] = useState(true);
 
@@ -119,9 +126,12 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setAcceptedAmount(String(initialData.acceptedAmount || '2100'));
       setReceivedAmount(String(initialData.receivedAmount || '2100'));
       setPaymentMode(initialData.paymentMode || 'CASH');
-      setCollectorName(initialData.collectorName || 'कार्यकर्ता प्रतिनिधि');
+      setCollectorName(initialData.collectorName || (isCollector ? workerCollectorName : 'कार्यकर्ता प्रतिनिधि'));
       setRemarks(initialData.remarks || '');
     } else if (isOpen) {
+      if (isCollector) {
+        setCollectorName(workerCollectorName);
+      }
       // Focus name input when modal opens
       setTimeout(() => {
         nameInputRef.current?.focus();
@@ -139,8 +149,11 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setReceivedAmount('2100');
       setCategory('SHO');
       setPaymentMode('CASH');
+      if (isCollector) {
+        setCollectorName(workerCollectorName);
+      }
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, isCollector, workerCollectorName]);
 
   // Keyboard shortcut: Ctrl+Enter to save
   useEffect(() => {
@@ -305,11 +318,10 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         key={catKey}
                         type="button"
                         onClick={() => setCategory(catKey)}
-                        className={`relative p-2.5 rounded-xl text-left border transition-all duration-150 flex flex-col gap-1 active:scale-[0.98] ${
-                          isSelected
+                        className={`relative p-2.5 rounded-xl text-left border transition-all duration-150 flex flex-col gap-1 active:scale-[0.98] ${isSelected
                             ? meta.activeClass
                             : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50/80'
-                        }`}
+                          }`}
                       >
                         {isSelected && (
                           <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] shadow-2xs">
@@ -317,9 +329,8 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                           </div>
                         )}
                         <div className="flex items-center gap-1.5">
-                          <div className={`w-5 h-5 rounded-md flex items-center justify-center ${
-                            isSelected ? 'bg-black/10' : 'bg-slate-100 text-slate-600'
-                          }`}>
+                          <div className={`w-5 h-5 rounded-md flex items-center justify-center ${isSelected ? 'bg-black/10' : 'bg-slate-100 text-slate-600'
+                            }`}>
                             <IconComponent className="w-3 h-3" />
                           </div>
                           <span className="text-xs font-mono font-black">{cat.code}</span>
@@ -433,11 +444,10 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       key={tag}
                       type="button"
                       onClick={() => setCaste(tag)}
-                      className={`text-[10px] px-2 py-0.5 rounded-lg border font-medium transition-all ${
-                        caste === tag
+                      className={`text-[10px] px-2 py-0.5 rounded-lg border font-medium transition-all ${caste === tag
                           ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold shadow-2xs'
                           : 'bg-slate-100/70 text-slate-600 border-slate-200 hover:bg-amber-50 hover:border-amber-200'
-                      }`}
+                        }`}
                     >
                       {tag}
                     </button>
@@ -510,11 +520,10 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                           key={item.amount}
                           type="button"
                           onClick={() => handlePresetClick(item.amount)}
-                          className={`px-2 py-2 rounded-xl text-center border transition-all active:scale-95 flex flex-col items-center justify-center ${
-                            isMatched
+                          className={`px-2 py-2 rounded-xl text-center border transition-all active:scale-95 flex flex-col items-center justify-center ${isMatched
                               ? 'bg-amber-600 text-white border-amber-700 shadow-xs font-extrabold'
                               : 'bg-white text-slate-800 border-amber-200/90 hover:border-amber-400 hover:bg-amber-100/60'
-                          }`}
+                            }`}
                         >
                           <span className="text-xs font-mono font-black">₹{item.amount.toLocaleString('hi-IN')}</span>
                           <span className={`text-[9px] mt-0.5 leading-none ${isMatched ? 'text-amber-100' : 'text-amber-800/80 font-medium'}`}>
@@ -607,11 +616,10 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                   </div>
 
                   {/* Card 3: Balance Display */}
-                  <div className={`p-3 rounded-xl border shadow-2xs flex flex-col justify-between ${
-                    calculatedBalance === 0
+                  <div className={`p-3 rounded-xl border shadow-2xs flex flex-col justify-between ${calculatedBalance === 0
                       ? 'bg-emerald-50/80 border-emerald-200'
                       : 'bg-rose-50/80 border-rose-200'
-                  }`}>
+                    }`}>
                     <div className="flex items-center justify-between">
                       <span className={`text-xs font-bold ${calculatedBalance === 0 ? 'text-emerald-900' : 'text-rose-900'}`}>
                         शेष बकाया (Balance)
@@ -628,9 +636,8 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     </div>
 
                     <div className="my-1">
-                      <div className={`text-xl font-black font-mono tracking-tight ${
-                        calculatedBalance === 0 ? 'text-emerald-700' : 'text-rose-600'
-                      }`}>
+                      <div className={`text-xl font-black font-mono tracking-tight ${calculatedBalance === 0 ? 'text-emerald-700' : 'text-rose-600'
+                        }`}>
                         ₹{calculatedBalance.toLocaleString('hi-IN')}
                       </div>
                     </div>
@@ -661,11 +668,10 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <button
                         type="button"
                         onClick={() => setPaymentMode('CASH')}
-                        className={`h-11 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-98 ${
-                          paymentMode === 'CASH'
+                        className={`h-11 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-98 ${paymentMode === 'CASH'
                             ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50/50 hover:border-emerald-300'
-                        }`}
+                          }`}
                       >
                         <Banknote className="w-4 h-4" />
                         <span>💵 नकद (CASH)</span>
@@ -674,11 +680,10 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <button
                         type="button"
                         onClick={() => setPaymentMode('ONL')}
-                        className={`h-11 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-98 ${
-                          paymentMode === 'ONL'
+                        className={`h-11 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 active:scale-98 ${paymentMode === 'ONL'
                             ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-blue-50/50 hover:border-blue-300'
-                        }`}
+                          }`}
                       >
                         <QrCode className="w-4 h-4" />
                         <span>📲 ऑनलाइन (UPI)</span>
@@ -687,30 +692,46 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                   </div>
 
                   <div>
-                    <Label className="text-xs font-bold text-slate-800 block mb-1.5">
-                      संग्रहकर्ता / पावती प्रतिनिधि (Collector Name)
-                    </Label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label className="text-xs font-bold text-slate-800">
+                        संग्रहकर्ता / पावती प्रतिनिधि (Collector Name)
+                      </Label>
+                      {isCollector && (
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span>🔒</span>
+                          <span>लॉक्ड</span>
+                        </span>
+                      )}
+                    </div>
                     <Input
                       placeholder="उदा० अमित कुमार / समिति कोषाध्यक्ष"
                       value={collectorName}
                       onChange={e => setCollectorName(e.target.value)}
-                      className="h-11 text-xs font-semibold text-slate-900 border-slate-200 rounded-xl bg-white focus-visible:ring-amber-500"
+                      disabled={isCollector}
+                      className={`h-11 text-xs font-semibold text-slate-900 border-slate-200 rounded-xl ${isCollector ? 'bg-slate-100 cursor-not-allowed opacity-90 text-slate-700' : 'bg-white'
+                        } focus-visible:ring-amber-500`}
                     />
-                    {/* Quick collector selection chips */}
-                    {staffList && staffList.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1 mt-1">
-                        <span className="text-[9px] text-slate-400">कार्यकर्ता:</span>
-                        {staffList.slice(0, 4).map(s => (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => setCollectorName(s.name)}
-                            className="text-[9px] px-1.5 py-0.2 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
-                          >
-                            {s.name}
-                          </button>
-                        ))}
-                      </div>
+                    {isCollector ? (
+                      <p className="text-[10px] text-amber-800 mt-1 font-medium">
+                        यह रसीद स्वतः आपके नाम ({workerCollectorName}) पर दर्ज होगी।
+                      </p>
+                    ) : (
+                      /* Quick collector selection chips */
+                      staffList && staffList.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          <span className="text-[9px] text-slate-400">कार्यकर्ता:</span>
+                          {staffList.slice(0, 4).map(s => (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => setCollectorName(s.name)}
+                              className="text-[9px] px-1.5 py-0.2 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
+                            >
+                              {s.name}
+                            </button>
+                          ))}
+                        </div>
+                      )
                     )}
                   </div>
                 </div>

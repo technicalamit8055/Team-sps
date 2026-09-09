@@ -145,11 +145,10 @@ export const PujaScheduleModal: React.FC<PujaScheduleModalProps> = ({ isOpen, on
               {PUJA_SCHEDULE.map(item => (
                 <div
                   key={item.dayNumber}
-                  className={`p-3 rounded-2xl border transition-all ${
-                    item.highlight
+                  className={`p-3 rounded-2xl border transition-all ${item.highlight
                       ? 'bg-amber-50/50 border-amber-300 shadow-xs ring-1 ring-amber-400/30'
                       : 'bg-white border-slate-200 hover:border-slate-300'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2.5">
@@ -161,11 +160,10 @@ export const PujaScheduleModal: React.FC<PujaScheduleModalProps> = ({ isOpen, on
                           </span>
                           <Badge
                             variant="outline"
-                            className={`text-[10px] font-medium ${
-                              item.highlight
+                            className={`text-[10px] font-medium ${item.highlight
                                 ? 'bg-amber-100 text-amber-900 border-amber-300'
                                 : 'bg-slate-100 text-slate-700 border-slate-200'
-                            }`}
+                              }`}
                           >
                             {item.tithiHi}
                           </Badge>

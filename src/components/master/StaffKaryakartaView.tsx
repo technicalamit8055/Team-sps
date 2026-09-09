@@ -19,6 +19,13 @@ import {
   KeyRound,
   Star,
   UserCheck,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
+  RefreshCw,
+  Send,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -58,6 +65,11 @@ const ROLE_CONFIG: Record<
     color: 'bg-purple-500',
     badgeBg: 'bg-purple-50 text-purple-700 border-purple-200',
   },
+  collector: {
+    label: 'चंदा संग्रहकर्ता (Collector)',
+    color: 'bg-amber-600',
+    badgeBg: 'bg-amber-50 text-amber-800 border-amber-300',
+  },
 };
 
 const ACCESS_LEVEL_LABELS: Record<
@@ -75,6 +87,10 @@ const ACCESS_LEVEL_LABELS: Record<
   viewer: {
     label: 'Viewer',
     badgeColor: 'bg-blue-50 text-blue-700 border-blue-300',
+  },
+  collector: {
+    label: 'Donation Only (चंदा संग्रह)',
+    badgeColor: 'bg-amber-50 text-amber-800 border-amber-300',
   },
   no_access: {
     label: 'No Access',
@@ -98,9 +114,12 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newDesignation, setNewDesignation] = useState('');
-  const [newRole, setNewRole] = useState<MasterRole>('karyakarta');
-  const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>([]);
-  const [defaultAccessLevel, setDefaultAccessLevel] = useState<WorkspaceAccessLevel>('editor');
+  const [newRole, setNewRole] = useState<MasterRole>('collector');
+  const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>(['ent-durga-narayanpur']);
+  const [defaultAccessLevel, setDefaultAccessLevel] = useState<WorkspaceAccessLevel>('collector');
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Edit staff form state
   const [editName, setEditName] = useState('');
@@ -108,6 +127,35 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
   const [editDesignation, setEditDesignation] = useState('');
   const [editRole, setEditRole] = useState<MasterRole>('karyakarta');
   const [editStatus, setEditStatus] = useState<'active' | 'inactive'>('active');
+  const [editPassword, setEditPassword] = useState('');
+  const [showEditPassword, setShowEditPassword] = useState(false);
+
+  // Credential View / Share Dialog state
+  const [credentialModalData, setCredentialModalData] = useState<{
+    name: string;
+    username: string;
+    password: string;
+    phone: string;
+    roleLabel: string;
+    assignedUnitNames: string[];
+  } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const generateRandomPassword = () => {
+    const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let pass = '';
+    for (let i = 0; i < 6; i++) {
+      pass += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return `Sps@${pass}`;
+  };
+
+  const handleCopy = (text: string, fieldKey: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldKey);
+    toast.success('क्लिपबोर्ड पर कॉपी किया गया!');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +164,10 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       return;
     }
 
-    const username = `${newName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${Math.floor(Math.random() * 100)}`;
+    const autoUsername = `${newName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${newRole === 'collector' ? 'collector' : Math.floor(Math.random() * 100)}`;
+    const finalUsername = newUsername.trim() || autoUsername;
+    const finalPassword = newPassword.trim() || generateRandomPassword();
+
     const workspacePermissions: MasterStaff['workspacePermissions'] = {};
 
     selectedWorkspaceIds.forEach(wsId => {
@@ -139,7 +190,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
     addStaff({
       name: newName.trim(),
       phone: newPhone.trim(),
-      username,
+      username: finalUsername,
+      password: finalPassword,
       designation: newDesignation.trim() || ROLE_CONFIG[newRole].label,
       primaryRole: newRole,
       status: 'active',
@@ -147,10 +199,25 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       workspacePermissions,
     });
 
+    const assignedUnitNames = selectedWorkspaceIds
+      .map(id => entities.find(e => e.id === id)?.name)
+      .filter(Boolean) as string[];
+
+    setCredentialModalData({
+      name: newName.trim(),
+      username: finalUsername,
+      password: finalPassword,
+      phone: newPhone.trim(),
+      roleLabel: ROLE_CONFIG[newRole]?.label || 'कार्यकर्ता',
+      assignedUnitNames: assignedUnitNames.length > 0 ? assignedUnitNames : ['श्री दुर्गा पूजा समिति नारायणपुर'],
+    });
+
     setNewName('');
     setNewPhone('');
+    setNewUsername('');
+    setNewPassword('');
     setNewDesignation('');
-    setSelectedWorkspaceIds([]);
+    setSelectedWorkspaceIds(['ent-durga-narayanpur']);
     setIsCreateModalOpen(false);
   };
 
@@ -161,6 +228,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
     setEditDesignation(staff.designation);
     setEditRole(staff.primaryRole);
     setEditStatus(staff.status);
+    setEditPassword(staff.password || '');
+    setShowEditPassword(false);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -173,6 +242,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       designation: editDesignation.trim(),
       primaryRole: editRole,
       status: editStatus,
+      password: editPassword.trim() || editingStaff.password || 'demo123',
     });
 
     setEditingStaff(null);
@@ -273,6 +343,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
             { id: 'all', label: 'All Members' },
             { id: 'manager', label: '⭐ Incharges' },
             { id: 'admin', label: '🛡️ Admins' },
+            { id: 'collector', label: '🎟️ चंदा संग्रहकर्ता' },
             { id: 'karyakarta', label: '👥 Field Workers' },
             { id: 'accountant', label: '💰 Treasurers' },
           ].map(tab => {
@@ -326,6 +397,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                           ? 'bg-gradient-to-br from-saffron to-saffron-dark ring-2 ring-saffron/30'
                           : staff.primaryRole === 'admin'
                           ? 'bg-gradient-to-br from-rose-500 to-rose-700'
+                          : staff.primaryRole === 'collector'
+                          ? 'bg-gradient-to-br from-amber-500 to-amber-700 ring-2 ring-amber-400/30'
                           : 'bg-gradient-to-br from-navy to-navy-dark'
                       }`}
                     >
@@ -433,6 +506,28 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => {
+                      const assignedUnitNames = Object.keys(staff.workspacePermissions)
+                        .map(id => entities.find(e => e.id === id)?.name)
+                        .filter(Boolean) as string[];
+                      setCredentialModalData({
+                        name: staff.name,
+                        username: staff.username,
+                        password: staff.password || 'demo123',
+                        phone: staff.phone,
+                        roleLabel: ROLE_CONFIG[staff.primaryRole]?.label || 'कार्यकर्ता',
+                        assignedUnitNames: assignedUnitNames.length > 0 ? assignedUnitNames : ['श्री दुर्गा पूजा समिति नारायणपुर'],
+                      });
+                    }}
+                    className="h-7 w-7 p-0 text-amber-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg"
+                    title="View / Share Credentials"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleOpenEdit(staff)}
                     className="h-7 w-7 p-0 text-muted-foreground hover:text-navy hover:bg-slate-100 rounded-lg"
                     title="Edit Member"
@@ -495,6 +590,59 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
               />
             </div>
 
+            {/* Login Credentials Section */}
+            <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200/70 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-amber-700" />
+                  लॉगिन क्रेडेंशियल्स (Login Credentials)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setNewPassword(generateRandomPassword())}
+                  className="text-[10px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1 transition-colors"
+                >
+                  <RefreshCw className="w-2.5 h-2.5" />
+                  <span>पासवर्ड ऑटो-जनरेट</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <Label className="text-[11px] font-semibold text-slate-700">Username</Label>
+                  <Input
+                    placeholder={newName ? `${newName.toLowerCase().replace(/[^a-z0-9]/g, '')}_collector` : 'username_123'}
+                    value={newUsername}
+                    onChange={e => setNewUsername(e.target.value)}
+                    className="mt-1 text-xs font-mono rounded-xl bg-white"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-[11px] font-semibold text-slate-700">Password</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter or auto-generate"
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      className="text-xs font-mono rounded-xl pr-8 bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                    >
+                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[10px] text-amber-800/80">
+                💡 सदस्य जोड़ने के तुरंत बाद क्रेडेंशियल्स सीधे WhatsApp पर भेजने का विकल्प मिलेगा।
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs font-semibold text-slate-700">Role</Label>
@@ -503,6 +651,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="collector">🎟️ चंदा संग्रहकर्ता (Collector)</SelectItem>
                     <SelectItem value="manager">⭐ Incharge</SelectItem>
                     <SelectItem value="karyakarta">👥 Field Worker</SelectItem>
                     <SelectItem value="accountant">💰 Treasurer</SelectItem>
@@ -533,6 +682,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="collector">🎟️ Donation Only (चंदा संग्रह)</SelectItem>
                   <SelectItem value="editor">Editor (Data Entry)</SelectItem>
                   <SelectItem value="viewer">Viewer (Read Only)</SelectItem>
                   <SelectItem value="full_control">Full Access (Admin)</SelectItem>
@@ -631,6 +781,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="collector">🎟️ चंदा संग्रहकर्ता (Collector)</SelectItem>
                     <SelectItem value="manager">⭐ Incharge</SelectItem>
                     <SelectItem value="karyakarta">👥 Field Worker</SelectItem>
                     <SelectItem value="accountant">💰 Treasurer</SelectItem>
@@ -663,6 +814,31 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
               />
             </div>
 
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">
+                Change Password (पासवर्ड बदलें)
+              </Label>
+              <div className="relative mt-1">
+                <Input
+                  type={showEditPassword ? 'text' : 'password'}
+                  placeholder="Leave blank to keep unchanged"
+                  value={editPassword}
+                  onChange={e => setEditPassword(e.target.value)}
+                  className="text-xs font-mono rounded-xl pr-8"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowEditPassword(!showEditPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                >
+                  {showEditPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                यदि पासवर्ड नहीं बदलना चाहते हैं, तो इसे खाली छोड़ दें।
+              </p>
+            </div>
+
             <div className="flex justify-end gap-2 pt-3 border-t">
               <Button
                 type="button"
@@ -678,6 +854,136 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* CREDENTIALS VIEW & WHATSAPP SHARE MODAL */}
+      <Dialog open={!!credentialModalData} onOpenChange={open => !open && setCredentialModalData(null)}>
+        <DialogContent className="max-w-md w-[95vw] rounded-2xl p-5 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-amber-100 text-amber-800">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <span>कार्यकर्ता लॉगिन क्रेडेंशियल्स (Login Credentials)</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {credentialModalData && (
+            <div className="space-y-4 mt-2 text-xs">
+              {/* Profile banner */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">{credentialModalData.name}</h4>
+                  <p className="text-muted-foreground">{credentialModalData.phone} • {credentialModalData.roleLabel}</p>
+                </div>
+                <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-300 font-semibold">
+                  {credentialModalData.roleLabel}
+                </Badge>
+              </div>
+
+              {/* Credentials Box */}
+              <div className="space-y-2.5 bg-gradient-to-br from-amber-50/50 to-orange-50/40 p-3.5 rounded-2xl border border-amber-200/80">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-700">Username</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(credentialModalData.username, 'username')}
+                      className="text-[11px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1"
+                    >
+                      {copiedField === 'username' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedField === 'username' ? 'कॉपी हुआ!' : 'कॉपी'}</span>
+                    </button>
+                  </div>
+                  <div className="mt-1 p-2 rounded-xl bg-white border border-amber-200/60 font-mono font-bold text-slate-900 text-sm">
+                    {credentialModalData.username}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-700">Password</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(credentialModalData.password, 'password')}
+                      className="text-[11px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1"
+                    >
+                      {copiedField === 'password' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedField === 'password' ? 'कॉपी हुआ!' : 'कॉपी'}</span>
+                    </button>
+                  </div>
+                  <div className="mt-1 p-2 rounded-xl bg-white border border-amber-200/60 font-mono font-bold text-slate-900 text-sm">
+                    {credentialModalData.password}
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[11px] font-semibold text-slate-700 block">आवंटित यूनिट (Assigned Unit)</span>
+                  <div className="mt-1 p-2 rounded-xl bg-white border border-amber-200/60 font-semibold text-slate-800 text-xs">
+                    {credentialModalData.assignedUnitNames.join(', ')}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-700">पोर्टल लॉगिन लिंक (Login URL)</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(`${window.location.origin}/login`, 'url')}
+                      className="text-[11px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1"
+                    >
+                      {copiedField === 'url' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedField === 'url' ? 'कॉपी हुआ!' : 'कॉपी'}</span>
+                    </button>
+                  </div>
+                  <div className="mt-1 p-2 rounded-xl bg-white border border-amber-200/60 font-mono text-slate-600 text-xs truncate">
+                    {window.location.origin}/login
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const cleanPhone = credentialModalData.phone.replace(/[^0-9]/g, '');
+                    const message = `*Team SPS - कार्यकर्ता लॉगिन विवरण*\n\nनमस्ते *${credentialModalData.name}* जी,\nआपको Team SPS सिस्टम में *${credentialModalData.roleLabel}* के रूप में जोड़ा गया है।\n\n🏛️ *आवंटित यूनिट:* ${credentialModalData.assignedUnitNames.join(', ')}\n🌐 *लॉगिन लिंक:* ${window.location.origin}/login\n👤 *Username:* ${credentialModalData.username}\n🔑 *Password:* ${credentialModalData.password}\n\nकृपया लिंक खोलकर अपना Username और Password दर्ज करें।`;
+                    window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+                  }}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl py-2.5 flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>WhatsApp पर क्रेडेंशियल्स भेजें</span>
+                </Button>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const text = `Team SPS लॉगिन क्रेडेंशियल्स:\nनाम: ${credentialModalData.name}\nUsername: ${credentialModalData.username}\nPassword: ${credentialModalData.password}\nयूनिट: ${credentialModalData.assignedUnitNames.join(', ')}\nलिंक: ${window.location.origin}/login`;
+                      handleCopy(text, 'all');
+                    }}
+                    className="flex-1 rounded-xl text-xs"
+                  >
+                    <Copy className="w-3.5 h-3.5 mr-1" />
+                    <span>{copiedField === 'all' ? 'समस्त विवरण कॉपी हुआ!' : 'सभी विवरण कॉपी करें'}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setCredentialModalData(null)}
+                    className="rounded-xl text-xs text-slate-600"
+                  >
+                    बंद करें
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

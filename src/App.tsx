@@ -27,7 +27,7 @@ const queryClient = new QueryClient();
 
 // Protected route wrapper for team (admin, manager, worker)
 function TeamRoute({ children }: { children: React.ReactNode }) {
-  const { user, role, isLoading } = useAuth();
+  const { user, role, isCollector, assignedWorkspaceId, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -46,12 +46,17 @@ function TeamRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/janta" replace />;
   }
 
+  // Assigned collector workers can only access their assigned unit
+  if (isCollector || assignedWorkspaceId) {
+    return <Navigate to="/samiti" replace />;
+  }
+
   return <>{children}</>;
 }
 
 // Protected route wrapper for Admin & Manager (Master OS)
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, role, isLoading } = useAuth();
+  const { user, role, isCollector, assignedWorkspaceId, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -70,12 +75,40 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/janta" replace />;
   }
 
+  // Collectors are restricted from Master OS central command and redirected to their unit
+  if (isCollector || assignedWorkspaceId) {
+    return <Navigate to="/samiti" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Protected route for Samiti & Festival Units (accessible to Admin, Manager, and Collectors)
+function SamitiRoute({ children }: { children: React.ReactNode }) {
+  const { user, role, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role === 'citizen') {
+    return <Navigate to="/janta" replace />;
+  }
+
   return <>{children}</>;
 }
 
 // Protected route for citizens only
 function CitizenRoute({ children }: { children: React.ReactNode }) {
-  const { user, role, isLoading } = useAuth();
+  const { user, role, isCollector, assignedWorkspaceId, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -89,8 +122,11 @@ function CitizenRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Non-citizens go to main election workspace or master
+  // Non-citizens go to assigned unit or election workspace or master
   if (role && role !== 'citizen') {
+    if (isCollector || assignedWorkspaceId) {
+      return <Navigate to="/samiti" replace />;
+    }
     if (role === 'admin') {
       return <Navigate to="/master" replace />;
     }
@@ -102,7 +138,7 @@ function CitizenRoute({ children }: { children: React.ReactNode }) {
 
 // Public route (redirects authenticated users)
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, role, isLoading } = useAuth();
+  const { user, role, isCollector, assignedWorkspaceId, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -113,6 +149,10 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user) {
+    // Redirect assigned collector workers straight to assigned unit
+    if (isCollector || assignedWorkspaceId) {
+      return <Navigate to="/samiti" replace />;
+    }
     // Redirect based on role
     if (role === 'citizen') {
       return <Navigate to="/janta" replace />;
@@ -168,14 +208,14 @@ const AppRoutes = () => (
         </AdminRoute>
       } />
       <Route path="/samiti" element={
-        <AdminRoute>
+        <SamitiRoute>
           <MasterOS />
-        </AdminRoute>
+        </SamitiRoute>
       } />
       <Route path="/events" element={
-        <AdminRoute>
+        <SamitiRoute>
           <MasterOS />
-        </AdminRoute>
+        </SamitiRoute>
       } />
 
       <Route path="*" element={<NotFound />} />
