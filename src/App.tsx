@@ -5,13 +5,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { SamitiProvider } from "@/contexts/SamitiContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
 const Login = lazy(() => import("./pages/Login"));
 const JantaPortal = lazy(() => import("./pages/JantaPortal"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
-const MasterSamitiDashboard = lazy(() => import("./pages/MasterSamitiDashboard"));
+const MasterOS = lazy(() => import("./pages/MasterOS"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading fallback component
@@ -47,6 +49,30 @@ function TeamRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Protected route wrapper for Admin & Manager (Master OS)
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, role, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Citizens go to Janta Portal
+  if (role === 'citizen') {
+    return <Navigate to="/janta" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 // Protected route for citizens only
 function CitizenRoute({ children }: { children: React.ReactNode }) {
   const { user, role, isLoading } = useAuth();
@@ -63,9 +89,12 @@ function CitizenRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Non-citizens go to main dashboard
+  // Non-citizens go to main election workspace or master
   if (role && role !== 'citizen') {
-    return <Navigate to="/dashboard" replace />;
+    if (role === 'admin') {
+      return <Navigate to="/master" replace />;
+    }
+    return <Navigate to="/election" replace />;
   }
 
   return <>{children}</>;
@@ -88,7 +117,11 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     if (role === 'citizen') {
       return <Navigate to="/janta" replace />;
     }
-    return <Navigate to="/dashboard" replace />;
+    // Admins redirect to Master OS
+    if (role === 'admin') {
+      return <Navigate to="/master" replace />;
+    }
+    return <Navigate to="/election" replace />;
   }
 
   return <>{children}</>;
@@ -110,32 +143,62 @@ const AppRoutes = () => (
           <JantaPortal />
         </CitizenRoute>
       } />
-      <Route path="/dashboard" element={
+
+      {/* Primary Election Command / Victory OS Console */}
+      <Route path="/election" element={
         <TeamRoute>
           <Index />
         </TeamRoute>
       } />
-      {/* Master Event & Samiti Dashboard */}
-      <Route path="/samiti" element={<MasterSamitiDashboard />} />
-      <Route path="/master" element={<MasterSamitiDashboard />} />
-      <Route path="/events" element={<MasterSamitiDashboard />} />
+
+      {/* Legacy and convenience route redirects */}
+      <Route path="/dashboard" element={<Navigate to="/election" replace />} />
+      <Route path="/victory" element={<Navigate to="/election" replace />} />
+      <Route path="/victory-os" element={<Navigate to="/election" replace />} />
+
+      {/* Master OS Hub & Workspace Control Plane */}
+      <Route path="/master" element={
+        <AdminRoute>
+          <MasterOS />
+        </AdminRoute>
+      } />
+      <Route path="/master-os" element={
+        <AdminRoute>
+          <MasterOS />
+        </AdminRoute>
+      } />
+      <Route path="/samiti" element={
+        <AdminRoute>
+          <MasterOS />
+        </AdminRoute>
+      } />
+      <Route path="/events" element={
+        <AdminRoute>
+          <MasterOS />
+        </AdminRoute>
+      } />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner position="top-center" richColors />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner position="top-center" richColors />
+        <BrowserRouter>
+          <AuthProvider>
+            <SamitiProvider>
+              <AppRoutes />
+            </SamitiProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

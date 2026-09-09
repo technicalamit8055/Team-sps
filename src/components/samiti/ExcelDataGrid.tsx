@@ -11,17 +11,18 @@ import {
   MessageSquare,
   Edit2,
   Trash2,
-  Filter,
-  ArrowUpDown,
-  AlertCircle,
-  CheckCircle2,
   FileSpreadsheet,
   LayoutGrid,
   Table,
   Phone,
   Plus,
-  ArrowRight,
-  Wallet,
+  ArrowUpDown,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+  Crown,
+  HandCoins,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -35,7 +36,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export const ExcelDataGrid: React.FC = () => {
-  const { currentEntity, currentEvent, donations, deleteDonation } = useSamiti();
+  const { currentEntity, currentEvent, donations, updateDonation, deleteDonation } = useSamiti();
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,7 +46,7 @@ export const ExcelDataGrid: React.FC = () => {
   const [sortField, setSortField] = useState<'serialNumber' | 'name' | 'acceptedAmount' | 'balanceAmount'>('serialNumber');
   const [sortAsc, setSortAsc] = useState(true);
 
-  // View Mode: auto-detect mobile vs desktop, with manual user toggle
+  // View Mode: cards vs grid
   const [viewMode, setViewMode] = useState<'cards' | 'grid'>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768 ? 'cards' : 'grid';
@@ -53,10 +54,8 @@ export const ExcelDataGrid: React.FC = () => {
     return 'grid';
   });
 
-  // Responsive listener for window resize
   useEffect(() => {
     const handleResize = () => {
-      // only auto-switch if not manually interacted on small screens
       if (window.innerWidth < 640 && viewMode === 'grid') {
         setViewMode('cards');
       }
@@ -83,6 +82,7 @@ export const ExcelDataGrid: React.FC = () => {
             (d.address1 && d.address1.toLowerCase().includes(term)) ||
             (d.address2 && d.address2.toLowerCase().includes(term)) ||
             (d.phone && d.phone.includes(term)) ||
+            (d.collectorName && d.collectorName.toLowerCase().includes(term)) ||
             String(d.serialNumber).includes(term);
 
           if (!match) return false;
@@ -136,31 +136,37 @@ export const ExcelDataGrid: React.FC = () => {
     setIsReceiptOpen(true);
   };
 
+  const toggleHandover = (donation: SamitiDonation) => {
+    updateDonation(donation.id, {
+      isHandoverDone: !donation.isHandoverDone,
+    });
+  };
+
   return (
     <div className="space-y-4">
-      {/* Sleek Modern Control Bar (Mobile & Tablet Optimized) */}
-      <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs space-y-3">
+      {/* Control & Search Bar */}
+      <div className="bg-white border border-amber-200/80 rounded-2xl p-3.5 sm:p-4 shadow-xs space-y-3">
         {/* Top search & Primary action */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           {/* Search box */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-3 text-amber-500" />
             <Input
-              placeholder="नाम, दुकान, पिता का नाम, पता या मोबाइल नं०..."
+              placeholder="नाम, दुकान, पिता का नाम, पता या मोबाइल नं० खोजें..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="pl-9 text-xs border-slate-200 bg-slate-50/50 focus-visible:bg-white h-9"
+              className="pl-9 text-xs border-amber-200 bg-amber-50/20 focus-visible:bg-white focus-visible:border-amber-400 h-9 rounded-xl"
             />
           </div>
 
           {/* View Mode Toggle & Desktop Quick Add */}
           <div className="flex items-center justify-between sm:justify-end gap-2">
             {/* View Mode Toggle Button */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs">
               <button
                 type="button"
                 onClick={() => setViewMode('cards')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1 ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
                   viewMode === 'cards'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
@@ -168,12 +174,12 @@ export const ExcelDataGrid: React.FC = () => {
                 title="कार्ड दृश्य (Mobile Touch Friendly)"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">कार्ड</span>
+                <span className="hidden xs:inline">कार्ड दृश्य</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all flex items-center gap-1 ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
                   viewMode === 'grid'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
@@ -181,11 +187,11 @@ export const ExcelDataGrid: React.FC = () => {
                 title="एक्सेल स्प्रेडशीट ग्रिड"
               >
                 <Table className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">ग्रिड</span>
+                <span className="hidden xs:inline">रजिस्टर ग्रिड</span>
               </button>
             </div>
 
-            {/* Desktop Add Button (Hidden on smallest screens since FAB handles it) */}
+            {/* Desktop Add Button */}
             <div className="hidden sm:block">
               <QuickDonationDialog />
             </div>
@@ -194,7 +200,7 @@ export const ExcelDataGrid: React.FC = () => {
 
         {/* Clean, Segmented Filter Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2.5 border-t border-slate-100 text-xs">
-          {/* Category Chips (Horizontally scrollable on mobile) */}
+          {/* Category Chips */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
             <span className="text-slate-400 font-medium text-[11px] shrink-0">श्रेणी:</span>
             <button
@@ -202,7 +208,7 @@ export const ExcelDataGrid: React.FC = () => {
               onClick={() => setCategoryFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all ${
                 categoryFilter === 'ALL'
-                  ? 'bg-slate-900 text-white shadow-xs'
+                  ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -220,12 +226,12 @@ export const ExcelDataGrid: React.FC = () => {
                   onClick={() => setCategoryFilter(catKey)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all flex items-center gap-1 border ${
                     isSelected
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                      ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
                   <span>{cat.code}</span>
-                  <span className="text-[10px] opacity-60">({count})</span>
+                  <span className="text-[10px] opacity-70">({count})</span>
                 </button>
               );
             })}
@@ -282,7 +288,7 @@ export const ExcelDataGrid: React.FC = () => {
                   modeFilter === 'CASH' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
                 }`}
               >
-                नकद
+                💵 नकद
               </button>
               <button
                 type="button"
@@ -291,7 +297,7 @@ export const ExcelDataGrid: React.FC = () => {
                   modeFilter === 'ONL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
                 }`}
               >
-                UPI
+                📲 UPI
               </button>
             </div>
           </div>
@@ -304,7 +310,7 @@ export const ExcelDataGrid: React.FC = () => {
       {viewMode === 'cards' && (
         <div className="space-y-3">
           {filteredDonations.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-xl p-10 text-center text-slate-400">
+            <div className="bg-white border border-amber-200/80 rounded-2xl p-10 text-center text-slate-400">
               <p className="text-sm font-semibold text-slate-700">कोई चंदा प्रविष्टि नहीं मिली</p>
               <p className="text-xs text-slate-400 mt-1">
                 सर्च फिल्टर बदलें या नया चंदा दर्ज करें।
@@ -315,26 +321,35 @@ export const ExcelDataGrid: React.FC = () => {
               {filteredDonations.map(row => {
                 const cat = DONATION_CATEGORIES[row.category] || DONATION_CATEGORIES.OTH;
                 const isDue = row.balanceAmount > 0;
+                const isVip = row.acceptedAmount >= 10000;
 
                 return (
                   <div
                     key={row.id}
-                    className="bg-white border border-slate-200 hover:border-slate-300 rounded-xl p-4 shadow-xs transition-all flex flex-col justify-between gap-3 relative"
+                    className={`bg-white border rounded-2xl p-4 shadow-xs transition-all flex flex-col justify-between gap-3 relative hover:shadow-md ${
+                      isVip ? 'border-amber-400/90 ring-1 ring-amber-400/30' : 'border-slate-200'
+                    }`}
                   >
                     {/* Top Row: S.NUM, Category & Mode */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        <span className="font-mono text-xs font-bold text-amber-900 bg-amber-100/70 px-2 py-0.5 rounded-lg border border-amber-200">
                           #{row.serialNumber}
                         </span>
                         <Badge variant="outline" className={`text-[10px] font-mono font-bold ${cat.badgeColor}`}>
                           {cat.code} • {cat.labelHi.split('/')[0]}
                         </Badge>
+                        {isVip && (
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold inline-flex items-center gap-1 border-none py-0 px-2 shadow-2xs">
+                            <Crown className="w-2.5 h-2.5" />
+                            दानवीर
+                          </Badge>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md ${
                             row.paymentMode === 'ONL'
                               ? 'bg-blue-50 text-blue-700 border border-blue-200'
                               : 'bg-slate-100 text-slate-700 border border-slate-200'
@@ -343,11 +358,11 @@ export const ExcelDataGrid: React.FC = () => {
                           {row.paymentMode}
                         </span>
                         {isDue ? (
-                          <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                          <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
                             बकाया
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                             चुकता
                           </span>
                         )}
@@ -361,7 +376,7 @@ export const ExcelDataGrid: React.FC = () => {
                           {row.name}
                         </h4>
                         {row.caste && (
-                          <span className="text-[11px] text-slate-400 shrink-0">
+                          <span className="text-[11px] text-slate-400 shrink-0 font-medium">
                             {row.caste}
                           </span>
                         )}
@@ -379,33 +394,52 @@ export const ExcelDataGrid: React.FC = () => {
                         </p>
                       )}
 
-                      {row.phone && (
-                        <a
-                          href={`tel:${row.phone}`}
-                          className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 font-mono mt-1"
+                      <div className="flex items-center justify-between text-xs pt-1">
+                        {row.phone ? (
+                          <a
+                            href={`tel:${row.phone}`}
+                            className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-emerald-700 font-mono"
+                          >
+                            <Phone className="w-3 h-3 text-emerald-600" />
+                            <span>{row.phone}</span>
+                          </a>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">फोन दर्ज नहीं</span>
+                        )}
+
+                        {/* Handover Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={() => toggleHandover(row)}
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-all inline-flex items-center gap-1 border ${
+                            row.isHandoverDone
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                          }`}
+                          title="रोकड़ संदूक मिलान स्थिति बदलें"
                         >
-                          <Phone className="w-3 h-3 text-slate-400" />
-                          <span>{row.phone}</span>
-                        </a>
-                      )}
+                          <HandCoins className="w-2.5 h-2.5" />
+                          <span>{row.isHandoverDone ? 'रोकड़ जमा ✓' : 'रोकड़ बाकी'}</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Financial Amounts Strip */}
-                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="bg-amber-50/40 p-2.5 rounded-xl border border-amber-200/70 grid grid-cols-3 gap-2 text-center text-xs">
                       <div>
                         <span className="text-[10px] text-slate-400 block font-mono">स्वीकृत (Pledged)</span>
                         <span className="font-mono font-semibold text-slate-800">
                           ₹{row.acceptedAmount.toLocaleString('hi-IN')}
                         </span>
                       </div>
-                      <div className="border-x border-slate-200 px-1">
-                        <span className="text-[10px] text-emerald-600 block font-mono">प्राप्त (Received)</span>
+                      <div className="border-x border-amber-200/80 px-1">
+                        <span className="text-[10px] text-emerald-700 block font-mono">प्राप्त (Received)</span>
                         <span className="font-mono font-bold text-emerald-700">
                           ₹{row.receivedAmount.toLocaleString('hi-IN')}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-rose-500 block font-mono">बकाया (Due)</span>
+                        <span className="text-[10px] text-rose-600 block font-mono">बकाया (Due)</span>
                         <span className={`font-mono font-bold ${isDue ? 'text-rose-600' : 'text-slate-400'}`}>
                           ₹{row.balanceAmount.toLocaleString('hi-IN')}
                         </span>
@@ -417,7 +451,7 @@ export const ExcelDataGrid: React.FC = () => {
                       <Button
                         size="sm"
                         onClick={() => openReceiptModal(row)}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-8 shadow-xs"
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-8 rounded-xl shadow-xs"
                       >
                         <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
                         <span>व्हाट्सएप रसीद भेजें</span>
@@ -430,7 +464,7 @@ export const ExcelDataGrid: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 w-8 p-0 border-slate-200 text-slate-600 hover:text-slate-900"
+                              className="h-8 w-8 p-0 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900"
                               title="संपादित करें"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -442,7 +476,7 @@ export const ExcelDataGrid: React.FC = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => setDeletingId(row.id)}
-                          className="h-8 w-8 p-0 border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                          className="h-8 w-8 p-0 rounded-xl border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                           title="हटाएँ"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -455,27 +489,27 @@ export const ExcelDataGrid: React.FC = () => {
             </div>
           )}
 
-          {/* Compact Mobile Summary Strip */}
-          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs text-xs space-y-2">
+          {/* Compact Summary Strip */}
+          <div className="bg-white border border-amber-200 rounded-2xl p-4 shadow-xs text-xs space-y-2">
             <div className="flex items-center justify-between font-mono text-[11px] text-slate-500 uppercase font-bold">
               <span>कुल योग ({filteredDonations.length} प्रविष्टियाँ)</span>
               <span>नकद: ₹{visibleTotals.cash.toLocaleString('hi-IN')} | UPI: ₹{visibleTotals.online.toLocaleString('hi-IN')}</span>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-100">
               <div>
-                <span className="text-[10px] text-slate-400 block">कुल स्वीकृत</span>
+                <span className="text-[10px] text-slate-400 block font-medium">कुल स्वीकृत</span>
                 <span className="font-mono font-bold text-slate-900 text-sm">
                   ₹{visibleTotals.accepted.toLocaleString('hi-IN')}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-emerald-600 block">कुल प्राप्त</span>
+                <span className="text-[10px] text-emerald-700 block font-medium">कुल प्राप्त</span>
                 <span className="font-mono font-bold text-emerald-700 text-sm">
                   ₹{visibleTotals.received.toLocaleString('hi-IN')}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-rose-500 block">कुल बकाया</span>
+                <span className="text-[10px] text-rose-600 block font-medium">कुल बकाया</span>
                 <span className="font-mono font-bold text-rose-600 text-sm">
                   ₹{visibleTotals.balance.toLocaleString('hi-IN')}
                 </span>
@@ -489,20 +523,20 @@ export const ExcelDataGrid: React.FC = () => {
       {/* OPTION B: FULL SPREADSHEET HORIZONTAL GRID VIEW                    */}
       {/* ------------------------------------------------------------------ */}
       {viewMode === 'grid' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="bg-white rounded-2xl border border-amber-200/80 shadow-xs overflow-hidden">
           {/* Table Header Bar */}
-          <div className="bg-slate-50 px-4 sm:px-5 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-4 sm:px-5 py-2.5 border-b border-amber-200 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4 text-slate-500" />
-              <span className="font-bold text-slate-800 tracking-wide uppercase font-mono">
+              <FileSpreadsheet className="w-4 h-4 text-amber-700" />
+              <span className="font-bold text-amber-950 tracking-wide uppercase font-mono">
                 चंदा रजिस्टर (Donation Ledger)
               </span>
-              <span className="text-slate-400 hidden sm:inline">•</span>
-              <span className="text-slate-600 font-medium hidden sm:inline">
+              <span className="text-amber-400 hidden sm:inline">•</span>
+              <span className="text-amber-900 font-medium hidden sm:inline">
                 {currentEntity.name}
               </span>
             </div>
-            <div className="text-slate-500 font-mono text-[11px]">
+            <div className="text-amber-900 font-mono text-[11px]">
               दिखाई गई प्रविष्टियाँ: <span className="font-bold text-slate-900">{filteredDonations.length}</span>
             </div>
           </div>
@@ -511,7 +545,7 @@ export const ExcelDataGrid: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50/80 text-slate-600 font-bold uppercase text-[11px] border-b border-slate-200">
+                <tr className="bg-slate-50 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
                   <th
                     onClick={() => handleSort('serialNumber')}
                     className="p-3 border-r border-slate-100 cursor-pointer hover:bg-slate-100 text-center whitespace-nowrap"
@@ -557,13 +591,14 @@ export const ExcelDataGrid: React.FC = () => {
                     </div>
                   </th>
                   <th className="p-3 border-r border-slate-100 text-center whitespace-nowrap">CASH/ONL</th>
+                  <th className="p-3 border-r border-slate-100 text-center whitespace-nowrap">रोकड़ जमा</th>
                   <th className="p-3 text-center whitespace-nowrap">ACTIONS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredDonations.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="py-12 text-center text-slate-400">
+                    <td colSpan={13} className="py-12 text-center text-slate-400">
                       <p className="text-sm font-semibold text-slate-600">कोई प्रविष्टि नहीं मिली</p>
                       <p className="text-xs text-slate-400 mt-1">
                         सर्च फिल्टर बदलें या नया चंदा जोड़ें।
@@ -574,16 +609,17 @@ export const ExcelDataGrid: React.FC = () => {
                   filteredDonations.map((row, index) => {
                     const cat = DONATION_CATEGORIES[row.category] || DONATION_CATEGORIES.OTH;
                     const isDue = row.balanceAmount > 0;
+                    const isVip = row.acceptedAmount >= 10000;
 
                     return (
                       <tr
                         key={row.id}
-                        className={`hover:bg-slate-50/80 transition-colors ${
-                          index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                        className={`hover:bg-amber-50/40 transition-colors ${
+                          isVip ? 'bg-amber-50/20' : index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
                         }`}
                       >
                         {/* S.NUM */}
-                        <td className="p-3 border-r border-slate-100 text-center font-mono font-bold text-slate-600 text-xs">
+                        <td className="p-3 border-r border-slate-100 text-center font-mono font-bold text-amber-950 text-xs">
                           #{row.serialNumber}
                         </td>
 
@@ -596,7 +632,14 @@ export const ExcelDataGrid: React.FC = () => {
 
                         {/* NAME */}
                         <td className="p-3 border-r border-slate-100 font-semibold text-slate-900">
-                          {row.name}
+                          <div className="flex items-center gap-1.5">
+                            <span>{row.name}</span>
+                            {isVip && (
+                              <span title="दानवीर">
+                                <Crown className="w-3 h-3 text-amber-600 shrink-0" />
+                              </span>
+                            )}
+                          </div>
                           {row.phone && (
                             <span className="block text-[10px] font-normal text-slate-400 font-mono">
                               📞 {row.phone}
@@ -658,6 +701,21 @@ export const ExcelDataGrid: React.FC = () => {
                           </span>
                         </td>
 
+                        {/* CASHIER HANDOVER TOGGLE */}
+                        <td className="p-2 border-r border-slate-100 text-center">
+                          <button
+                            type="button"
+                            onClick={() => toggleHandover(row)}
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all ${
+                              row.isHandoverDone
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                            }`}
+                          >
+                            {row.isHandoverDone ? 'जमा ✓' : 'बाकी'}
+                          </button>
+                        </td>
+
                         {/* ACTIONS */}
                         <td className="p-2 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1">
@@ -666,7 +724,7 @@ export const ExcelDataGrid: React.FC = () => {
                               variant="ghost"
                               onClick={() => openReceiptModal(row)}
                               title="व्हाट्सएप रसीद भेजें"
-                              className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
                             >
                               <MessageSquare className="w-3.5 h-3.5" />
                             </Button>
@@ -678,7 +736,7 @@ export const ExcelDataGrid: React.FC = () => {
                                   size="sm"
                                   variant="ghost"
                                   title="संपादित करें"
-                                  className="h-7 w-7 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                                  className="h-7 w-7 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -690,7 +748,7 @@ export const ExcelDataGrid: React.FC = () => {
                               variant="ghost"
                               onClick={() => setDeletingId(row.id)}
                               title="हटाएँ"
-                              className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                              className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
@@ -704,20 +762,20 @@ export const ExcelDataGrid: React.FC = () => {
 
               {/* Sticky Auto-Sum Footer */}
               <tfoot>
-                <tr className="bg-slate-100 text-slate-900 font-bold border-t-2 border-slate-300 text-xs">
-                  <td colSpan={7} className="p-3 text-right font-mono uppercase tracking-wider text-slate-600">
+                <tr className="bg-amber-50/80 text-slate-900 font-bold border-t-2 border-amber-300 text-xs">
+                  <td colSpan={7} className="p-3 text-right font-mono uppercase tracking-wider text-amber-950">
                     कुल योग ({filteredDonations.length} रिकॉर्ड):
                   </td>
-                  <td className="p-3 text-right font-mono text-sm border-r border-slate-200 text-slate-900">
+                  <td className="p-3 text-right font-mono text-sm border-r border-amber-200 text-slate-900">
                     ₹{visibleTotals.accepted.toLocaleString('hi-IN')}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm border-r border-slate-200 text-emerald-700 bg-emerald-50/50">
+                  <td className="p-3 text-right font-mono text-sm border-r border-amber-200 text-emerald-700 bg-emerald-50/50">
                     ₹{visibleTotals.received.toLocaleString('hi-IN')}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm border-r border-slate-200 text-rose-600 bg-rose-50/50">
+                  <td className="p-3 text-right font-mono text-sm border-r border-amber-200 text-rose-600 bg-rose-50/50">
                     ₹{visibleTotals.balance.toLocaleString('hi-IN')}
                   </td>
-                  <td colSpan={2} className="p-3 text-center text-[11px] font-mono text-slate-600">
+                  <td colSpan={3} className="p-3 text-center text-[11px] font-mono text-slate-700">
                     नकद: ₹{visibleTotals.cash.toLocaleString('hi-IN')} | UPI: ₹{visibleTotals.online.toLocaleString('hi-IN')}
                   </td>
                 </tr>
@@ -726,23 +784,6 @@ export const ExcelDataGrid: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* ------------------------------------------------------------------ */}
-      {/* MOBILE FLOATING ACTION BUTTON (FAB) FOR 1-TAP QUICK ENTRY          */}
-      {/* ------------------------------------------------------------------ */}
-      <div className="fixed bottom-6 right-6 z-40 sm:hidden">
-        <QuickDonationDialog
-          triggerButton={
-            <button
-              type="button"
-              className="h-14 w-14 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/40 flex items-center justify-center transition-transform active:scale-95 border-2 border-white/20"
-              title="त्वरित चंदा प्रविष्टि (+)"
-            >
-              <Plus className="w-7 h-7" />
-            </button>
-          }
-        />
-      </div>
 
       {/* WhatsApp Receipt Modal */}
       <WhatsAppReceiptModal
@@ -756,7 +797,7 @@ export const ExcelDataGrid: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
-        <AlertDialogContent className="max-w-[92vw] sm:max-w-lg">
+        <AlertDialogContent className="max-w-[92vw] sm:max-w-lg rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>क्या आप यह चंदा प्रविष्टि हटाना चाहते हैं?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -764,7 +805,7 @@ export const ExcelDataGrid: React.FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row justify-end gap-2">
-            <AlertDialogCancel>रद्द करें</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl">रद्द करें</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deletingId) {
@@ -772,7 +813,7 @@ export const ExcelDataGrid: React.FC = () => {
                   setDeletingId(null);
                 }
               }}
-              className="bg-rose-600 hover:bg-rose-700 text-white"
+              className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl"
             >
               हाँ, हटाएँ
             </AlertDialogAction>

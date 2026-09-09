@@ -9,6 +9,13 @@ import {
   PaymentMode,
   ExpenseCategory,
 } from '@/types/samiti';
+import {
+  MasterStaff,
+  WorkspaceAccessLevel,
+  WorkspacePermission,
+  ModuleAccess,
+  DEFAULT_MODULE_ACCESS_MAP,
+} from '@/types/master';
 import { toast } from 'sonner';
 
 const DEFAULT_ENTITIES: MasterEntity[] = [
@@ -356,6 +363,162 @@ const SEED_EXPENSES: SamitiExpense[] = [
   },
 ];
 
+const DEFAULT_STAFF_LIST: MasterStaff[] = [
+  {
+    id: 'staff-1',
+    name: 'अमित कुमार',
+    phone: '9835012345',
+    username: 'amit_admin',
+    primaryRole: 'admin',
+    designation: 'मुख्य प्रशासक एवं महासचिव',
+    status: 'active',
+    joinedDate: '2024-01-15',
+    avatarColor: 'bg-indigo-600',
+    workspacePermissions: {
+      'ent-election-2026': {
+        workspaceId: 'ent-election-2026',
+        accessLevel: 'full_control',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
+      },
+      'ent-durga-narayanpur': {
+        workspaceId: 'ent-durga-narayanpur',
+        accessLevel: 'full_control',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
+      },
+      'ent-ganesh-utsav': {
+        workspaceId: 'ent-ganesh-utsav',
+        accessLevel: 'full_control',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
+      },
+      'ent-vyapar-mandal': {
+        workspaceId: 'ent-vyapar-mandal',
+        accessLevel: 'full_control',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
+      },
+    },
+  },
+  {
+    id: 'staff-2',
+    name: 'मनोज कुमार',
+    phone: '9835112233',
+    username: 'manoj_treasurer',
+    primaryRole: 'accountant',
+    designation: 'वरिष्ठ कोषाध्यक्ष (वित्तीय नियंत्रक)',
+    status: 'active',
+    joinedDate: '2024-02-10',
+    avatarColor: 'bg-emerald-600',
+    workspacePermissions: {
+      'ent-durga-narayanpur': {
+        workspaceId: 'ent-durga-narayanpur',
+        accessLevel: 'full_control',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
+      },
+      'ent-vyapar-mandal': {
+        workspaceId: 'ent-vyapar-mandal',
+        accessLevel: 'full_control',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
+      },
+      'ent-ganesh-utsav': {
+        workspaceId: 'ent-ganesh-utsav',
+        accessLevel: 'editor',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.editor },
+      },
+      'ent-election-2026': {
+        workspaceId: 'ent-election-2026',
+        accessLevel: 'viewer',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.viewer },
+      },
+    },
+  },
+  {
+    id: 'staff-3',
+    name: 'विक्रम सिंह',
+    phone: '9876543230',
+    username: 'vikram_warroom',
+    primaryRole: 'manager',
+    designation: 'चुनाव वॉर रूम एवं बूथ प्रमुख',
+    status: 'active',
+    joinedDate: '2024-03-01',
+    avatarColor: 'bg-rose-600',
+    workspacePermissions: {
+      'ent-election-2026': {
+        workspaceId: 'ent-election-2026',
+        accessLevel: 'full_control',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
+      },
+      'ent-durga-narayanpur': {
+        workspaceId: 'ent-durga-narayanpur',
+        accessLevel: 'editor',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.editor },
+      },
+    },
+  },
+  {
+    id: 'staff-4',
+    name: 'प्रिया कुमारी',
+    phone: '9876543231',
+    username: 'priya_ward',
+    primaryRole: 'karyakarta',
+    designation: 'वार्ड समन्वयक एवं महिला मोर्चा',
+    status: 'active',
+    joinedDate: '2024-04-12',
+    avatarColor: 'bg-purple-600',
+    workspacePermissions: {
+      'ent-election-2026': {
+        workspaceId: 'ent-election-2026',
+        accessLevel: 'editor',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.editor },
+      },
+      'ent-durga-narayanpur': {
+        workspaceId: 'ent-durga-narayanpur',
+        accessLevel: 'viewer',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.viewer },
+      },
+    },
+  },
+  {
+    id: 'staff-5',
+    name: 'सुनील वर्मा',
+    phone: '9470123456',
+    username: 'sunil_collector',
+    primaryRole: 'karyakarta',
+    designation: 'फील्ड संग्रहकर्ता एवं जनसंपर्क',
+    status: 'active',
+    joinedDate: '2024-05-20',
+    avatarColor: 'bg-amber-600',
+    workspacePermissions: {
+      'ent-durga-narayanpur': {
+        workspaceId: 'ent-durga-narayanpur',
+        accessLevel: 'editor',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.editor },
+      },
+    },
+  },
+  {
+    id: 'staff-6',
+    name: 'संतोष यादव',
+    phone: '9876543232',
+    username: 'santosh_youth',
+    primaryRole: 'karyakarta',
+    designation: 'युवा मोर्चा प्रभारी',
+    status: 'active',
+    joinedDate: '2024-06-05',
+    avatarColor: 'bg-cyan-600',
+    workspacePermissions: {
+      'ent-election-2026': {
+        workspaceId: 'ent-election-2026',
+        accessLevel: 'editor',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.editor },
+      },
+      'ent-ganesh-utsav': {
+        workspaceId: 'ent-ganesh-utsav',
+        accessLevel: 'viewer',
+        modules: { ...DEFAULT_MODULE_ACCESS_MAP.viewer },
+      },
+    },
+  },
+];
+
 interface SamitiContextType {
   entities: MasterEntity[];
   currentEntity: MasterEntity;
@@ -366,6 +529,10 @@ interface SamitiContextType {
   donations: SamitiDonation[];
   expenses: SamitiExpense[];
   summary: SamitiFinancialSummary;
+  mainWorkspaceId: string;
+  setMainWorkspaceId: (id: string) => void;
+  isMainWorkspace: (id: string) => boolean;
+  mainWorkspace: MasterEntity;
   addDonation: (donation: Omit<SamitiDonation, 'id' | 'serialNumber' | 'balanceAmount' | 'createdAt' | 'updatedAt'>) => SamitiDonation;
   updateDonation: (id: string, updates: Partial<SamitiDonation>) => void;
   deleteDonation: (id: string) => void;
@@ -374,6 +541,14 @@ interface SamitiContextType {
   deleteExpense: (id: string) => void;
   importDonations: (newDonations: Array<Omit<SamitiDonation, 'id' | 'createdAt' | 'updatedAt'>>) => number;
   addEntity: (entity: Omit<MasterEntity, 'id'>, initialEvent: Omit<SamitiEvent, 'id' | 'entityId'>) => void;
+  updateEntity: (id: string, updates: Partial<MasterEntity>) => void;
+  deleteEntity: (id: string) => boolean;
+  staffList: MasterStaff[];
+  addStaff: (staffData: Omit<MasterStaff, 'id' | 'joinedDate'>) => MasterStaff;
+  updateStaff: (id: string, updates: Partial<MasterStaff>) => void;
+  deleteStaff: (id: string) => void;
+  updateStaffPermission: (staffId: string, workspaceId: string, accessLevel: WorkspaceAccessLevel, modules?: Partial<ModuleAccess>) => void;
+  grantAllWorkspaces: (staffId: string, accessLevel: WorkspaceAccessLevel) => void;
   resetToSampleData: () => void;
 }
 
@@ -386,96 +561,221 @@ const STORAGE_KEYS = {
   EXPENSES: 'victory_samiti_expenses_v1',
   SELECTED_ENTITY: 'victory_samiti_current_entity_v1',
   SELECTED_EVENT: 'victory_samiti_current_event_v1',
+  MAIN_WORKSPACE: 'victory_master_main_workspace_v1',
+  STAFF: 'victory_master_staff_v1',
 };
 
 export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load Entities
+  // Load Entities safely
   const [entities, setEntities] = useState<MasterEntity[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ENTITIES);
-    return saved ? JSON.parse(saved) : DEFAULT_ENTITIES;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.ENTITIES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to load entities from localStorage:', e);
+    }
+    return DEFAULT_ENTITIES;
   });
+
+  // Main Workspace (Default is Election Command 2026)
+  const [mainWorkspaceId, setMainWorkspaceIdState] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.MAIN_WORKSPACE);
+      if (saved) return saved;
+    } catch (e) {
+      console.warn('Failed to load mainWorkspaceId from localStorage:', e);
+    }
+    return 'ent-election-2026';
+  });
+
+  const setMainWorkspaceId = (id: string) => {
+    setMainWorkspaceIdState(id);
+    localStorage.setItem(STORAGE_KEYS.MAIN_WORKSPACE, id);
+    const list = Array.isArray(entities) && entities.length > 0 ? entities : DEFAULT_ENTITIES;
+    const targetEntity = list.find(e => e?.id === id);
+    toast.success(`'${targetEntity?.name || id}' को मुख्य कार्यक्षेत्र (Main Workspace) बनाया गया!`);
+  };
+
+  const isMainWorkspace = useCallback((id: string) => {
+    return (mainWorkspaceId || 'ent-election-2026') === id;
+  }, [mainWorkspaceId]);
+
+  const mainWorkspace = useMemo(() => {
+    const list = Array.isArray(entities) && entities.length > 0 ? entities : DEFAULT_ENTITIES;
+    return list.find(e => e?.id === mainWorkspaceId) || list[0] || DEFAULT_ENTITIES[0];
+  }, [entities, mainWorkspaceId]);
 
   const [currentEntityId, setCurrentEntityId] = useState<string>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SELECTED_ENTITY);
-    return saved && entities.some(e => e.id === saved) ? saved : entities[0]?.id || DEFAULT_ENTITIES[0].id;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SELECTED_ENTITY);
+      if (saved) return saved;
+    } catch (e) {
+      console.warn('Failed to load currentEntityId from localStorage:', e);
+    }
+    return DEFAULT_ENTITIES[0].id;
   });
 
-  // Load Events
+  // Load Events safely
   const [events, setEvents] = useState<SamitiEvent[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.EVENTS);
-    return saved ? JSON.parse(saved) : DEFAULT_EVENTS;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.EVENTS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to load events from localStorage:', e);
+    }
+    return DEFAULT_EVENTS;
   });
 
   const currentEntity = useMemo(() => {
-    return entities.find(e => e.id === currentEntityId) || entities[0];
+    const list = Array.isArray(entities) && entities.length > 0 ? entities : DEFAULT_ENTITIES;
+    return list.find(e => e?.id === currentEntityId) || list[0] || DEFAULT_ENTITIES[0];
   }, [entities, currentEntityId]);
 
   const entityEvents = useMemo(() => {
-    return events.filter(e => e.entityId === currentEntity.id);
-  }, [events, currentEntity.id]);
+    const evList = Array.isArray(events) && events.length > 0 ? events : DEFAULT_EVENTS;
+    const entId = currentEntity?.id || DEFAULT_ENTITIES[0].id;
+    return evList.filter(e => e?.entityId === entId);
+  }, [events, currentEntity]);
 
   const [currentEventId, setCurrentEventId] = useState<string>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SELECTED_EVENT);
-    return saved || DEFAULT_EVENTS[0].id;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SELECTED_EVENT);
+      if (saved) return saved;
+    } catch (e) {
+      console.warn('Failed to load currentEventId from localStorage:', e);
+    }
+    return DEFAULT_EVENTS[0].id;
   });
 
   const currentEvent = useMemo(() => {
+    const evList = Array.isArray(entityEvents) && entityEvents.length > 0 ? entityEvents : DEFAULT_EVENTS;
     return (
-      entityEvents.find(e => e.id === currentEventId) ||
-      entityEvents[0] ||
-      events[0] ||
+      evList.find(e => e?.id === currentEventId) ||
+      evList[0] ||
       DEFAULT_EVENTS[0]
     );
-  }, [entityEvents, currentEventId, events]);
+  }, [entityEvents, currentEventId]);
 
-  // Load Donations
+  // Load Donations safely
   const [donations, setDonations] = useState<SamitiDonation[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.DONATIONS);
-    return saved ? JSON.parse(saved) : SEED_DONATIONS;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.DONATIONS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to load donations from localStorage:', e);
+    }
+    return SEED_DONATIONS;
   });
 
-  // Load Expenses
+  // Load Expenses safely
   const [expenses, setExpenses] = useState<SamitiExpense[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-    return saved ? JSON.parse(saved) : SEED_EXPENSES;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to load expenses from localStorage:', e);
+    }
+    return SEED_EXPENSES;
+  });
+
+  // Load Staff safely
+  const [staffList, setStaffList] = useState<MasterStaff[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.STAFF);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to load staffList from localStorage:', e);
+    }
+    return DEFAULT_STAFF_LIST;
   });
 
   // Persist to local storage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.ENTITIES, JSON.stringify(entities));
+    try {
+      localStorage.setItem(STORAGE_KEYS.ENTITIES, JSON.stringify(entities));
+    } catch (e) {
+      console.warn(e);
+    }
   }, [entities]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+    try {
+      localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+    } catch (e) {
+      console.warn(e);
+    }
   }, [events]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.DONATIONS, JSON.stringify(donations));
+    try {
+      localStorage.setItem(STORAGE_KEYS.DONATIONS, JSON.stringify(donations));
+    } catch (e) {
+      console.warn(e);
+    }
   }, [donations]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
+    try {
+      localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
+    } catch (e) {
+      console.warn(e);
+    }
   }, [expenses]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SELECTED_ENTITY, currentEntityId);
+    try {
+      localStorage.setItem(STORAGE_KEYS.SELECTED_ENTITY, currentEntityId);
+    } catch (e) {
+      console.warn(e);
+    }
   }, [currentEntityId]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SELECTED_EVENT, currentEventId);
+    try {
+      localStorage.setItem(STORAGE_KEYS.SELECTED_EVENT, currentEventId);
+    } catch (e) {
+      console.warn(e);
+    }
   }, [currentEventId]);
 
-  // Donations filtered for the active event
-  const currentDonations = useMemo(() => {
-    return donations
-      .filter(d => d.eventId === currentEvent.id)
-      .sort((a, b) => a.serialNumber - b.serialNumber);
-  }, [donations, currentEvent.id]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(staffList));
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [staffList]);
 
-  // Expenses filtered for the active event
+  // Donations filtered for the active event safely
+  const currentDonations = useMemo(() => {
+    const donList = Array.isArray(donations) ? donations : SEED_DONATIONS;
+    const evtId = currentEvent?.id || DEFAULT_EVENTS[0].id;
+    return donList
+      .filter(d => d && d.eventId === evtId)
+      .sort((a, b) => (a?.serialNumber || 0) - (b?.serialNumber || 0));
+  }, [donations, currentEvent]);
+
+  // Expenses filtered for the active event safely
   const currentExpenses = useMemo(() => {
-    return expenses.filter(e => e.eventId === currentEvent.id);
-  }, [expenses, currentEvent.id]);
+    const expList = Array.isArray(expenses) ? expenses : SEED_EXPENSES;
+    const evtId = currentEvent?.id || DEFAULT_EVENTS[0].id;
+    return expList.filter(e => e && e.eventId === evtId);
+  }, [expenses, currentEvent]);
 
   // Calculate financial summary
   const summary: SamitiFinancialSummary = useMemo(() => {
@@ -690,12 +990,156 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     []
   );
 
+  // Update entity
+  const updateEntity = useCallback((id: string, updates: Partial<MasterEntity>) => {
+    setEntities(prev => prev.map(e => (e.id === id ? { ...e, ...updates } : e)));
+    toast.success('कार्यक्षेत्र जानकारी सफलतापूर्वक अपडेट की गई!');
+  }, []);
+
+  // Delete entity
+  const deleteEntity = useCallback(
+    (entityId: string) => {
+      if (entityId === mainWorkspaceId) {
+        toast.error('मुख्य कार्यक्षेत्र (Main Workspace) को सीधे नहीं हटाया जा सकता। कृपया पहले किसी अन्य कार्यक्षेत्र को मुख्य बनाएं।');
+        return false;
+      }
+
+      if (entities.length <= 1) {
+        toast.error('कम से कम एक कार्यक्षेत्र रहना अनिवार्य है।');
+        return false;
+      }
+
+      const targetEntity = entities.find(e => e.id === entityId);
+      const remainingEntities = entities.filter(e => e.id !== entityId);
+      const remainingEvents = events.filter(e => e.entityId !== entityId);
+      const deletedEventIds = events.filter(e => e.entityId === entityId).map(e => e.id);
+      const remainingDonations = donations.filter(d => !deletedEventIds.includes(d.eventId));
+      const remainingExpenses = expenses.filter(exp => !deletedEventIds.includes(exp.eventId));
+
+      setEntities(remainingEntities);
+      setEvents(remainingEvents);
+      setDonations(remainingDonations);
+      setExpenses(remainingExpenses);
+
+      if (currentEntityId === entityId) {
+        setCurrentEntityId(remainingEntities[0].id);
+        const newEvent = remainingEvents.find(e => e.entityId === remainingEntities[0].id);
+        if (newEvent) setCurrentEventId(newEvent.id);
+      }
+
+      // Clean up staff permissions for this workspace
+      setStaffList(prev =>
+        prev.map(staff => {
+          if (!staff.workspacePermissions[entityId]) return staff;
+          const { [entityId]: removed, ...restPermissions } = staff.workspacePermissions;
+          return {
+            ...staff,
+            workspacePermissions: restPermissions,
+          };
+        })
+      );
+
+      toast.success(`कार्यक्षेत्र "${targetEntity?.name || entityId}" और उसका समस्त डेटा हटा दिया गया!`);
+      return true;
+    },
+    [mainWorkspaceId, entities, events, donations, expenses, currentEntityId]
+  );
+
+  // Add staff
+  const addStaff = useCallback((staffData: Omit<MasterStaff, 'id' | 'joinedDate'>) => {
+    const newStaff: MasterStaff = {
+      ...staffData,
+      id: `staff-${Date.now()}`,
+      joinedDate: new Date().toISOString().split('T')[0],
+      avatarColor: staffData.avatarColor || 'bg-slate-700',
+    };
+
+    setStaffList(prev => [...prev, newStaff]);
+    toast.success(`कार्यकर्ता/स्टाफ "${newStaff.name}" सफलतापूर्वक जोड़ा गया!`);
+    return newStaff;
+  }, []);
+
+  // Update staff
+  const updateStaff = useCallback((id: string, updates: Partial<MasterStaff>) => {
+    setStaffList(prev => prev.map(s => (s.id === id ? { ...s, ...updates } : s)));
+    toast.success('कार्यकर्ता विवरण अपडेट किया गया!');
+  }, []);
+
+  // Delete staff
+  const deleteStaff = useCallback((id: string) => {
+    setStaffList(prev => prev.filter(s => s.id !== id));
+    toast.info('कार्यकर्ता को सिस्टम से हटा दिया गया!');
+  }, []);
+
+  // Update staff permission for specific workspace
+  const updateStaffPermission = useCallback(
+    (
+      staffId: string,
+      workspaceId: string,
+      accessLevel: WorkspaceAccessLevel,
+      modules?: Partial<ModuleAccess>
+    ) => {
+      setStaffList(prev =>
+        prev.map(staff => {
+          if (staff.id !== staffId) return staff;
+          const currentPerm = staff.workspacePermissions[workspaceId];
+          const defaultModules = DEFAULT_MODULE_ACCESS_MAP[accessLevel];
+
+          const updatedModules: ModuleAccess = {
+            ...(currentPerm ? currentPerm.modules : defaultModules),
+            ...(modules || {}),
+          };
+
+          return {
+            ...staff,
+            workspacePermissions: {
+              ...staff.workspacePermissions,
+              [workspaceId]: {
+                workspaceId,
+                accessLevel,
+                modules: updatedModules,
+              },
+            },
+          };
+        })
+      );
+      toast.success('कार्यक्षेत्र अनुमति व पहुंच अधिकार अपडेट किए गए!');
+    },
+    []
+  );
+
+  // Grant all workspaces
+  const grantAllWorkspaces = useCallback(
+    (staffId: string, accessLevel: WorkspaceAccessLevel) => {
+      setStaffList(prev =>
+        prev.map(staff => {
+          if (staff.id !== staffId) return staff;
+          const newPerms: Record<string, WorkspacePermission> = {};
+          entities.forEach(ent => {
+            newPerms[ent.id] = {
+              workspaceId: ent.id,
+              accessLevel,
+              modules: { ...DEFAULT_MODULE_ACCESS_MAP[accessLevel] },
+            };
+          });
+          return {
+            ...staff,
+            workspacePermissions: newPerms,
+          };
+        })
+      );
+      toast.success(`सभी ${entities.length} कार्यक्षेत्रों में पहुंच अधिकार प्रदान किए गए!`);
+    },
+    [entities]
+  );
+
   // Reset to sample data
   const resetToSampleData = useCallback(() => {
     setEntities(DEFAULT_ENTITIES);
     setEvents(DEFAULT_EVENTS);
     setDonations(SEED_DONATIONS);
     setExpenses(SEED_EXPENSES);
+    setStaffList(DEFAULT_STAFF_LIST);
     setCurrentEntityId(DEFAULT_ENTITIES[0].id);
     setCurrentEventId(DEFAULT_EVENTS[0].id);
     toast.success('डेटा को प्रारंभिक नमूना डेटा पर रीसेट कर दिया गया!');
@@ -713,6 +1157,10 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         donations: currentDonations,
         expenses: currentExpenses,
         summary,
+        mainWorkspaceId,
+        setMainWorkspaceId,
+        isMainWorkspace,
+        mainWorkspace,
         addDonation,
         updateDonation,
         deleteDonation,
@@ -721,6 +1169,14 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         deleteExpense,
         importDonations,
         addEntity,
+        updateEntity,
+        deleteEntity,
+        staffList,
+        addStaff,
+        updateStaff,
+        deleteStaff,
+        updateStaffPermission,
+        grantAllWorkspaces,
         resetToSampleData,
       }}
     >

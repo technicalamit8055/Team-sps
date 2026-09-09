@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useVictory } from '@/contexts/VictoryContext';
 import { useAuth } from '@/hooks/useAuth';
 import { TabType } from '@/types/victory';
-import { Home, Users, Briefcase, Brain, MapPin, Settings, UserPlus, Building2 } from 'lucide-react';
+import { Home, Users, Briefcase, Brain, MapPin, Settings, UserPlus, Building2, Layers } from 'lucide-react';
 
 const navItems: { id: TabType; label: string; icon: React.ReactNode; roles?: string[] }[] = [
   { id: 'dashboard', label: 'Home', icon: <Home className="w-5 h-5" /> },
@@ -70,14 +70,19 @@ export const Sidebar: React.FC = () => {
           </button>
         ))}
 
-        {/* Master Samiti / Event Dashboard */}
-        <Link
-          to="/samiti"
-          className="sidebar-item w-full text-amber-300 hover:text-amber-200 hover:bg-white/10 mt-2 border border-amber-400/30 rounded-xl"
-        >
-          <Building2 className="w-5 h-5 text-amber-400" />
-          <span className="font-semibold text-xs">🚩 उत्सव / समिति</span>
-        </Link>
+        {/* Master OS Central Command */}
+        {(role === 'admin' || role === 'manager') && (
+          <Link
+            to="/master"
+            className="sidebar-item w-full text-amber-300 hover:text-amber-200 hover:bg-white/10 mt-2 border border-amber-400/40 bg-amber-500/10 rounded-xl"
+          >
+            <Layers className="w-5 h-5 text-amber-400 shrink-0" />
+            <div className="flex flex-col text-left truncate">
+              <span className="font-bold text-xs">Master OS</span>
+              <span className="text-[10px] text-amber-300/80 truncate">कार्यक्षेत्र हब</span>
+            </div>
+          </Link>
+        )}
       </nav>
 
       {/* Settings at bottom */}

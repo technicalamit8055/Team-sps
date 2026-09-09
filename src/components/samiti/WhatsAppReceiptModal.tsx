@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { MessageSquare, Printer, Copy, Check, Share2, Sparkles, ExternalLink } from 'lucide-react';
+import { MessageSquare, Printer, Copy, Check, Sparkles, Phone, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface WhatsAppReceiptModalProps {
@@ -28,7 +28,7 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
   const targetPhone = overridePhone || donation.phone || '';
   const categoryInfo = DONATION_CATEGORIES[donation.category] || DONATION_CATEGORIES.OTH;
 
-  // Generate clean WhatsApp message
+  // Generate clean WhatsApp message formatted with emojis and clear sections
   const generateWhatsAppMessage = () => {
     const isFullPaid = donation.balanceAmount === 0;
     const balanceText = isFullPaid
@@ -36,32 +36,33 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
       : `⚠️ शेष बकाया राशि: ₹${donation.balanceAmount.toLocaleString('hi-IN')}`;
 
     return `🚩 *${currentEntity.name}* 🚩
-📍 ${currentEntity.location || 'नारायणपुर'}
-${currentEvent.title}
+📍 ${currentEntity.location || 'मुख्य चौक, नारायणपुर'}
+🎉 ${currentEvent.title}
 ===========================
-*डिजिटल चंदा / सहयोग रसीद*
+📜 *डिजिटल चंदा / सहयोग रसीद (Official Receipt)*
 ===========================
-📜 *रसीद सं०:* #${String(donation.serialNumber).padStart(3, '0')}
-📅 *दिनांक:* ${donation.date || new Date().toLocaleDateString('hi-IN')}
-👤 *सहयोगकर्ता:* ${donation.name}
-🏷️ *श्रेणी:* ${categoryInfo.labelHi}
-🏢 *पहचान/फर्म:* ${donation.identity || 'निवासी'}
-📍 *पता:* ${donation.address1 || ''} ${donation.address2 ? ', ' + donation.address2 : ''}
+🔢 *रसीद सं० (Receipt No):* #${String(donation.serialNumber).padStart(4, '0')}
+📅 *दिनांक (Date):* ${donation.date || new Date().toISOString().split('T')[0]}
+👤 *सहयोगकर्ता (Donor):* ${donation.name}
+🏷️ *श्रेणी (Category):* ${categoryInfo.labelHi} (${categoryInfo.code})
+🏢 *पहचान / फर्म:* ${donation.identity || 'प्रतिष्ठित निवासी'}
+📍 *पता:* ${donation.address1 || ''}${donation.address2 ? ', ' + donation.address2 : ''}
 
 💰 *स्वीकृत राशि (Pledged):* ₹${donation.acceptedAmount.toLocaleString('hi-IN')}
-💵 *प्राप्त राशि (Received):* ₹${donation.receivedAmount.toLocaleString('hi-IN')} (${donation.paymentMode === 'ONL' ? 'ऑनलाइन/UPI' : 'नकद'})
+💵 *प्राप्त राशि (Received):* ₹${donation.receivedAmount.toLocaleString('hi-IN')} (${donation.paymentMode === 'ONL' ? '📲 ऑनलाइन/UPI' : '💵 नकद/Cash'})
 ${balanceText}
 
-संग्रहकर्ता: ${donation.collectorName || 'समिति प्रतिनिधि'}
+संग्रहकर्ता प्रतिनिधि: ${donation.collectorName || 'श्री दुर्गा पूजा समिति'}
 ===========================
-🙏 *${currentEntity.tagline || 'माँ भगवती की कृपा आप पर सदा बनी रहे।'}*
-धन्यवाद!`;
+🙏 *"${currentEntity.tagline || 'माँ दुर्गा की असीम कृपा आप और आपके परिवार पर सदा बनी रहे।'}"*
+===========================
+🚩 माँ भगवती आपको सुख, शांति, समृद्धि व उत्तम स्वास्थ्य प्रदान करें! जय माँ दुर्गे! 🚩`;
   };
 
   const handleSendWhatsApp = () => {
     const cleanPhone = targetPhone.replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length < 10) {
-      toast.error('कृपया मान्य 10 अंकों का व्हाट्सएप मोबाइल नंबर दर्ज करें!');
+      toast.error('कृपया 10 अंकों का मान्य व्हाट्सएप मोबाइल नंबर दर्ज करें!');
       return;
     }
 
@@ -86,69 +87,82 @@ ${balanceText}
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg w-[94vw] p-0 overflow-hidden bg-white border-amber-300 rounded-2xl">
-        <DialogHeader className="p-3.5 sm:p-4 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white flex flex-row items-center justify-between">
-          <DialogTitle className="text-sm sm:text-base font-bold flex items-center gap-2 text-white">
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-200" />
-            डिजिटल चंदा रसीद (Official Receipt)
+      <DialogContent className="max-w-lg w-[95vw] p-0 overflow-hidden bg-white border-amber-300 rounded-3xl shadow-2xl">
+        <DialogHeader className="p-4 bg-gradient-to-r from-rose-700 via-amber-600 to-orange-600 text-white flex flex-row items-center justify-between">
+          <DialogTitle className="text-base font-bold flex items-center gap-2 text-white">
+            <Sparkles className="w-4 h-4 text-amber-200" />
+            <span>डिजिटल चंदा रसीद (Official Receipt)</span>
           </DialogTitle>
         </DialogHeader>
 
         {/* Printable & Screen Receipt Card */}
-        <div className="p-3.5 sm:p-6 space-y-3 sm:space-y-4 max-h-[75vh] overflow-y-auto print:max-h-none print:p-8" id="printable-receipt">
-          {/* Ornate Hindu / Festival Border Container */}
-          <div className="relative border-4 border-double border-amber-500/80 rounded-xl p-3.5 sm:p-5 bg-gradient-to-b from-amber-50/40 via-white to-amber-50/20 shadow-inner">
+        <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto print:max-h-none print:p-8" id="printable-receipt">
+          {/* Ornate Hindu / Festive Border Container */}
+          <div className="relative border-4 border-double border-amber-500/80 rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-amber-50/40 via-white to-amber-50/20 shadow-inner">
             {/* Corner Decorative Glyphs */}
-            <div className="absolute top-1 left-2 text-amber-600/70 text-xs font-serif">🚩 ॐ</div>
-            <div className="absolute top-1 right-2 text-amber-600/70 text-xs font-serif">卐 🚩</div>
+            <div className="absolute top-1.5 left-2 text-amber-700 text-xs font-serif font-bold">
+              🚩 ॐ
+            </div>
+            <div className="absolute top-1.5 right-2 text-amber-700 text-xs font-serif font-bold">
+              卐 🚩
+            </div>
 
             {/* Letterhead Header */}
-            <div className="text-center border-b-2 border-amber-400 pb-3">
+            <div className="text-center border-b-2 border-amber-400 pb-3 pt-1">
               <h2 className="text-xl font-extrabold text-amber-950 tracking-wide font-serif">
                 {currentEntity.name}
               </h2>
-              <p className="text-xs text-amber-900 font-medium">
+              <p className="text-xs text-amber-900 font-medium mt-0.5">
                 📍 {currentEntity.location || 'नारायणपुर'} • स्थापना वर्ष: {currentEntity.establishedYear || 1985}
               </p>
-              <p className="text-xs font-semibold text-orange-700 mt-0.5">
+              <p className="text-xs font-semibold text-rose-700 mt-0.5">
                 {currentEvent.title}
               </p>
-              <div className="mt-2 inline-block bg-amber-600 text-white font-bold text-[11px] px-3 py-0.5 rounded-full shadow-sm">
+              <div className="mt-2 inline-block bg-gradient-to-r from-amber-600 to-rose-600 text-white font-bold text-[11px] px-3.5 py-0.5 rounded-full shadow-xs">
                 सहयोग / चंदा पावती (Donation Receipt)
               </div>
             </div>
 
             {/* Receipt Meta */}
-            <div className="flex justify-between items-center text-xs mt-3 px-1 py-1 bg-amber-100/50 rounded-lg border border-amber-200">
+            <div className="flex justify-between items-center text-xs mt-3 px-2 py-1 bg-amber-100/60 rounded-xl border border-amber-200">
               <span className="font-bold text-amber-950 font-mono">
-                क्रमांक / S.No: #{String(donation.serialNumber).padStart(3, '0')}
+                रसीद सं० / S.No: #{String(donation.serialNumber).padStart(4, '0')}
               </span>
-              <span className="text-amber-900">
-                दिनांक: <span className="font-semibold">{donation.date}</span>
+              <span className="text-amber-900 font-mono text-[11px]">
+                दिनांक: <span className="font-bold">{donation.date}</span>
               </span>
             </div>
 
             {/* Contributor Details */}
             <div className="mt-3 space-y-2 text-xs border-b border-amber-200 pb-3">
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start gap-2">
                 <div>
-                  <p className="text-gray-500 text-[11px]">सहयोगकर्ता का नाम (Donor Name):</p>
-                  <p className="text-base font-bold text-gray-950">{donation.name}</p>
+                  <p className="text-slate-500 text-[11px]">सहयोगकर्ता का नाम (Donor Name):</p>
+                  <p className="text-base font-bold text-slate-950">{donation.name}</p>
                 </div>
-                <Badge className={categoryInfo.badgeColor}>{categoryInfo.labelHi}</Badge>
+                <Badge className={`${categoryInfo.badgeColor} text-[10px] font-mono shrink-0`}>
+                  {categoryInfo.code} • {categoryInfo.labelHi.split('/')[0]}
+                </Badge>
               </div>
 
               {donation.identity && (
                 <div>
-                  <p className="text-gray-500 text-[11px]">पहचान / दुकान / पिता (Identity / Firm):</p>
-                  <p className="font-semibold text-gray-800">{donation.identity}</p>
+                  <p className="text-slate-500 text-[11px]">पहचान / दुकान / पिता (Identity / Firm):</p>
+                  <p className="font-semibold text-slate-800">{donation.identity}</p>
+                </div>
+              )}
+
+              {donation.caste && (
+                <div>
+                  <p className="text-slate-500 text-[11px]">समुदाय / वर्ग (Tag):</p>
+                  <p className="text-slate-700">{donation.caste}</p>
                 </div>
               )}
 
               {(donation.address1 || donation.address2) && (
                 <div>
-                  <p className="text-gray-500 text-[11px]">पता (Address):</p>
-                  <p className="text-gray-700">
+                  <p className="text-slate-500 text-[11px]">पता (Address):</p>
+                  <p className="text-slate-700">
                     {donation.address1} {donation.address2 ? `• ${donation.address2}` : ''}
                   </p>
                 </div>
@@ -156,30 +170,42 @@ ${balanceText}
             </div>
 
             {/* Amount Table */}
-            <div className="mt-3 bg-amber-50/70 rounded-lg p-3 border border-amber-300">
+            <div className="mt-3 bg-amber-50/70 rounded-xl p-3 border border-amber-300">
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-gray-500">स्वीकृत राशि (Accepted):</span>
-                  <p className="text-sm font-bold text-gray-900">₹{donation.acceptedAmount.toLocaleString('hi-IN')}</p>
+                  <span className="text-slate-500 text-[11px]">स्वीकृत राशि (Pledged):</span>
+                  <p className="text-sm font-bold text-slate-900 font-mono">
+                    ₹{donation.acceptedAmount.toLocaleString('hi-IN')}
+                  </p>
                 </div>
                 <div>
-                  <span className="text-gray-500">भुगतान माध्यम (Mode):</span>
-                  <p className="text-sm font-bold text-amber-800">
-                    {donation.paymentMode === 'ONL' ? '📲 ऑनलाइन (UPI / QR)' : '💵 नकद (Cash)'}
+                  <span className="text-slate-500 text-[11px]">भुगतान माध्यम (Mode):</span>
+                  <p className="text-sm font-bold text-amber-800 font-mono">
+                    {donation.paymentMode === 'ONL' ? '📲 ऑनलाइन (UPI/QR)' : '💵 नकद (Cash)'}
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs mt-2 pt-2 border-t border-amber-200">
-                <div className="bg-emerald-50 p-2 rounded border border-emerald-300">
-                  <span className="text-emerald-700 font-semibold">प्राप्त राशि (Received):</span>
-                  <p className="text-base font-black text-emerald-800">
+                <div className="bg-emerald-50 p-2 rounded-lg border border-emerald-300">
+                  <span className="text-emerald-800 font-semibold text-[10px] uppercase block">
+                    प्राप्त राशि (Received)
+                  </span>
+                  <p className="text-base font-black text-emerald-800 font-mono">
                     ₹{donation.receivedAmount.toLocaleString('hi-IN')}
                   </p>
                 </div>
-                <div className={`p-2 rounded border ${donation.balanceAmount > 0 ? 'bg-red-50 border-red-300 text-red-800' : 'bg-gray-50 border-gray-200 text-gray-700'}`}>
-                  <span className="font-semibold">शेष बकाया (Balance Due):</span>
-                  <p className="text-base font-black">
+                <div
+                  className={`p-2 rounded-lg border ${
+                    donation.balanceAmount > 0
+                      ? 'bg-rose-50 border-rose-300 text-rose-800'
+                      : 'bg-slate-50 border-slate-200 text-slate-600'
+                  }`}
+                >
+                  <span className="font-semibold text-[10px] uppercase block">
+                    शेष बकाया (Balance Due)
+                  </span>
+                  <p className="text-base font-black font-mono">
                     ₹{donation.balanceAmount.toLocaleString('hi-IN')}
                   </p>
                 </div>
@@ -188,12 +214,12 @@ ${balanceText}
 
             {/* Footer Blessing & Signatures */}
             <div className="mt-4 text-center">
-              <p className="text-[11px] font-serif italic text-amber-900 font-medium">
+              <p className="text-[11px] font-serif italic text-amber-950 font-medium">
                 "{currentEntity.tagline || 'माँ दुर्गा की असीम कृपा आप और आपके परिवार पर सदा बनी रहे।'}"
               </p>
-              <div className="flex justify-between items-end mt-6 text-[10px] text-gray-500 px-2">
+              <div className="flex justify-between items-end mt-6 text-[10px] text-slate-500 px-2">
                 <div className="text-left">
-                  <p className="font-semibold text-gray-700">{donation.collectorName || 'अधिकृत कार्यकर्ता'}</p>
+                  <p className="font-semibold text-slate-800">{donation.collectorName || 'समिति प्रतिनिधि'}</p>
                   <p>संग्रहकर्ता हस्ताक्षर</p>
                 </div>
                 <div className="text-right">
@@ -205,20 +231,18 @@ ${balanceText}
           </div>
 
           {/* Quick WhatsApp Phone override */}
-          <div className="bg-gray-50 p-3 rounded-lg border flex flex-col gap-2">
-            <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
+          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 flex flex-col gap-2">
+            <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
               <span>व्हाट्सएप मोबाइल नंबर (WhatsApp Number):</span>
-              <span className="text-[11px] text-muted-foreground">10 अंक</span>
+              <span className="text-[11px] text-slate-400 font-mono">10 अंक</span>
             </label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="उदा० 9835012345"
-                defaultValue={donation.phone}
-                value={overridePhone}
-                onChange={e => setOverridePhone(e.target.value)}
-                className="font-mono text-sm"
-              />
-            </div>
+            <Input
+              placeholder="उदा० 9835012345"
+              defaultValue={donation.phone}
+              value={overridePhone}
+              onChange={e => setOverridePhone(e.target.value)}
+              className="font-mono text-xs h-9 bg-white"
+            />
           </div>
         </div>
 

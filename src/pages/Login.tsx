@@ -23,15 +23,19 @@ export default function Login() {
       return;
     }
     setIsLoading(true);
-    const {
-      error
-    } = await signIn(username, password);
+    const { error, role } = await signIn(username, password);
     setIsLoading(false);
     if (error) {
       toast.error(error);
     } else {
       toast.success('स्वागत है! Login सफल।');
-      navigate('/dashboard');
+      if (role === 'admin') {
+        navigate('/master');
+      } else if (role === 'citizen') {
+        navigate('/janta');
+      } else {
+        navigate('/election');
+      }
     }
   };
   return <div className="min-h-screen bg-gradient-to-br from-victory-saffron/20 via-background to-victory-navy/10 flex items-center justify-center p-4">

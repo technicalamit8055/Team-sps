@@ -16,7 +16,7 @@ interface AuthContextType {
     phone: string | null;
   } | null;
   isLoading: boolean;
-  signIn: (username: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (username: string, password: string) => Promise<{ error: string | null; role?: AppRole | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -90,12 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (username: string, password: string): Promise<{ error: string | null }> => {
+  const signIn = async (username: string, password: string): Promise<{ error: string | null; role?: AppRole | null }> => {
     try {
       // Convert username to proxy email
       const proxyEmail = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@victory.local`;
       
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: proxyEmail,
         password: password
       });
@@ -108,7 +108,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: error.message };
       }
 
-      return { error: null };
+      let userRole: AppRole | null = null;
+      if (data?.user) {
+        setUser(data.user);
+        setSession(data.session);
+
+        try {
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', data.user.id)
+            .single();
+
+          if (roleData?.role) {
+            userRole = roleData.role as AppRole;
+            setRole(userRole);
+          }
+        } catch (e) {
+          console.error('Error fetching role in signIn:', e);
+        }
+
+        // Also fetch profile in background
+        fetchUserData(data.user.id);
+      }
+
+      return { error: null, role: userRole };
     } catch (err) {
       return { error: 'Login failed. Please try again.' };
     }

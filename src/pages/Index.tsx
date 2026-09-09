@@ -4,9 +4,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { Sidebar } from '@/components/Sidebar';
 import { BottomNav } from '@/components/BottomNav';
 import { FAB } from '@/components/FAB';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Layers } from 'lucide-react';
 
 // Lazy load dashboard pages for code splitting
 const Dashboard = lazy(() => import('@/pages/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -104,10 +105,20 @@ const MainContent: React.FC = () => {
               <p className="text-xs text-muted-foreground">@{profile?.username}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-destructive">
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-3">
+            {(role === 'admin' || role === 'manager') && (
+              <Link to="/master">
+                <Button variant="outline" size="sm" className="border-slate-800 bg-slate-900 text-white hover:bg-slate-800 text-xs gap-1.5 h-8">
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Master OS हब</span>
+                </Button>
+              </Link>
+            )}
+            <Button variant="ghost" size="sm" onClick={signOut} className="text-muted-foreground hover:text-destructive">
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Page Content */}
