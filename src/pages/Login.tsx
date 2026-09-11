@@ -31,7 +31,7 @@ export default function Login() {
       toast.success('स्वागत है! Login सफल।');
       if (isCollector || assignedWorkspaceId) {
         // Directly redirect assigned collector worker to their unit (e.g. Durga Puja Unit)
-        navigate('/samiti');
+        navigate('/durga-puja-unit');
       } else if (role === 'admin') {
         navigate('/master');
       } else if (role === 'citizen') {

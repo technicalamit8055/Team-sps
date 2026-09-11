@@ -127,7 +127,7 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <Link
-                  to="/samiti"
+                  to="/durga-puja-unit"
                   className="inline-flex items-center gap-2 text-slate-300 hover:text-victory-saffron transition-colors"
                 >
                   <Calendar className="w-4 h-4 text-amber-400" />

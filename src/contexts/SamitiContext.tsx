@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import {
   MasterEntity,
@@ -519,6 +519,26 @@ const STORAGE_KEYS = {
 export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuth();
   const db = useSamitiDatabase();
+  const {
+    setIsSyncing,
+    fetchEntitiesFromCloud,
+    saveEntityToCloud,
+    deleteEntityFromCloud,
+    fetchEventsFromCloud,
+    saveEventToCloud,
+    fetchDonationsFromCloud,
+    saveDonationToCloud,
+    deleteDonationFromCloud,
+    bulkSaveDonationsToCloud,
+    fetchExpensesFromCloud,
+    saveExpenseToCloud,
+    deleteExpenseFromCloud,
+    fetchStaffFromCloud,
+    saveStaffToCloud,
+    deleteStaffFromCloud,
+    purgeDemoEntitiesFromCloud,
+    subscribeToSamitiRealtime,
+  } = db;
   // Load Entities safely
   const [entities, setEntities] = useState<MasterEntity[]>(() => {
     try {
@@ -741,14 +761,14 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Cloud Synchronization
   const syncWithCloud = useCallback(async () => {
-    db.setIsSyncing(true);
+    setIsSyncing(true);
     try {
       const [cloudEntities, cloudEvents, cloudDonations, cloudExpenses, cloudStaff] = await Promise.all([
-        db.fetchEntitiesFromCloud(),
-        db.fetchEventsFromCloud(),
-        db.fetchDonationsFromCloud(),
-        db.fetchExpensesFromCloud(),
-        db.fetchStaffFromCloud(),
+        fetchEntitiesFromCloud(),
+        fetchEventsFromCloud(),
+        fetchDonationsFromCloud(),
+        fetchExpensesFromCloud(),
+        fetchStaffFromCloud(),
       ]);
 
       if (cloudEntities && cloudEntities.length > 0) {
@@ -756,19 +776,19 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       } else if (cloudEntities && cloudEntities.length === 0) {
         // First run on new database - auto-seed initial data to cloud
         for (const ent of DEFAULT_ENTITIES) {
-          await db.saveEntityToCloud(ent);
+          await saveEntityToCloud(ent);
         }
         for (const evt of DEFAULT_EVENTS) {
-          await db.saveEventToCloud(evt);
+          await saveEventToCloud(evt);
         }
         for (const don of SEED_DONATIONS) {
-          await db.saveDonationToCloud(don);
+          await saveDonationToCloud(don);
         }
         for (const exp of SEED_EXPENSES) {
-          await db.saveExpenseToCloud(exp);
+          await saveExpenseToCloud(exp);
         }
         for (const st of DEFAULT_STAFF_LIST) {
-          await db.saveStaffToCloud(st);
+          await saveStaffToCloud(st);
         }
       }
 
@@ -787,14 +807,31 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (e) {
       console.warn('Sync with cloud failed:', e);
     } finally {
-      db.setIsSyncing(false);
+      setIsSyncing(false);
     }
-  }, [db]);
+  }, [
+    setIsSyncing,
+    fetchEntitiesFromCloud,
+    saveEntityToCloud,
+    fetchEventsFromCloud,
+    saveEventToCloud,
+    fetchDonationsFromCloud,
+    saveDonationToCloud,
+    fetchExpensesFromCloud,
+    saveExpenseToCloud,
+    fetchStaffFromCloud,
+    saveStaffToCloud,
+  ]);
+
+  // Keep a stable ref to syncWithCloud so the initial mount sync runs without adding syncWithCloud to deps
+  const syncWithCloudRef = useRef(syncWithCloud);
+  syncWithCloudRef.current = syncWithCloud;
 
   useEffect(() => {
-    syncWithCloud();
+    // Initial sync with cloud on mount
+    syncWithCloudRef.current();
 
-    const unsubscribe = db.subscribeToSamitiRealtime((payload) => {
+    const unsubscribe = subscribeToSamitiRealtime((payload) => {
       const { table, eventType, newRow, oldRow } = payload;
       if (table === 'samiti_donations') {
         if (eventType === 'INSERT' && newRow) {
@@ -991,7 +1028,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => {
       unsubscribe();
     };
-  }, [syncWithCloud, db]);
+  }, [subscribeToSamitiRealtime]);
 
   // Donations filtered for the active event safely
   const currentDonations = useMemo(() => {
@@ -1091,11 +1128,11 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setDonations(prev => [...prev, newDonation]);
-      db.saveDonationToCloud(newDonation);
+      saveDonationToCloud(newDonation);
       toast.success(`दान प्रविष्टि क्रमांक #${serialNumber} सफलतापूर्वक दर्ज की गई!`);
       return newDonation;
     },
-    [currentDonations, db]
+    [currentDonations, saveDonationToCloud]
   );
 
   // Update donation
@@ -1120,10 +1157,10 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       })
     );
     if (updatedItem) {
-      db.saveDonationToCloud(updatedItem);
+      saveDonationToCloud(updatedItem);
     }
     toast.success('दान प्रविष्टि सफलतापूर्वक अपडेट की गई!');
-  }, [db]);
+  }, [saveDonationToCloud]);
 
   // Delete donation
   const deleteDonation = useCallback(
@@ -1133,10 +1170,10 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return;
       }
       setDonations(prev => prev.filter(item => item.id !== id));
-      db.deleteDonationFromCloud(id);
+      deleteDonationFromCloud(id);
       toast.info('दान प्रविष्टि हटा दी गई!');
     },
-    [isCollectorMode, db]
+    [isCollectorMode, deleteDonationFromCloud]
   );
 
   // Add expense
@@ -1154,11 +1191,11 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setExpenses(prev => [...prev, newExpense]);
-      db.saveExpenseToCloud(newExpense);
+      saveExpenseToCloud(newExpense);
       toast.success(`खर्चा वाउचर #${voucherNo} सफलतापूर्वक दर्ज हुआ!`);
       return newExpense;
     },
-    [currentExpenses.length, db]
+    [currentExpenses.length, saveExpenseToCloud]
   );
 
   // Update expense
@@ -1182,17 +1219,17 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       })
     );
     if (updatedExp) {
-      db.saveExpenseToCloud(updatedExp);
+      saveExpenseToCloud(updatedExp);
     }
     toast.success('खर्चा वाउचर अपडेट किया गया!');
-  }, [db]);
+  }, [saveExpenseToCloud]);
 
   // Delete expense
   const deleteExpense = useCallback((id: string) => {
     setExpenses(prev => prev.filter(item => item.id !== id));
-    db.deleteExpenseFromCloud(id);
+    deleteExpenseFromCloud(id);
     toast.info('खर्चा वाउचर हटा दिया गया!');
-  }, [db]);
+  }, [deleteExpenseFromCloud]);
 
   // Import donations from CSV/Excel
   const importDonations = useCallback(
@@ -1212,11 +1249,11 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
 
       setDonations(prev => [...prev, ...toInsert]);
-      db.bulkSaveDonationsToCloud(toInsert);
+      bulkSaveDonationsToCloud(toInsert);
       toast.success(`${toInsert.length} दान प्रविष्टियाँ सफलतापूर्वक इम्पोर्ट की गईं!`);
       return toInsert.length;
     },
-    [currentDonations, db]
+    [currentDonations, bulkSaveDonationsToCloud]
   );
 
   // Add entity
@@ -1237,13 +1274,13 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setEntities(prev => [...prev, newEntity]);
       setEvents(prev => [...prev, newEvent]);
-      db.saveEntityToCloud(newEntity);
-      db.saveEventToCloud(newEvent);
+      saveEntityToCloud(newEntity);
+      saveEventToCloud(newEvent);
       setCurrentEntityId(newEntityId);
       setCurrentEventId(newEventId);
       toast.success(`नया संगठन/समिति "${newEntity.name}" तैयार हो गया!`);
     },
-    [db]
+    [saveEntityToCloud, saveEventToCloud]
   );
 
   // Update entity
@@ -1257,10 +1294,10 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return e;
     }));
     if (updated) {
-      db.saveEntityToCloud(updated);
+      saveEntityToCloud(updated);
     }
     toast.success('कार्यक्षेत्र जानकारी सफलतापूर्वक अपडेट की गई!');
-  }, [db]);
+  }, [saveEntityToCloud]);
 
   // Delete entity
   const deleteEntity = useCallback(
@@ -1286,7 +1323,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setEvents(remainingEvents);
       setDonations(remainingDonations);
       setExpenses(remainingExpenses);
-      db.deleteEntityFromCloud(entityId);
+      deleteEntityFromCloud(entityId);
 
       if (currentEntityId === entityId) {
         setCurrentEntityId(remainingEntities[0].id);
@@ -1303,7 +1340,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...staff,
             workspacePermissions: restPermissions,
           };
-          db.saveStaffToCloud(updatedStaff);
+          saveStaffToCloud(updatedStaff);
           return updatedStaff;
         })
       );
@@ -1311,7 +1348,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       toast.success(`कार्यक्षेत्र "${targetEntity?.name || entityId}" और उसका समस्त डेटा हटा दिया गया!`);
       return true;
     },
-    [mainWorkspaceId, entities, events, donations, expenses, currentEntityId, db]
+    [mainWorkspaceId, entities, events, donations, expenses, currentEntityId, deleteEntityFromCloud, saveStaffToCloud]
   );
 
   // Add staff
@@ -1324,10 +1361,10 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     setStaffList(prev => [...prev, newStaff]);
-    db.saveStaffToCloud(newStaff);
+    saveStaffToCloud(newStaff);
     toast.success(`कार्यकर्ता/स्टाफ "${newStaff.name}" सफलतापूर्वक जोड़ा गया!`);
     return newStaff;
-  }, [db]);
+  }, [saveStaffToCloud]);
 
   // Update staff
   const updateStaff = useCallback((id: string, updates: Partial<MasterStaff>) => {
@@ -1340,17 +1377,17 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return s;
     }));
     if (updated) {
-      db.saveStaffToCloud(updated);
+      saveStaffToCloud(updated);
     }
     toast.success('कार्यकर्ता विवरण अपडेट किया गया!');
-  }, [db]);
+  }, [saveStaffToCloud]);
 
   // Delete staff
   const deleteStaff = useCallback((id: string) => {
     setStaffList(prev => prev.filter(s => s.id !== id));
-    db.deleteStaffFromCloud(id);
+    deleteStaffFromCloud(id);
     toast.info('कार्यकर्ता को सिस्टम से हटा दिया गया!');
-  }, [db]);
+  }, [deleteStaffFromCloud]);
 
   // Update staff permission for specific workspace
   const updateStaffPermission = useCallback(
@@ -1382,13 +1419,13 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               },
             },
           };
-          db.saveStaffToCloud(updatedStaff);
+          saveStaffToCloud(updatedStaff);
           return updatedStaff;
         })
       );
       toast.success('कार्यक्षेत्र अनुमति व पहुंच अधिकार अपडेट किए गए!');
     },
-    [db]
+    [saveStaffToCloud]
   );
 
   // Grant all workspaces
@@ -1409,23 +1446,23 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...staff,
             workspacePermissions: newPerms,
           };
-          db.saveStaffToCloud(updatedStaff);
+          saveStaffToCloud(updatedStaff);
           return updatedStaff;
         })
       );
       toast.success(`सभी ${entities.length} कार्यक्षेत्रों में पहुंच अधिकार प्रदान किए गए!`);
     },
-    [entities, db]
+    [entities, saveStaffToCloud]
   );
 
   // Reset master demo data (Purge all except Durga Puja Unit and Election Command)
   const resetMasterDemoData = useCallback(async () => {
     try {
-      db.setIsSyncing(true);
+      setIsSyncing(true);
       toast.loading('मास्टर डेमो डेटा रीसेट एवं क्लाउड पर्ज जारी है...', { id: 'purge-toast' });
       
       // 1. Purge from live Supabase database
-      await db.purgeDemoEntitiesFromCloud(['ent-durga-narayanpur', 'ent-election-2026']);
+      await purgeDemoEntitiesFromCloud(['ent-durga-narayanpur', 'ent-election-2026']);
       
       // 2. Reset in-memory state to clean defaults (only Durga Puja & Election Command)
       setEntities(DEFAULT_ENTITIES);
@@ -1458,9 +1495,9 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.error('Reset master demo data error:', err);
       toast.error('डेटा रीसेट में त्रुटि आई: ' + err.message, { id: 'purge-toast' });
     } finally {
-      db.setIsSyncing(false);
+      setIsSyncing(false);
     }
-  }, [db]);
+  }, [setIsSyncing, purgeDemoEntitiesFromCloud]);
 
   // Reset to sample data
   const resetToSampleData = useCallback(() => {

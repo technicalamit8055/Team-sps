@@ -15,6 +15,7 @@ import {
   Users2,
   ShieldCheck,
   BarChart3,
+  RefreshCw,
 } from 'lucide-react';
 import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 
@@ -100,25 +101,32 @@ export const MasterHeader: React.FC<MasterHeaderProps> = ({
                 <button
                   type="button"
                   onClick={() => syncWithCloud()}
-                  className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
+                  disabled={isSyncing || !isCloudConnected}
+                  className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full border transition-all cursor-pointer ${
                     isSyncing
-                      ? 'bg-amber-100 text-amber-800 border-amber-300'
+                      ? 'bg-amber-100 text-amber-800 border-amber-300 cursor-wait'
                       : isCloudConnected
                       ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
-                      : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                      : 'bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200 cursor-not-allowed'
                   }`}
-                  title="Click to manually refresh and sync with Supabase Cloud Database"
+                  title={
+                    isSyncing
+                      ? 'Syncing with cloud...'
+                      : isCloudConnected
+                      ? 'Online - Click to sync with Cloud'
+                      : 'Offline - Network disconnected'
+                  }
                 >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      isSyncing
-                        ? 'bg-amber-500 animate-spin'
-                        : isCloudConnected
-                        ? 'bg-emerald-500 animate-pulse'
-                        : 'bg-slate-400'
-                    }`}
-                  />
-                  {isSyncing ? 'SYNCING...' : isCloudConnected ? 'SUPABASE LIVE' : 'OFFLINE CACHE'}
+                  {isSyncing ? (
+                    <RefreshCw className="w-2.5 h-2.5 text-amber-700 animate-spin" />
+                  ) : (
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        isCloudConnected ? 'bg-emerald-500' : 'bg-rose-500'
+                      }`}
+                    />
+                  )}
+                  {isSyncing ? 'SYNCING...' : isCloudConnected ? 'ONLINE' : 'OFFLINE'}
                 </button>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSamiti } from '@/contexts/SamitiContext';
 import { useAuth } from '@/hooks/useAuth';
 import { MasterNavSection } from '@/types/master';
@@ -30,6 +30,7 @@ import {
 
 export const MasterOS: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const {
     entities,
     currentEntity,
@@ -43,35 +44,16 @@ export const MasterOS: React.FC = () => {
 
   const { profile, role, isCollector, assignedWorkspaceId, signOut } = useAuth();
 
-  // null = Master Hub overview; string = active dedicated workspace view
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(() => {
-    if (isCollector || assignedWorkspaceId) {
-      return assignedWorkspaceId || 'ent-durga-narayanpur';
-    }
-    if (
-      typeof window !== 'undefined' &&
-      (window.location.pathname.includes('/samiti') || window.location.pathname.includes('/events'))
-    ) {
-      return 'ent-durga-narayanpur';
-    }
-    return null;
-  });
+  // null = Master Hub overview; string = active dedicated workspace view (for in-memory custom units)
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
 
-  // Force activeWorkspaceId to assigned unit if collector
+  // Redirect assigned collectors directly to their dedicated unit portal
   useEffect(() => {
     if (isCollector || assignedWorkspaceId) {
-      const targetUnit = assignedWorkspaceId || 'ent-durga-narayanpur';
-      if (activeWorkspaceId !== targetUnit) {
-        setActiveWorkspaceId(targetUnit);
-      }
-      if (currentEntity.id !== targetUnit) {
-        setCurrentEntityId(targetUnit);
-      }
-    } else if (location.pathname.includes('/samiti') && activeWorkspaceId === null) {
-      setCurrentEntityId('ent-durga-narayanpur');
-      setActiveWorkspaceId('ent-durga-narayanpur');
+      navigate('/durga-puja-unit', { replace: true });
     }
-  }, [location.pathname, activeWorkspaceId, isCollector, assignedWorkspaceId, currentEntity.id, setCurrentEntityId]);
+  }, [isCollector, assignedWorkspaceId, navigate]);
+
   const [activeTab, setActiveTab] = useState<'chanda' | 'kharcha' | 'analytics' | 'import_export'>('chanda');
 
   // Master OS Navigation & Modal States
@@ -83,7 +65,14 @@ export const MasterOS: React.FC = () => {
 
   const openWorkspace = (entityId: string) => {
     setCurrentEntityId(entityId);
-    setActiveWorkspaceId(entityId);
+    const target = entities.find(e => e.id === entityId);
+    if (target?.type === 'election' || entityId === 'ent-election-2026') {
+      navigate('/election');
+    } else if (entityId === 'ent-durga-narayanpur' || target?.type === 'festival_samiti') {
+      navigate('/durga-puja-unit');
+    } else {
+      setActiveWorkspaceId(entityId);
+    }
   };
 
   const launchMainWorkspace = () => {

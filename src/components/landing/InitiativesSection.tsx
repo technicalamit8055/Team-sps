@@ -114,7 +114,7 @@ export const InitiativesSection: React.FC = () => {
         'सामाजिक सौहार्द और युवाओं की भागीदारी'
       ],
       ctaText: 'समिति डैशबोर्ड देखें',
-      ctaLink: '/samiti',
+      ctaLink: '/durga-puja-unit',
       isInternal: true
     }
   ];
@@ -303,7 +303,7 @@ export const InitiativesSection: React.FC = () => {
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
-              <Link to="/samiti">
+              <Link to="/durga-puja-unit">
                 <Button variant="outline" className="border-white/30 text-white hover:bg-white/10 rounded-xl">
                   समिति एवं इवेंट डैशबोर्ड
                 </Button>

@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import JantaPortal from "./pages/JantaPortal";
 import LandingPage from "./pages/LandingPage";
 import MasterOS from "./pages/MasterOS";
+import DurgaPujaUnitPage from "./pages/DurgaPujaUnitPage";
 import NotFound from "./pages/NotFound";
 
 // Loading fallback component
@@ -49,7 +50,7 @@ function TeamRoute({ children }: { children: React.ReactNode }) {
 
   // Assigned collector workers can only access their assigned unit
   if (isCollector || assignedWorkspaceId) {
-    return <Navigate to="/samiti" replace />;
+    return <Navigate to="/durga-puja-unit" replace />;
   }
 
   return <>{children}</>;
@@ -78,7 +79,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
   // Collectors are restricted from Master OS central command and redirected to their unit
   if (isCollector || assignedWorkspaceId) {
-    return <Navigate to="/samiti" replace />;
+    return <Navigate to="/durga-puja-unit" replace />;
   }
 
   return <>{children}</>;
@@ -126,7 +127,7 @@ function CitizenRoute({ children }: { children: React.ReactNode }) {
   // Non-citizens go to assigned unit or election workspace or master
   if (role && role !== 'citizen') {
     if (isCollector || assignedWorkspaceId) {
-      return <Navigate to="/samiti" replace />;
+      return <Navigate to="/durga-puja-unit" replace />;
     }
     if (role === 'admin') {
       return <Navigate to="/master" replace />;
@@ -152,7 +153,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   if (user) {
     // Redirect assigned collector workers straight to assigned unit
     if (isCollector || assignedWorkspaceId) {
-      return <Navigate to="/samiti" replace />;
+      return <Navigate to="/durga-puja-unit" replace />;
     }
     // Redirect based on role
     if (role === 'citizen') {
@@ -224,16 +225,18 @@ const AppRoutes = () => (
           <MasterOS />
         </AdminRoute>
       } />
-      <Route path="/samiti" element={
+
+      {/* Dedicated Durga Puja Samiti Unit Route & Aliases */}
+      <Route path="/durga-puja-unit" element={
         <SamitiRoute>
-          <MasterOS />
+          <DurgaPujaUnitPage />
         </SamitiRoute>
       } />
-      <Route path="/events" element={
-        <SamitiRoute>
-          <MasterOS />
-        </SamitiRoute>
-      } />
+      <Route path="/durga%20puja%20unit" element={<Navigate to="/durga-puja-unit" replace />} />
+      <Route path="/durga puja unit" element={<Navigate to="/durga-puja-unit" replace />} />
+      <Route path="/durga-puja" element={<Navigate to="/durga-puja-unit" replace />} />
+      <Route path="/samiti" element={<Navigate to="/durga-puja-unit" replace />} />
+      <Route path="/events" element={<Navigate to="/durga-puja-unit" replace />} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

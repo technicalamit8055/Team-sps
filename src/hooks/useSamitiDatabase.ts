@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   MasterEntity,
@@ -13,8 +13,23 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export function useSamitiDatabase() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
-  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(true);
+  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(
+    () => (typeof navigator !== 'undefined' ? navigator.onLine : true)
+  );
   const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useEffect(() => {
+    const handleOnline = () => setIsCloudConnected(true);
+    const handleOffline = () => setIsCloudConnected(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // -------------------------------------------------------------
   // ENTITIES
@@ -543,28 +558,54 @@ export function useSamitiDatabase() {
     []
   );
 
-  return {
-    isSyncing,
-    setIsSyncing,
-    isCloudConnected,
-    fetchEntitiesFromCloud,
-    saveEntityToCloud,
-    deleteEntityFromCloud,
-    fetchEventsFromCloud,
-    saveEventToCloud,
-    fetchDonationsFromCloud,
-    saveDonationToCloud,
-    deleteDonationFromCloud,
-    bulkSaveDonationsToCloud,
-    fetchExpensesFromCloud,
-    saveExpenseToCloud,
-    deleteExpenseFromCloud,
-    fetchHandoversFromCloud,
-    saveHandoverToCloud,
-    fetchStaffFromCloud,
-    saveStaffToCloud,
-    deleteStaffFromCloud,
-    purgeDemoEntitiesFromCloud,
-    subscribeToSamitiRealtime,
-  };
+  return useMemo(
+    () => ({
+      isSyncing,
+      setIsSyncing,
+      isCloudConnected,
+      fetchEntitiesFromCloud,
+      saveEntityToCloud,
+      deleteEntityFromCloud,
+      fetchEventsFromCloud,
+      saveEventToCloud,
+      fetchDonationsFromCloud,
+      saveDonationToCloud,
+      deleteDonationFromCloud,
+      bulkSaveDonationsToCloud,
+      fetchExpensesFromCloud,
+      saveExpenseToCloud,
+      deleteExpenseFromCloud,
+      fetchHandoversFromCloud,
+      saveHandoverToCloud,
+      fetchStaffFromCloud,
+      saveStaffToCloud,
+      deleteStaffFromCloud,
+      purgeDemoEntitiesFromCloud,
+      subscribeToSamitiRealtime,
+    }),
+    [
+      isSyncing,
+      setIsSyncing,
+      isCloudConnected,
+      fetchEntitiesFromCloud,
+      saveEntityToCloud,
+      deleteEntityFromCloud,
+      fetchEventsFromCloud,
+      saveEventToCloud,
+      fetchDonationsFromCloud,
+      saveDonationToCloud,
+      deleteDonationFromCloud,
+      bulkSaveDonationsToCloud,
+      fetchExpensesFromCloud,
+      saveExpenseToCloud,
+      deleteExpenseFromCloud,
+      fetchHandoversFromCloud,
+      saveHandoverToCloud,
+      fetchStaffFromCloud,
+      saveStaffToCloud,
+      deleteStaffFromCloud,
+      purgeDemoEntitiesFromCloud,
+      subscribeToSamitiRealtime,
+    ]
+  );
 }
