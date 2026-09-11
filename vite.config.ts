@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => ({
         background_color: "#FFFFFF",
         display: "standalone",
         orientation: "any",
-        start_url: "/",
+        start_url: "/login?source=pwa",
         scope: "/",
         categories: ["productivity", "government", "utilities"],
         icons: [

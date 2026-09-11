@@ -707,6 +707,323 @@ export type Database = {
           },
         ]
       }
+      samiti_entities: {
+        Row: {
+          created_at: string | null
+          established_year: number | null
+          id: string
+          location: string | null
+          name: string
+          registration_no: string | null
+          tagline: string | null
+          type: string
+          updated_at: string | null
+          upi_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          established_year?: number | null
+          id: string
+          location?: string | null
+          name: string
+          registration_no?: string | null
+          tagline?: string | null
+          type: string
+          updated_at?: string | null
+          upi_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          established_year?: number | null
+          id?: string
+          location?: string | null
+          name?: string
+          registration_no?: string | null
+          tagline?: string | null
+          type?: string
+          updated_at?: string | null
+          upi_id?: string | null
+        }
+        Relationships: []
+      }
+      samiti_events: {
+        Row: {
+          created_at: string | null
+          end_date: string | null
+          entity_id: string
+          fiscal_year: string
+          id: string
+          is_active: boolean | null
+          start_date: string | null
+          target_budget: number | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_date?: string | null
+          entity_id: string
+          fiscal_year: string
+          id: string
+          is_active?: boolean | null
+          start_date?: string | null
+          target_budget?: number | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string | null
+          entity_id?: string
+          fiscal_year?: string
+          id?: string
+          is_active?: boolean | null
+          start_date?: string | null
+          target_budget?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samiti_events_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "samiti_entities"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      samiti_donations: {
+        Row: {
+          accepted_amount: number
+          address1: string | null
+          address2: string | null
+          balance_amount: number
+          caste: string | null
+          category: string
+          collector_name: string | null
+          created_at: string | null
+          date: string
+          event_id: string
+          id: string
+          identity: string | null
+          is_handover_done: boolean | null
+          name: string
+          payment_mode: string
+          phone: string | null
+          receipt_url: string | null
+          received_amount: number
+          remarks: string | null
+          serial_number: number
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_amount?: number
+          address1?: string | null
+          address2?: string | null
+          balance_amount?: number
+          caste?: string | null
+          category: string
+          collector_name?: string | null
+          created_at?: string | null
+          date: string
+          event_id: string
+          id: string
+          identity?: string | null
+          is_handover_done?: boolean | null
+          name: string
+          payment_mode?: string
+          phone?: string | null
+          receipt_url?: string | null
+          received_amount?: number
+          remarks?: string | null
+          serial_number: number
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_amount?: number
+          address1?: string | null
+          address2?: string | null
+          balance_amount?: number
+          caste?: string | null
+          category?: string
+          collector_name?: string | null
+          created_at?: string | null
+          date?: string
+          event_id?: string
+          id?: string
+          identity?: string | null
+          is_handover_done?: boolean | null
+          name?: string
+          payment_mode?: string
+          phone?: string | null
+          receipt_url?: string | null
+          received_amount?: number
+          remarks?: string | null
+          serial_number?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samiti_donations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "samiti_events"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      samiti_expenses: {
+        Row: {
+          amount_paid: number
+          balance_due: number
+          bill_receipt_url: string | null
+          category: string
+          created_at: string | null
+          event_id: string
+          expense_date: string
+          id: string
+          notes: string | null
+          paid_by: string | null
+          payment_mode: string
+          total_amount: number
+          vendor_name: string
+          vendor_phone: string | null
+          voucher_no: string
+        }
+        Insert: {
+          amount_paid?: number
+          balance_due?: number
+          bill_receipt_url?: string | null
+          category: string
+          created_at?: string | null
+          event_id: string
+          expense_date: string
+          id: string
+          notes?: string | null
+          paid_by?: string | null
+          payment_mode?: string
+          total_amount?: number
+          vendor_name: string
+          vendor_phone?: string | null
+          voucher_no: string
+        }
+        Update: {
+          amount_paid?: number
+          balance_due?: number
+          bill_receipt_url?: string | null
+          category?: string
+          created_at?: string | null
+          event_id?: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          paid_by?: string | null
+          payment_mode?: string
+          total_amount?: number
+          vendor_name?: string
+          vendor_phone?: string | null
+          voucher_no?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samiti_expenses_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "samiti_events"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      samiti_cash_handovers: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          event_id: string
+          handed_at: string | null
+          id: string
+          notes: string | null
+          status: string
+          volunteer_name: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          event_id: string
+          handed_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          volunteer_name: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          event_id?: string
+          handed_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          volunteer_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samiti_cash_handovers_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "samiti_events"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      master_staff: {
+        Row: {
+          avatar_color: string | null
+          created_at: string | null
+          designation: string | null
+          email: string | null
+          id: string
+          joined_date: string
+          name: string
+          password_hash: string | null
+          phone: string
+          primary_role: string
+          status: string
+          username: string
+          workspace_permissions: Json
+        }
+        Insert: {
+          avatar_color?: string | null
+          created_at?: string | null
+          designation?: string | null
+          email?: string | null
+          id: string
+          joined_date?: string
+          name: string
+          password_hash?: string | null
+          phone: string
+          primary_role: string
+          status?: string
+          username: string
+          workspace_permissions?: Json
+        }
+        Update: {
+          avatar_color?: string | null
+          created_at?: string | null
+          designation?: string | null
+          email?: string | null
+          id?: string
+          joined_date?: string
+          name?: string
+          password_hash?: string | null
+          phone?: string
+          primary_role?: string
+          status?: string
+          username?: string
+          workspace_permissions?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       candidate_profile_public: {

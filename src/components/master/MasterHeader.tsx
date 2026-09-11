@@ -68,7 +68,7 @@ export const MasterHeader: React.FC<MasterHeaderProps> = ({
   searchQuery,
   setSearchQuery,
 }) => {
-  const { mainWorkspace } = useSamiti();
+  const { mainWorkspace, isCloudConnected, isSyncing, syncWithCloud } = useSamiti();
   const currentInfo = SECTION_TITLES[activeSection] || SECTION_TITLES.workspaces;
 
   return (
@@ -97,10 +97,29 @@ export const MasterHeader: React.FC<MasterHeaderProps> = ({
                 <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight truncate">
                   {currentInfo.title}
                 </h1>
-                <span className="hidden xl:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  LIVE SYNC
-                </span>
+                <button
+                  type="button"
+                  onClick={() => syncWithCloud()}
+                  className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
+                    isSyncing
+                      ? 'bg-amber-100 text-amber-800 border-amber-300'
+                      : isCloudConnected
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
+                      : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                  }`}
+                  title="Click to manually refresh and sync with Supabase Cloud Database"
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isSyncing
+                        ? 'bg-amber-500 animate-spin'
+                        : isCloudConnected
+                        ? 'bg-emerald-500 animate-pulse'
+                        : 'bg-slate-400'
+                    }`}
+                  />
+                  {isSyncing ? 'SYNCING...' : isCloudConnected ? 'SUPABASE LIVE' : 'OFFLINE CACHE'}
+                </button>
               </div>
             </div>
             <p className="text-[11px] text-muted-foreground truncate hidden sm:block mt-0.5">

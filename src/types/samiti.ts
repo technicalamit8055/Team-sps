@@ -83,9 +83,11 @@ export interface SamitiDonation {
   isHandoverDone?: boolean; // Cash handed over to Treasurer
   date: string; // Date of entry
   remarks?: string;
+  receiptUrl?: string; // Digital / cloud receipt URL
   createdAt: string;
   updatedAt: string;
 }
+
 
 export type ExpenseCategory = 
   | 'pandal_tent' 

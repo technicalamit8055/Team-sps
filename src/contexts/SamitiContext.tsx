@@ -18,6 +18,7 @@ import {
   DEFAULT_MODULE_ACCESS_MAP,
 } from '@/types/master';
 import { toast } from 'sonner';
+import { useSamitiDatabase } from '@/hooks/useSamitiDatabase';
 
 const DEFAULT_ENTITIES: MasterEntity[] = [
   {
@@ -554,6 +555,9 @@ interface SamitiContextType {
   resetToSampleData: () => void;
   isCollectorMode: boolean;
   currentStaffMember: MasterStaff | null;
+  isCloudConnected: boolean;
+  isSyncing: boolean;
+  syncWithCloud: () => Promise<void>;
 }
 
 const SamitiContext = createContext<SamitiContextType | undefined>(undefined);
@@ -571,6 +575,7 @@ const STORAGE_KEYS = {
 
 export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuth();
+  const db = useSamitiDatabase();
   // Load Entities safely
   const [entities, setEntities] = useState<MasterEntity[]>(() => {
     try {
@@ -791,6 +796,167 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [staffList]);
 
+  // Cloud Synchronization
+  const syncWithCloud = useCallback(async () => {
+    db.setIsSyncing(true);
+    try {
+      const [cloudEntities, cloudEvents, cloudDonations, cloudExpenses, cloudStaff] = await Promise.all([
+        db.fetchEntitiesFromCloud(),
+        db.fetchEventsFromCloud(),
+        db.fetchDonationsFromCloud(),
+        db.fetchExpensesFromCloud(),
+        db.fetchStaffFromCloud(),
+      ]);
+
+      if (cloudEntities && cloudEntities.length > 0) {
+        setEntities(cloudEntities);
+      } else if (cloudEntities && cloudEntities.length === 0) {
+        // First run on new database - auto-seed initial data to cloud
+        for (const ent of DEFAULT_ENTITIES) {
+          await db.saveEntityToCloud(ent);
+        }
+        for (const evt of DEFAULT_EVENTS) {
+          await db.saveEventToCloud(evt);
+        }
+        for (const don of SEED_DONATIONS) {
+          await db.saveDonationToCloud(don);
+        }
+        for (const exp of SEED_EXPENSES) {
+          await db.saveExpenseToCloud(exp);
+        }
+        for (const st of DEFAULT_STAFF_LIST) {
+          await db.saveStaffToCloud(st);
+        }
+      }
+
+      if (cloudEvents && cloudEvents.length > 0) {
+        setEvents(cloudEvents);
+      }
+      if (cloudDonations && cloudDonations.length > 0) {
+        setDonations(cloudDonations);
+      }
+      if (cloudExpenses && cloudExpenses.length > 0) {
+        setExpenses(cloudExpenses);
+      }
+      if (cloudStaff && cloudStaff.length > 0) {
+        setStaffList(cloudStaff);
+      }
+    } catch (e) {
+      console.warn('Sync with cloud failed:', e);
+    } finally {
+      db.setIsSyncing(false);
+    }
+  }, [db]);
+
+  useEffect(() => {
+    syncWithCloud();
+
+    const unsubscribe = db.subscribeToSamitiRealtime((payload) => {
+      const { table, eventType, newRow, oldRow } = payload;
+      if (table === 'samiti_donations') {
+        if (eventType === 'INSERT' && newRow) {
+          setDonations(prev => {
+            if (prev.some(d => d.id === newRow.id)) return prev;
+            return [...prev, {
+              id: newRow.id,
+              eventId: newRow.event_id,
+              serialNumber: newRow.serial_number,
+              category: newRow.category,
+              name: newRow.name,
+              identity: newRow.identity || '',
+              caste: newRow.caste || '',
+              address1: newRow.address1 || '',
+              address2: newRow.address2 || '',
+              phone: newRow.phone || '',
+              acceptedAmount: Number(newRow.accepted_amount) || 0,
+              receivedAmount: Number(newRow.received_amount) || 0,
+              balanceAmount: Number(newRow.balance_amount) || 0,
+              paymentMode: newRow.payment_mode,
+              collectorName: newRow.collector_name || undefined,
+              isHandoverDone: newRow.is_handover_done ?? false,
+              date: newRow.date,
+              remarks: newRow.remarks || undefined,
+              receiptUrl: newRow.receipt_url || undefined,
+              createdAt: newRow.created_at || new Date().toISOString(),
+              updatedAt: newRow.updated_at || new Date().toISOString(),
+            }];
+          });
+        } else if (eventType === 'UPDATE' && newRow) {
+          setDonations(prev => prev.map(d => d.id === newRow.id ? {
+            ...d,
+            eventId: newRow.event_id,
+            serialNumber: newRow.serial_number,
+            category: newRow.category,
+            name: newRow.name,
+            identity: newRow.identity || '',
+            caste: newRow.caste || '',
+            address1: newRow.address1 || '',
+            address2: newRow.address2 || '',
+            phone: newRow.phone || '',
+            acceptedAmount: Number(newRow.accepted_amount) || 0,
+            receivedAmount: Number(newRow.received_amount) || 0,
+            balanceAmount: Number(newRow.balance_amount) || 0,
+            paymentMode: newRow.payment_mode,
+            collectorName: newRow.collector_name || undefined,
+            isHandoverDone: newRow.is_handover_done ?? false,
+            date: newRow.date,
+            remarks: newRow.remarks || undefined,
+            receiptUrl: newRow.receipt_url || undefined,
+            updatedAt: newRow.updated_at || new Date().toISOString(),
+          } : d));
+        } else if (eventType === 'DELETE' && oldRow) {
+          setDonations(prev => prev.filter(d => d.id !== oldRow.id));
+        }
+      } else if (table === 'samiti_expenses') {
+        if (eventType === 'INSERT' && newRow) {
+          setExpenses(prev => {
+            if (prev.some(e => e.id === newRow.id)) return prev;
+            return [...prev, {
+              id: newRow.id,
+              eventId: newRow.event_id,
+              voucherNo: newRow.voucher_no,
+              category: newRow.category,
+              vendorName: newRow.vendor_name,
+              vendorPhone: newRow.vendor_phone || undefined,
+              totalAmount: Number(newRow.total_amount) || 0,
+              amountPaid: Number(newRow.amount_paid) || 0,
+              balanceDue: Number(newRow.balance_due) || 0,
+              paymentMode: newRow.payment_mode,
+              expenseDate: newRow.expense_date,
+              paidBy: newRow.paid_by || undefined,
+              billReceiptUrl: newRow.bill_receipt_url || undefined,
+              notes: newRow.notes || undefined,
+              createdAt: newRow.created_at || new Date().toISOString(),
+            }];
+          });
+        } else if (eventType === 'UPDATE' && newRow) {
+          setExpenses(prev => prev.map(e => e.id === newRow.id ? {
+            ...e,
+            eventId: newRow.event_id,
+            voucherNo: newRow.voucher_no,
+            category: newRow.category,
+            vendorName: newRow.vendor_name,
+            vendorPhone: newRow.vendor_phone || undefined,
+            totalAmount: Number(newRow.total_amount) || 0,
+            amountPaid: Number(newRow.amount_paid) || 0,
+            balanceDue: Number(newRow.balance_due) || 0,
+            paymentMode: newRow.payment_mode,
+            expenseDate: newRow.expense_date,
+            paidBy: newRow.paid_by || undefined,
+            billReceiptUrl: newRow.bill_receipt_url || undefined,
+            notes: newRow.notes || undefined,
+          } : e));
+        } else if (eventType === 'DELETE' && oldRow) {
+          setExpenses(prev => prev.filter(e => e.id !== oldRow.id));
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [syncWithCloud, db]);
+
   // Donations filtered for the active event safely
   const currentDonations = useMemo(() => {
     const donList = Array.isArray(donations) ? donations : SEED_DONATIONS;
@@ -889,14 +1055,16 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setDonations(prev => [...prev, newDonation]);
+      db.saveDonationToCloud(newDonation);
       toast.success(`दान प्रविष्टि क्रमांक #${serialNumber} सफलतापूर्वक दर्ज की गई!`);
       return newDonation;
     },
-    [currentDonations]
+    [currentDonations, db]
   );
 
   // Update donation
   const updateDonation = useCallback((id: string, updates: Partial<SamitiDonation>) => {
+    let updatedItem: SamitiDonation | null = null;
     setDonations(prev =>
       prev.map(item => {
         if (item.id === id) {
@@ -904,18 +1072,22 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const received = updates.receivedAmount !== undefined ? updates.receivedAmount : item.receivedAmount;
           const balanceAmount = Math.max(0, accepted - received);
 
-          return {
+          updatedItem = {
             ...item,
             ...updates,
             balanceAmount,
             updatedAt: new Date().toISOString(),
           };
+          return updatedItem;
         }
         return item;
       })
     );
+    if (updatedItem) {
+      db.saveDonationToCloud(updatedItem);
+    }
     toast.success('दान प्रविष्टि सफलतापूर्वक अपडेट की गई!');
-  }, []);
+  }, [db]);
 
   // Delete donation
   const deleteDonation = useCallback(
@@ -925,9 +1097,10 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return;
       }
       setDonations(prev => prev.filter(item => item.id !== id));
+      db.deleteDonationFromCloud(id);
       toast.info('दान प्रविष्टि हटा दी गई!');
     },
-    [isCollectorMode]
+    [isCollectorMode, db]
   );
 
   // Add expense
@@ -945,14 +1118,16 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
 
       setExpenses(prev => [...prev, newExpense]);
+      db.saveExpenseToCloud(newExpense);
       toast.success(`खर्चा वाउचर #${voucherNo} सफलतापूर्वक दर्ज हुआ!`);
       return newExpense;
     },
-    [currentExpenses.length]
+    [currentExpenses.length, db]
   );
 
   // Update expense
   const updateExpense = useCallback((id: string, updates: Partial<SamitiExpense>) => {
+    let updatedExp: SamitiExpense | null = null;
     setExpenses(prev =>
       prev.map(item => {
         if (item.id === id) {
@@ -960,23 +1135,28 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const paid = updates.amountPaid !== undefined ? updates.amountPaid : item.amountPaid;
           const balanceDue = Math.max(0, total - paid);
 
-          return {
+          updatedExp = {
             ...item,
             ...updates,
             balanceDue,
           };
+          return updatedExp;
         }
         return item;
       })
     );
+    if (updatedExp) {
+      db.saveExpenseToCloud(updatedExp);
+    }
     toast.success('खर्चा वाउचर अपडेट किया गया!');
-  }, []);
+  }, [db]);
 
   // Delete expense
   const deleteExpense = useCallback((id: string) => {
     setExpenses(prev => prev.filter(item => item.id !== id));
+    db.deleteExpenseFromCloud(id);
     toast.info('खर्चा वाउचर हटा दिया गया!');
-  }, []);
+  }, [db]);
 
   // Import donations from CSV/Excel
   const importDonations = useCallback(
@@ -996,10 +1176,11 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
 
       setDonations(prev => [...prev, ...toInsert]);
+      db.bulkSaveDonationsToCloud(toInsert);
       toast.success(`${toInsert.length} दान प्रविष्टियाँ सफलतापूर्वक इम्पोर्ट की गईं!`);
       return toInsert.length;
     },
-    [currentDonations]
+    [currentDonations, db]
   );
 
   // Add entity
@@ -1020,18 +1201,30 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setEntities(prev => [...prev, newEntity]);
       setEvents(prev => [...prev, newEvent]);
+      db.saveEntityToCloud(newEntity);
+      db.saveEventToCloud(newEvent);
       setCurrentEntityId(newEntityId);
       setCurrentEventId(newEventId);
       toast.success(`नया संगठन/समिति "${newEntity.name}" तैयार हो गया!`);
     },
-    []
+    [db]
   );
 
   // Update entity
   const updateEntity = useCallback((id: string, updates: Partial<MasterEntity>) => {
-    setEntities(prev => prev.map(e => (e.id === id ? { ...e, ...updates } : e)));
+    let updated: MasterEntity | null = null;
+    setEntities(prev => prev.map(e => {
+      if (e.id === id) {
+        updated = { ...e, ...updates };
+        return updated;
+      }
+      return e;
+    }));
+    if (updated) {
+      db.saveEntityToCloud(updated);
+    }
     toast.success('कार्यक्षेत्र जानकारी सफलतापूर्वक अपडेट की गई!');
-  }, []);
+  }, [db]);
 
   // Delete entity
   const deleteEntity = useCallback(
@@ -1057,6 +1250,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setEvents(remainingEvents);
       setDonations(remainingDonations);
       setExpenses(remainingExpenses);
+      db.deleteEntityFromCloud(entityId);
 
       if (currentEntityId === entityId) {
         setCurrentEntityId(remainingEntities[0].id);
@@ -1069,17 +1263,19 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         prev.map(staff => {
           if (!staff.workspacePermissions[entityId]) return staff;
           const { [entityId]: removed, ...restPermissions } = staff.workspacePermissions;
-          return {
+          const updatedStaff = {
             ...staff,
             workspacePermissions: restPermissions,
           };
+          db.saveStaffToCloud(updatedStaff);
+          return updatedStaff;
         })
       );
 
       toast.success(`कार्यक्षेत्र "${targetEntity?.name || entityId}" और उसका समस्त डेटा हटा दिया गया!`);
       return true;
     },
-    [mainWorkspaceId, entities, events, donations, expenses, currentEntityId]
+    [mainWorkspaceId, entities, events, donations, expenses, currentEntityId, db]
   );
 
   // Add staff
@@ -1092,21 +1288,33 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     setStaffList(prev => [...prev, newStaff]);
+    db.saveStaffToCloud(newStaff);
     toast.success(`कार्यकर्ता/स्टाफ "${newStaff.name}" सफलतापूर्वक जोड़ा गया!`);
     return newStaff;
-  }, []);
+  }, [db]);
 
   // Update staff
   const updateStaff = useCallback((id: string, updates: Partial<MasterStaff>) => {
-    setStaffList(prev => prev.map(s => (s.id === id ? { ...s, ...updates } : s)));
+    let updated: MasterStaff | null = null;
+    setStaffList(prev => prev.map(s => {
+      if (s.id === id) {
+        updated = { ...s, ...updates };
+        return updated;
+      }
+      return s;
+    }));
+    if (updated) {
+      db.saveStaffToCloud(updated);
+    }
     toast.success('कार्यकर्ता विवरण अपडेट किया गया!');
-  }, []);
+  }, [db]);
 
   // Delete staff
   const deleteStaff = useCallback((id: string) => {
     setStaffList(prev => prev.filter(s => s.id !== id));
+    db.deleteStaffFromCloud(id);
     toast.info('कार्यकर्ता को सिस्टम से हटा दिया गया!');
-  }, []);
+  }, [db]);
 
   // Update staff permission for specific workspace
   const updateStaffPermission = useCallback(
@@ -1127,7 +1335,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ...(modules || {}),
           };
 
-          return {
+          const updatedStaff = {
             ...staff,
             workspacePermissions: {
               ...staff.workspacePermissions,
@@ -1138,11 +1346,13 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               },
             },
           };
+          db.saveStaffToCloud(updatedStaff);
+          return updatedStaff;
         })
       );
       toast.success('कार्यक्षेत्र अनुमति व पहुंच अधिकार अपडेट किए गए!');
     },
-    []
+    [db]
   );
 
   // Grant all workspaces
@@ -1159,15 +1369,17 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               modules: { ...DEFAULT_MODULE_ACCESS_MAP[accessLevel] },
             };
           });
-          return {
+          const updatedStaff = {
             ...staff,
             workspacePermissions: newPerms,
           };
+          db.saveStaffToCloud(updatedStaff);
+          return updatedStaff;
         })
       );
       toast.success(`सभी ${entities.length} कार्यक्षेत्रों में पहुंच अधिकार प्रदान किए गए!`);
     },
-    [entities]
+    [entities, db]
   );
 
   // Reset to sample data
@@ -1217,6 +1429,9 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         resetToSampleData,
         isCollectorMode,
         currentStaffMember,
+        isCloudConnected: db.isCloudConnected,
+        isSyncing: db.isSyncing,
+        syncWithCloud,
       }}
     >
       {children}

@@ -168,11 +168,27 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Root route handler: Redirects directly to /login when opened in PWA mode
+function RootRoute() {
+  const isStandalone = typeof window !== 'undefined' && (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as unknown as { standalone?: boolean }).standalone === true ||
+    document.referrer.includes('android-app://') ||
+    window.location.search.includes('source=pwa')
+  );
+
+  if (isStandalone) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <LandingPage />;
+}
+
 const AppRoutes = () => (
   <Suspense fallback={<PageLoader />}>
     <Routes>
-      {/* Public landing page - no auth required */}
-      <Route path="/" element={<LandingPage />} />
+      {/* Public landing page in browser; directly redirects to /login in PWA */}
+      <Route path="/" element={<RootRoute />} />
 
       <Route path="/login" element={
         <PublicRoute>
