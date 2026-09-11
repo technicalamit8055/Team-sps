@@ -402,11 +402,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE
   public.activities;
 
 -- 9. INITIAL SEED DATA (FESTIVALS, CAMPAIGN & INITIAL RECORDS)
+-- Clean up any obsolete demo entities if present
+DELETE FROM public.samiti_entities WHERE id NOT IN ('ent-durga-narayanpur', 'ent-election-2026');
+DELETE FROM public.samiti_events WHERE entity_id NOT IN ('ent-durga-narayanpur', 'ent-election-2026');
+
 INSERT INTO public.samiti_entities (id, name, type, upi_id, tagline, location, established_year)
 VALUES
   ('ent-durga-narayanpur', 'श्री दुर्गा पूजा समिति, नारायणपुर', 'festival_samiti', 'durgapuja.narayanpur@upi', 'माँ दुर्गा की असीम कृपा आप और आपके परिवार पर सदा बनी रहे।', 'मुख्य चौक, नारायणपुर', 1985),
-  ('ent-ganesh-utsav', 'श्री गणेश उत्सव मंडल, नारायणपुर', 'festival_samiti', 'ganeshutsav@upi', 'गणपति बप्पा मोरया! रिद्धि-सिद्धि के दाता की जय।', 'स्टेशन रोड, नारायणपुर', 2002),
-  ('ent-vyapar-mandal', 'नारायणपुर व्यापार मंडल वार्षिक महोत्सव', 'business', 'vyapar.narayanpur@upi', 'व्यापार वृद्धि एवं सामाजिक सहयोग महाकुंभ', 'कमर्शियल कॉम्प्लेक्स, नारायणपुर', 2015),
   ('ent-election-2026', '🗳️ चुनाव अभियान प्रबंधन (Victory OS Election Command)', 'election', 'campaign.victory@upi', 'मिशन विजय 2026 • बूथ प्रबंधन, मतदाता CRM, वॉर रूम एवं रणनीतिकार AI', 'नारायणपुर विधानसभा क्षेत्र', 2026)
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
@@ -417,9 +419,7 @@ ON CONFLICT (id) DO UPDATE SET
 INSERT INTO public.samiti_events (id, entity_id, title, fiscal_year, target_budget, start_date, end_date, is_active)
 VALUES
   ('evt-durga-2026', 'ent-durga-narayanpur', 'श्री दुर्गा पूजा महोत्सव 2026 (भव्य 41वाँ वार्षिकोत्सव)', '2026-27', 550000, '2026-10-15', '2026-10-24', true),
-  ('evt-election-2026', 'ent-election-2026', 'विधानसभा चुनाव अभियान 2026 (War Room & Voter CRM)', '2026-27', 2500000, '2026-09-01', '2026-11-30', true),
-  ('evt-ganesh-2026', 'ent-ganesh-utsav', 'श्री गणेश चतुर्थी महोत्सव 2026', '2026-27', 250000, '2026-09-15', '2026-09-25', true),
-  ('evt-trade-2026', 'ent-vyapar-mandal', 'दीपावली व्यापार मेला एवं सांस्कृतिक प्रदर्शनी 2026', '2026-27', 400000, '2026-10-28', '2026-11-02', true)
+  ('evt-election-2026', 'ent-election-2026', 'विधानसभा चुनाव अभियान 2026 (War Room & Voter CRM)', '2026-27', 2500000, '2026-09-01', '2026-11-30', true)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.samiti_donations (id, event_id, serial_number, category, name, identity, caste, address1, address2, phone, accepted_amount, received_amount, balance_amount, payment_mode, collector_name, is_handover_done, date, remarks)

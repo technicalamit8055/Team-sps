@@ -56,11 +56,13 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
     addEntity,
     updateEntity,
     deleteEntity,
+    resetMasterDemoData,
     events,
     summary,
   } = useSamiti();
 
   const [filterType, setFilterType] = useState<string>('all');
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 
   // Create workspace state
   const [newName, setNewName] = useState('');
@@ -261,14 +263,27 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
           })}
         </div>
 
-        <Button
-          size="sm"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="btn-saffron text-xs h-8 px-3 rounded-xl shadow-xs shrink-0 flex items-center gap-1.5 font-semibold"
-        >
-          <Plus className="w-4 h-4" />
-          <span>+ Add Unit</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsResetDialogOpen(true)}
+            className="text-xs h-8 px-2.5 sm:px-3 rounded-xl border-amber-300 text-amber-900 bg-amber-50/80 hover:bg-amber-100 hover:text-amber-950 font-semibold shadow-none flex items-center gap-1.5"
+            title="Reset master demo data and purge from cloud database"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+            <span>रीसेट डेमो डेटा</span>
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="btn-saffron text-xs h-8 px-3 rounded-xl shadow-xs shrink-0 flex items-center gap-1.5 font-semibold"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Add Unit</span>
+          </Button>
+        </div>
       </div>
 
       {/* Workspace Cards Grid */}
@@ -688,6 +703,52 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
                 Delete Unit
               </AlertDialogAction>
             )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Master Demo Data Confirmation Dialog */}
+      <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+        <AlertDialogContent className="rounded-2xl max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-900 text-base sm:text-lg">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              मास्टर डेमो डेटा रीसेट व क्लाउड पर्ज
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-600 text-xs sm:text-sm space-y-3 pt-2">
+              <p>
+                क्या आप मास्टर OS और क्लाउड डेटाबेस से सभी पुराने डेमो डेटा हटाना चाहते हैं?
+              </p>
+              <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-emerald-900 text-xs font-medium space-y-1">
+                <span className="font-bold text-emerald-800 flex items-center gap-1">
+                  🛡️ सुरक्षित रखे जाएंगे:
+                </span>
+                <ul className="list-disc list-inside space-y-0.5 pl-1">
+                  <li>श्री दुर्गा पूजा समिति, नारायणपुर (समस्त चंदा व खर्चा रिकॉर्ड)</li>
+                  <li>चुनाव अभियान प्रबंधन (Victory OS Election Command)</li>
+                </ul>
+              </div>
+              <div className="bg-rose-50 p-3 rounded-xl border border-rose-200 text-rose-900 text-xs font-medium space-y-1">
+                <span className="font-bold text-rose-800 flex items-center gap-1">
+                  🗑️ क्लाउड डेटाबेस से हटाए जाएंगे:
+                </span>
+                <ul className="list-disc list-inside space-y-0.5 pl-1">
+                  <li>श्री गणेश उत्सव मंडल एवं व्यापार मंडल के समस्त डेमो डेटा</li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel className="text-xs rounded-xl">रद्द करें</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                await resetMasterDemoData();
+                setIsResetDialogOpen(false);
+              }}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl"
+            >
+              हाँ, डेमो डेटा हटाएं व रीसेट करें
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

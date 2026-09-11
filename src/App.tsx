@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,13 +9,13 @@ import { SamitiProvider } from "@/contexts/SamitiContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ReloadPrompt } from "@/components/pwa/ReloadPrompt";
 
-// Lazy load pages for code splitting
-const Index = lazy(() => import("./pages/Index"));
-const Login = lazy(() => import("./pages/Login"));
-const JantaPortal = lazy(() => import("./pages/JantaPortal"));
-const LandingPage = lazy(() => import("./pages/LandingPage"));
-const MasterOS = lazy(() => import("./pages/MasterOS"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Static page imports for rock-solid reliability across HMR, dev servers, and PWA
+import Index from "./pages/Index";
+import Login from "./pages/Login";
+import JantaPortal from "./pages/JantaPortal";
+import LandingPage from "./pages/LandingPage";
+import MasterOS from "./pages/MasterOS";
+import NotFound from "./pages/NotFound";
 
 // Loading fallback component
 const PageLoader = () => (

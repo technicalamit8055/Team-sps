@@ -385,6 +385,104 @@ export function useSamitiDatabase() {
   }, []);
 
   // -------------------------------------------------------------
+  // CASH HANDOVERS
+  // -------------------------------------------------------------
+  const fetchHandoversFromCloud = useCallback(async (): Promise<CashHandoverRecord[] | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('samiti_cash_handovers')
+        .select('*')
+        .order('handed_at', { ascending: false });
+
+      if (error) throw error;
+      if (!data) return [];
+
+      return data.map(item => ({
+        id: item.id,
+        eventId: item.event_id,
+        volunteerName: item.volunteer_name,
+        amount: Number(item.amount) || 0,
+        status: item.status as any,
+        handedAt: item.handed_at,
+        approvedAt: item.approved_at || undefined,
+        approvedBy: item.approved_by || undefined,
+        notes: item.notes || undefined,
+      }));
+    } catch (err: any) {
+      console.warn('Could not fetch handovers from Supabase:', err.message);
+      return null;
+    }
+  }, []);
+
+  const saveHandoverToCloud = useCallback(async (record: CashHandoverRecord) => {
+    try {
+      const { error } = await supabase.from('samiti_cash_handovers').upsert({
+        id: record.id,
+        event_id: record.eventId,
+        volunteer_name: record.volunteerName,
+        amount: record.amount,
+        status: record.status,
+        handed_at: record.handedAt,
+        approved_at: record.approvedAt || null,
+        approved_by: record.approvedBy || null,
+        notes: record.notes || null,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.warn('Failed to upsert handover to Supabase:', err.message);
+    }
+  }, []);
+
+  // -------------------------------------------------------------
+  // PURGE DEMO ENTITIES (Except Durga Puja Unit & Election Command)
+  // -------------------------------------------------------------
+  const purgeDemoEntitiesFromCloud = useCallback(async (keepEntityIds: string[] = ['ent-durga-narayanpur', 'ent-election-2026']) => {
+    try {
+      setIsSyncing(true);
+      const { data: allEntities } = await supabase.from('samiti_entities').select('id');
+      if (allEntities && allEntities.length > 0) {
+        const toDeleteIds = allEntities
+          .map(e => e.id)
+          .filter(id => !keepEntityIds.includes(id));
+
+        if (toDeleteIds.length > 0) {
+          await supabase.from('samiti_events').delete().in('entity_id', toDeleteIds);
+          await supabase.from('samiti_entities').delete().in('id', toDeleteIds);
+        }
+      }
+
+      // Clean staff permissions
+      const { data: staffList } = await supabase.from('master_staff').select('*');
+      if (staffList && staffList.length > 0) {
+        for (const staff of staffList) {
+          const perms = (staff.workspace_permissions as any) || {};
+          let changed = false;
+          const cleanPerms: Record<string, any> = {};
+          for (const [wsId, val] of Object.entries(perms)) {
+            if (keepEntityIds.includes(wsId)) {
+              cleanPerms[wsId] = val;
+            } else {
+              changed = true;
+            }
+          }
+          if (changed) {
+            await supabase
+              .from('master_staff')
+              .update({ workspace_permissions: cleanPerms })
+              .eq('id', staff.id);
+          }
+        }
+      }
+      return true;
+    } catch (err: any) {
+      console.warn('Failed to purge demo entities from cloud:', err);
+      return false;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
+
+  // -------------------------------------------------------------
   // REALTIME SUBSCRIPTION
   // -------------------------------------------------------------
   const subscribeToSamitiRealtime = useCallback(
@@ -414,6 +512,11 @@ export function useSamitiDatabase() {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'samiti_entities' },
           payload => onRemoteChange({ table: 'samiti_entities', eventType: payload.eventType, newRow: payload.new, oldRow: payload.old })
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'samiti_cash_handovers' },
+          payload => onRemoteChange({ table: 'samiti_cash_handovers', eventType: payload.eventType, newRow: payload.new, oldRow: payload.old })
         )
         .on(
           'postgres_changes',
@@ -456,9 +559,12 @@ export function useSamitiDatabase() {
     fetchExpensesFromCloud,
     saveExpenseToCloud,
     deleteExpenseFromCloud,
+    fetchHandoversFromCloud,
+    saveHandoverToCloud,
     fetchStaffFromCloud,
     saveStaffToCloud,
     deleteStaffFromCloud,
+    purgeDemoEntitiesFromCloud,
     subscribeToSamitiRealtime,
   };
 }

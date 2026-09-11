@@ -31,24 +31,6 @@ const DEFAULT_ENTITIES: MasterEntity[] = [
     establishedYear: 1985,
   },
   {
-    id: 'ent-ganesh-utsav',
-    name: 'श्री गणेश उत्सव मंडल, नारायणपुर',
-    type: 'festival_samiti',
-    upiId: 'ganeshutsav@upi',
-    tagline: 'गणपति बप्पा मोरया! रिद्धि-सिद्धि के दाता की जय।',
-    location: 'स्टेशन रोड, नारायणपुर',
-    establishedYear: 2002,
-  },
-  {
-    id: 'ent-vyapar-mandal',
-    name: 'नारायणपुर व्यापार मंडल वार्षिक महोत्सव',
-    type: 'business',
-    upiId: 'vyapar.narayanpur@upi',
-    tagline: 'व्यापार वृद्धि एवं सामाजिक सहयोग महाकुंभ',
-    location: 'कमर्शियल कॉम्प्लेक्स, नारायणपुर',
-    establishedYear: 2015,
-  },
-  {
     id: 'ent-election-2026',
     name: '🗳️ चुनाव अभियान प्रबंधन (Victory OS Election Command)',
     type: 'election',
@@ -78,26 +60,6 @@ const DEFAULT_EVENTS: SamitiEvent[] = [
     targetBudget: 2500000,
     startDate: '2026-09-01',
     endDate: '2026-11-30',
-    isActive: true,
-  },
-  {
-    id: 'evt-ganesh-2026',
-    entityId: 'ent-ganesh-utsav',
-    title: 'श्री गणेश चतुर्थी महोत्सव 2026',
-    fiscalYear: '2026-27',
-    targetBudget: 250000,
-    startDate: '2026-09-15',
-    endDate: '2026-09-25',
-    isActive: true,
-  },
-  {
-    id: 'evt-trade-2026',
-    entityId: 'ent-vyapar-mandal',
-    title: 'दीपावली व्यापार मेला एवं सांस्कृतिक प्रदर्शनी 2026',
-    fiscalYear: '2026-27',
-    targetBudget: 400000,
-    startDate: '2026-10-28',
-    endDate: '2026-11-02',
     isActive: true,
   },
 ];
@@ -387,16 +349,6 @@ const DEFAULT_STAFF_LIST: MasterStaff[] = [
         accessLevel: 'full_control',
         modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
       },
-      'ent-ganesh-utsav': {
-        workspaceId: 'ent-ganesh-utsav',
-        accessLevel: 'full_control',
-        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
-      },
-      'ent-vyapar-mandal': {
-        workspaceId: 'ent-vyapar-mandal',
-        accessLevel: 'full_control',
-        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
-      },
     },
   },
   {
@@ -414,16 +366,6 @@ const DEFAULT_STAFF_LIST: MasterStaff[] = [
         workspaceId: 'ent-durga-narayanpur',
         accessLevel: 'full_control',
         modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
-      },
-      'ent-vyapar-mandal': {
-        workspaceId: 'ent-vyapar-mandal',
-        accessLevel: 'full_control',
-        modules: { ...DEFAULT_MODULE_ACCESS_MAP.full_control },
-      },
-      'ent-ganesh-utsav': {
-        workspaceId: 'ent-ganesh-utsav',
-        accessLevel: 'editor',
-        modules: { ...DEFAULT_MODULE_ACCESS_MAP.editor },
       },
       'ent-election-2026': {
         workspaceId: 'ent-election-2026',
@@ -513,8 +455,8 @@ const DEFAULT_STAFF_LIST: MasterStaff[] = [
         accessLevel: 'editor',
         modules: { ...DEFAULT_MODULE_ACCESS_MAP.editor },
       },
-      'ent-ganesh-utsav': {
-        workspaceId: 'ent-ganesh-utsav',
+      'ent-durga-narayanpur': {
+        workspaceId: 'ent-durga-narayanpur',
         accessLevel: 'viewer',
         modules: { ...DEFAULT_MODULE_ACCESS_MAP.viewer },
       },
@@ -553,6 +495,7 @@ interface SamitiContextType {
   updateStaffPermission: (staffId: string, workspaceId: string, accessLevel: WorkspaceAccessLevel, modules?: Partial<ModuleAccess>) => void;
   grantAllWorkspaces: (staffId: string, accessLevel: WorkspaceAccessLevel) => void;
   resetToSampleData: () => void;
+  resetMasterDemoData: () => Promise<void>;
   isCollectorMode: boolean;
   currentStaffMember: MasterStaff | null;
   isCloudConnected: boolean;
@@ -948,6 +891,99 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           } : e));
         } else if (eventType === 'DELETE' && oldRow) {
           setExpenses(prev => prev.filter(e => e.id !== oldRow.id));
+        }
+      } else if (table === 'samiti_entities') {
+        if (eventType === 'INSERT' && newRow) {
+          setEntities(prev => {
+            if (prev.some(e => e.id === newRow.id)) return prev;
+            return [...prev, {
+              id: newRow.id,
+              name: newRow.name,
+              type: newRow.type as any,
+              upiId: newRow.upi_id || undefined,
+              tagline: newRow.tagline || undefined,
+              location: newRow.location || undefined,
+              establishedYear: newRow.established_year || undefined,
+            }];
+          });
+        } else if (eventType === 'UPDATE' && newRow) {
+          setEntities(prev => prev.map(e => e.id === newRow.id ? {
+            ...e,
+            name: newRow.name,
+            type: newRow.type as any,
+            upiId: newRow.upi_id || undefined,
+            tagline: newRow.tagline || undefined,
+            location: newRow.location || undefined,
+            establishedYear: newRow.established_year || undefined,
+          } : e));
+        } else if (eventType === 'DELETE' && oldRow) {
+          setEntities(prev => prev.filter(e => e.id !== oldRow.id));
+        }
+      } else if (table === 'samiti_events') {
+        if (eventType === 'INSERT' && newRow) {
+          setEvents(prev => {
+            if (prev.some(e => e.id === newRow.id)) return prev;
+            return [...prev, {
+              id: newRow.id,
+              entityId: newRow.entity_id,
+              title: newRow.title,
+              fiscalYear: newRow.fiscal_year,
+              targetBudget: Number(newRow.target_budget) || 0,
+              startDate: newRow.start_date || undefined,
+              endDate: newRow.end_date || undefined,
+              isActive: newRow.is_active ?? true,
+            }];
+          });
+        } else if (eventType === 'UPDATE' && newRow) {
+          setEvents(prev => prev.map(e => e.id === newRow.id ? {
+            ...e,
+            entityId: newRow.entity_id,
+            title: newRow.title,
+            fiscalYear: newRow.fiscal_year,
+            targetBudget: Number(newRow.target_budget) || 0,
+            startDate: newRow.start_date || undefined,
+            endDate: newRow.end_date || undefined,
+            isActive: newRow.is_active ?? true,
+          } : e));
+        } else if (eventType === 'DELETE' && oldRow) {
+          setEvents(prev => prev.filter(e => e.id !== oldRow.id));
+        }
+      } else if (table === 'master_staff') {
+        if (eventType === 'INSERT' && newRow) {
+          setStaffList(prev => {
+            if (prev.some(s => s.id === newRow.id)) return prev;
+            return [...prev, {
+              id: newRow.id,
+              name: newRow.name,
+              phone: newRow.phone,
+              email: newRow.email || undefined,
+              username: newRow.username,
+              password: newRow.password_hash || undefined,
+              primaryRole: newRow.primary_role as any,
+              designation: newRow.designation || '',
+              status: newRow.status as any,
+              joinedDate: newRow.joined_date,
+              avatarColor: newRow.avatar_color || undefined,
+              workspacePermissions: (newRow.workspace_permissions as any) || {},
+            }];
+          });
+        } else if (eventType === 'UPDATE' && newRow) {
+          setStaffList(prev => prev.map(s => s.id === newRow.id ? {
+            ...s,
+            name: newRow.name,
+            phone: newRow.phone,
+            email: newRow.email || undefined,
+            username: newRow.username,
+            password: newRow.password_hash || undefined,
+            primaryRole: newRow.primary_role as any,
+            designation: newRow.designation || '',
+            status: newRow.status as any,
+            joinedDate: newRow.joined_date,
+            avatarColor: newRow.avatar_color || undefined,
+            workspacePermissions: (newRow.workspace_permissions as any) || {},
+          } : s));
+        } else if (eventType === 'DELETE' && oldRow) {
+          setStaffList(prev => prev.filter(s => s.id !== oldRow.id));
         }
       }
     });
@@ -1382,17 +1418,54 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [entities, db]
   );
 
+  // Reset master demo data (Purge all except Durga Puja Unit and Election Command)
+  const resetMasterDemoData = useCallback(async () => {
+    try {
+      db.setIsSyncing(true);
+      toast.loading('मास्टर डेमो डेटा रीसेट एवं क्लाउड पर्ज जारी है...', { id: 'purge-toast' });
+      
+      // 1. Purge from live Supabase database
+      await db.purgeDemoEntitiesFromCloud(['ent-durga-narayanpur', 'ent-election-2026']);
+      
+      // 2. Reset in-memory state to clean defaults (only Durga Puja & Election Command)
+      setEntities(DEFAULT_ENTITIES);
+      setEvents(DEFAULT_EVENTS);
+      setDonations(SEED_DONATIONS);
+      setExpenses(SEED_EXPENSES);
+      setStaffList(DEFAULT_STAFF_LIST);
+      
+      // 3. Reset active pointers
+      setCurrentEntityId('ent-durga-narayanpur');
+      setCurrentEventId('evt-durga-2026');
+      setMainWorkspaceIdState('ent-election-2026');
+      
+      // 4. Update localStorage
+      try {
+        localStorage.setItem(STORAGE_KEYS.ENTITIES, JSON.stringify(DEFAULT_ENTITIES));
+        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(DEFAULT_EVENTS));
+        localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(DEFAULT_STAFF_LIST));
+        localStorage.setItem(STORAGE_KEYS.DONATIONS, JSON.stringify(SEED_DONATIONS));
+        localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(SEED_EXPENSES));
+        localStorage.setItem(STORAGE_KEYS.SELECTED_ENTITY, 'ent-durga-narayanpur');
+        localStorage.setItem(STORAGE_KEYS.SELECTED_EVENT, 'evt-durga-2026');
+        localStorage.setItem(STORAGE_KEYS.MAIN_WORKSPACE, 'ent-election-2026');
+      } catch (e) {
+        console.warn('LocalStorage save error on reset:', e);
+      }
+      
+      toast.success('समस्त डेमो डेटा हटा दिया गया! केवल दुर्गा पूजा यूनिट और इलेक्शन कमांड सुरक्षित रखे गए हैं।', { id: 'purge-toast' });
+    } catch (err: any) {
+      console.error('Reset master demo data error:', err);
+      toast.error('डेटा रीसेट में त्रुटि आई: ' + err.message, { id: 'purge-toast' });
+    } finally {
+      db.setIsSyncing(false);
+    }
+  }, [db]);
+
   // Reset to sample data
   const resetToSampleData = useCallback(() => {
-    setEntities(DEFAULT_ENTITIES);
-    setEvents(DEFAULT_EVENTS);
-    setDonations(SEED_DONATIONS);
-    setExpenses(SEED_EXPENSES);
-    setStaffList(DEFAULT_STAFF_LIST);
-    setCurrentEntityId(DEFAULT_ENTITIES[0].id);
-    setCurrentEventId(DEFAULT_EVENTS[0].id);
-    toast.success('डेटा को प्रारंभिक नमूना डेटा पर रीसेट कर दिया गया!');
-  }, []);
+    resetMasterDemoData();
+  }, [resetMasterDemoData]);
 
   return (
     <SamitiContext.Provider
@@ -1427,6 +1500,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateStaffPermission,
         grantAllWorkspaces,
         resetToSampleData,
+        resetMasterDemoData,
         isCollectorMode,
         currentStaffMember,
         isCloudConnected: db.isCloudConnected,

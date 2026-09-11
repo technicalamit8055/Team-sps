@@ -94,7 +94,12 @@ export interface DbCampaignSettings {
   constituency: string | null;
 }
 
-// Generic hook for fetching and subscribing to a table
+// Helper to validate UUID
+const isValidUuid = (val: any): boolean => {
+  return typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+};
+
+// Generic hook for fetching and subscribing to a table in real time
 function useSupabaseTable<T>(
   tableName: string,
   orderBy: string = 'created_at',
@@ -102,15 +107,8 @@ function useSupabaseTable<T>(
 ) {
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
 
   const fetchData = useCallback(async () => {
-    if (!user) {
-      setData([]);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const { data: result, error } = await supabase
         .from(tableName as any)
@@ -124,43 +122,40 @@ function useSupabaseTable<T>(
     } finally {
       setIsLoading(false);
     }
-  }, [user, tableName, orderBy, ascending]);
+  }, [tableName, orderBy, ascending]);
 
   useEffect(() => {
     fetchData();
 
     // Set up realtime subscription
-    let channel: RealtimeChannel | null = null;
-    
-    if (user) {
-      channel = supabase
-        .channel(`${tableName}_changes`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: tableName },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              setData(prev => [payload.new as T, ...prev]);
-            } else if (payload.eventType === 'UPDATE') {
-              setData(prev => prev.map(item => 
-                (item as any).id === (payload.new as any).id ? payload.new as T : item
-              ));
-            } else if (payload.eventType === 'DELETE') {
-              setData(prev => prev.filter(item => 
-                (item as any).id !== (payload.old as any).id
-              ));
-            }
+    const channel = supabase
+      .channel(`${tableName}_realtime_${Math.random().toString(36).substring(7)}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: tableName },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setData(prev => {
+              if (prev.some(item => (item as any).id === (payload.new as any).id)) return prev;
+              return [payload.new as T, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setData(prev => prev.map(item => 
+              (item as any).id === (payload.new as any).id ? payload.new as T : item
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setData(prev => prev.filter(item => 
+              (item as any).id !== (payload.old as any).id
+            ));
           }
-        )
-        .subscribe();
-    }
+        }
+      )
+      .subscribe();
 
     return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
+      supabase.removeChannel(channel);
     };
-  }, [user, tableName, fetchData]);
+  }, [tableName, fetchData]);
 
   return { data, isLoading, refetch: fetchData };
 }
@@ -171,18 +166,17 @@ export function useVoters() {
   const { user } = useAuth();
 
   const addVoter = useCallback(async (voter: Partial<Omit<DbVoter, 'id' | 'created_at' | 'has_voted'>> & { name: string }) => {
-    if (!user) return;
-    
+    const createdBy = user && isValidUuid(user.id) ? user.id : null;
     const { error } = await supabase
       .from('voters')
       .insert({
         ...voter,
         has_voted: false,
-        created_by: user.id,
+        created_by: createdBy,
       });
 
     if (error) {
-      toast.error('मतदाता जोड़ने में विफल');
+      toast.error('मतदाता जोड़ने में विफल: ' + error.message);
       console.error(error);
     } else {
       toast.success('मतदाता जोड़ा गया');
@@ -239,18 +233,17 @@ export function useExpenses() {
   const { user } = useAuth();
 
   const addExpense = useCallback(async (expense: Omit<DbExpense, 'id' | 'date' | 'created_by'>) => {
-    if (!user) return;
-    
+    const createdBy = user && isValidUuid(user.id) ? user.id : null;
     const { error } = await supabase
       .from('expenses')
       .insert({
         ...expense,
         date: new Date().toISOString().split('T')[0],
-        created_by: user.id,
+        created_by: createdBy,
       });
 
     if (error) {
-      toast.error('खर्च जोड़ने में विफल');
+      toast.error('खर्च जोड़ने में विफल: ' + error.message);
       console.error(error);
     } else {
       toast.success('खर्च जोड़ा गया');
@@ -281,18 +274,17 @@ export function useTasks() {
   const { user } = useAuth();
 
   const addTask = useCallback(async (task: { title: string; description?: string; assigned_to?: string; ward?: number; due_date?: string }) => {
-    if (!user) return;
-    
+    const createdBy = user && isValidUuid(user.id) ? user.id : null;
     const { error } = await supabase
       .from('tasks')
       .insert({
         ...task,
         is_completed: false,
-        created_by: user.id,
+        created_by: createdBy,
       });
 
     if (error) {
-      toast.error('कार्य जोड़ने में विफल');
+      toast.error('कार्य जोड़ने में विफल: ' + error.message);
       console.error(error);
     } else {
       toast.success('कार्य जोड़ा गया');
@@ -338,17 +330,16 @@ export function useEvents() {
   const { user } = useAuth();
 
   const addEvent = useCallback(async (event: { title: string; description?: string; location?: string; ward?: number; event_date?: string }) => {
-    if (!user) return;
-    
+    const createdBy = user && isValidUuid(user.id) ? user.id : null;
     const { error } = await supabase
       .from('events')
       .insert({
         ...event,
-        created_by: user.id,
+        created_by: createdBy,
       });
 
     if (error) {
-      toast.error('कार्यक्रम जोड़ने में विफल');
+      toast.error('कार्यक्रम जोड़ने में विफल: ' + error.message);
       console.error(error);
     } else {
       toast.success('कार्यक्रम जोड़ा गया');
@@ -425,17 +416,16 @@ export function useInfluencers() {
   const { user } = useAuth();
 
   const addInfluencer = useCallback(async (influencer: Omit<DbInfluencer, 'id'>) => {
-    if (!user) return;
-    
+    const createdBy = user && isValidUuid(user.id) ? user.id : null;
     const { error } = await supabase
       .from('influencers')
       .insert({
         ...influencer,
-        created_by: user.id,
+        created_by: createdBy,
       });
 
     if (error) {
-      toast.error('प्रभावशाली जोड़ने में विफल');
+      toast.error('प्रभावशाली जोड़ने में विफल: ' + error.message);
       console.error(error);
     } else {
       toast.success('प्रभावशाली जोड़ा गया');
@@ -477,17 +467,16 @@ export function useInventory() {
   const { user } = useAuth();
 
   const addItem = useCallback(async (item: Omit<DbInventory, 'id'>) => {
-    if (!user) return;
-    
+    const createdBy = user && isValidUuid(user.id) ? user.id : null;
     const { error } = await supabase
       .from('inventory')
       .insert({
         ...item,
-        created_by: user.id,
+        created_by: createdBy,
       });
 
     if (error) {
-      toast.error('आइटम जोड़ने में विफल');
+      toast.error('आइटम जोड़ने में विफल: ' + error.message);
       console.error(error);
     } else {
       toast.success('आइटम जोड़ा गया');
@@ -533,15 +522,8 @@ export function useActivities() {
 export function useCampaignSettings() {
   const [settings, setSettings] = useState<DbCampaignSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
 
   const fetchSettings = useCallback(async () => {
-    if (!user) {
-      setSettings(null);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const { data, error } = await supabase
         .from('campaign_settings')
@@ -556,33 +538,26 @@ export function useCampaignSettings() {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     fetchSettings();
 
-    // Set up realtime subscription
-    let channel: RealtimeChannel | null = null;
-    
-    if (user) {
-      channel = supabase
-        .channel('campaign_settings_changes')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'campaign_settings' },
-          () => {
-            fetchSettings();
-          }
-        )
-        .subscribe();
-    }
+    const channel = supabase
+      .channel(`campaign_settings_realtime_${Math.random().toString(36).substring(7)}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'campaign_settings' },
+        () => {
+          fetchSettings();
+        }
+      )
+      .subscribe();
 
     return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
+      supabase.removeChannel(channel);
     };
-  }, [user, fetchSettings]);
+  }, [fetchSettings]);
 
   const updateSettings = useCallback(async (updates: Partial<DbCampaignSettings>) => {
     if (!settings?.id) {
@@ -619,23 +594,26 @@ export function useCampaignSettings() {
 
 // Helper function to log activity
 async function logActivity(message: string, type: 'voter' | 'expense' | 'task' | 'event') {
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) return;
-
-  // Get username from profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, username')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  await supabase
-    .from('activities')
-    .insert({
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    let userName = 'एडमिन / कार्यकर्ता';
+    let userId: string | null = null;
+    if (user && isValidUuid(user.id)) {
+      userId = user.id;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, username')
+        .eq('id', user.id)
+        .maybeSingle();
+      userName = profile?.full_name || profile?.username || userName;
+    }
+    await supabase.from('activities').insert({
       message,
       type,
-      user_name: profile?.full_name || profile?.username || 'Unknown',
-      user_id: user.id,
+      user_name: userName,
+      user_id: userId,
     });
+  } catch (e) {
+    console.warn('logActivity warning:', e);
+  }
 }

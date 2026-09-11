@@ -23,6 +23,14 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error caught by ErrorBoundary:', error, errorInfo);
+    const msg = error?.message || '';
+    if (msg.includes('dynamically imported module') || msg.includes('Failed to fetch') || msg.includes('Loading chunk')) {
+      const reloaded = sessionStorage.getItem('auto_reloaded_chunk');
+      if (!reloaded) {
+        sessionStorage.setItem('auto_reloaded_chunk', 'true');
+        window.location.reload();
+      }
+    }
   }
 
   private handleReset = () => {
