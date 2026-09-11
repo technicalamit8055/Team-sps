@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   BarChart3,
 } from 'lucide-react';
+import { PWAInstallButton } from '@/components/pwa/PWAInstallButton';
 
 interface MasterHeaderProps {
   activeSection: MasterNavSection;
@@ -135,6 +136,9 @@ export const MasterHeader: React.FC<MasterHeaderProps> = ({
               <ExternalLink className="w-3 h-3 text-white/70" />
             </Button>
           )}
+
+          {/* PWA Install Action */}
+          <PWAInstallButton variant="master" />
 
           {/* Add Staff Button */}
           <Button

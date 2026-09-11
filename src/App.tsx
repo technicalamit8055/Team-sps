@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SamitiProvider } from "@/contexts/SamitiContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ReloadPrompt } from "@/components/pwa/ReloadPrompt";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -236,9 +237,11 @@ const App = () => (
             </SamitiProvider>
           </AuthProvider>
         </BrowserRouter>
+        <ReloadPrompt />
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );
 
 export default App;
+
