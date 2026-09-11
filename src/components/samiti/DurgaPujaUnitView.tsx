@@ -14,6 +14,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   FileSpreadsheet,
   Receipt,
   BarChart3,
@@ -36,6 +45,9 @@ import {
   LogOut,
   User,
   Shield,
+  RotateCcw,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface DurgaPujaUnitViewProps {
@@ -61,6 +73,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
     donations,
     isCollectorMode: contextCollectorMode,
     currentStaffMember,
+    resetDurgaPujaUnitData,
   } = useSamiti();
 
   const { profile, signOut } = useAuth();
@@ -107,6 +120,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isCashierSheetOpen, setIsCashierSheetOpen] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   const isMain = isMainWorkspace(currentEntity.id);
 
@@ -235,6 +249,18 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 >
                   <Calendar className="w-3.5 h-3.5 text-rose-300" />
                   <span>पूजा पंचांग</span>
+                </Button>
+
+                {/* Reset Data Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsResetModalOpen(true)}
+                  className="h-8 text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30 px-2 sm:px-2.5 rounded-xl hidden sm:inline-flex items-center gap-1.5 transition-all"
+                  title="दुर्गा पूजा यूनिट का डेटा रीसेट / शून्य करें"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                  <span>डेटा रीसेट</span>
                 </Button>
 
                 {/* Net Surplus Capsule */}
@@ -719,6 +745,68 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           isOpen={isScheduleOpen}
           onClose={() => setIsScheduleOpen(false)}
         />
+      )}
+
+      {/* 4. Reset Durga Puja Unit Data Dialog */}
+      {!isCollector && (
+        <AlertDialog open={isResetModalOpen} onOpenChange={setIsResetModalOpen}>
+          <AlertDialogContent className="rounded-2xl max-w-md bg-white border border-amber-200">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-amber-900 text-base sm:text-lg font-serif">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+                दुर्गा पूजा यूनिट डेटा रीसेट
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-600 text-xs sm:text-sm space-y-3 pt-2">
+                <p>
+                  कृपया चुनें कि आप दुर्गा पूजा समिति के चंदा व खर्च डेटा के साथ क्या करना चाहते हैं:
+                </p>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsResetModalOpen(false);
+                      await resetDurgaPujaUnitData('wipe_clean');
+                    }}
+                    className="w-full text-left p-3 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100/80 transition-all group"
+                  >
+                    <div className="flex items-center justify-between font-bold text-rose-900 text-xs sm:text-sm">
+                      <span className="flex items-center gap-1.5">
+                        <Trash2 className="w-4 h-4 text-rose-600" />
+                        1. शून्य रिकॉर्ड (Clean Slate - ₹0)
+                      </span>
+                      <Badge className="bg-rose-200 text-rose-800 text-[10px] border-none font-bold">अनुशंसित</Badge>
+                    </div>
+                    <p className="text-[11px] text-rose-700/90 mt-1">
+                      सभी डेमो चंदा और डेमो खर्चे हमेशा के लिए हटा दें। नए वास्तविक चंदा संग्रह के लिए एकदम साफ बहीखाता।
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsResetModalOpen(false);
+                      await resetDurgaPujaUnitData('restore_defaults');
+                    }}
+                    className="w-full text-left p-3 rounded-xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/80 transition-all group"
+                  >
+                    <div className="flex items-center justify-between font-bold text-amber-900 text-xs sm:text-sm">
+                      <span className="flex items-center gap-1.5">
+                        <RotateCcw className="w-4 h-4 text-amber-600" />
+                        2. डिफ़ॉल्ट डेमो डेटा रीस्टोर करें
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-800/90 mt-1">
+                      मूल 8 नमूना चंदा और 5 नमूना खर्चे वाउचर पुनः लोड करें (प्रस्तुति एवं परीक्षण हेतु)।
+                    </p>
+                  </button>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-3">
+              <AlertDialogCancel className="text-xs rounded-xl">रद्द करें</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );

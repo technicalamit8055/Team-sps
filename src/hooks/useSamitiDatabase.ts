@@ -558,6 +558,85 @@ export function useSamitiDatabase() {
     []
   );
 
+  // -------------------------------------------------------------
+  // RESET / PURGE DURGA PUJA UNIT DEMO DATA
+  // -------------------------------------------------------------
+  const resetDurgaPujaDataInCloud = useCallback(
+    async (
+      eventId: string = 'evt-durga-2026',
+      reseedData?: { donations?: SamitiDonation[]; expenses?: SamitiExpense[] }
+    ) => {
+      try {
+        setIsSyncing(true);
+        const { error: donErr } = await supabase
+          .from('samiti_donations')
+          .delete()
+          .eq('event_id', eventId);
+        if (donErr) throw donErr;
+
+        const { error: expErr } = await supabase
+          .from('samiti_expenses')
+          .delete()
+          .eq('event_id', eventId);
+        if (expErr) throw expErr;
+
+        if (reseedData?.donations && reseedData.donations.length > 0) {
+          const payload = reseedData.donations.map(d => ({
+            id: d.id,
+            event_id: d.eventId,
+            serial_number: d.serialNumber,
+            category: d.category,
+            name: d.name,
+            identity: d.identity || null,
+            caste: d.caste || null,
+            address1: d.address1 || null,
+            address2: d.address2 || null,
+            phone: d.phone || null,
+            accepted_amount: d.acceptedAmount,
+            received_amount: d.receivedAmount,
+            balance_amount: d.balanceAmount,
+            payment_mode: d.paymentMode,
+            collector_name: d.collectorName || null,
+            is_handover_done: d.isHandoverDone ?? false,
+            date: d.date,
+            remarks: d.remarks || null,
+            receipt_url: d.receiptUrl || null,
+            updated_at: new Date().toISOString(),
+          }));
+          await supabase.from('samiti_donations').insert(payload);
+        }
+
+        if (reseedData?.expenses && reseedData.expenses.length > 0) {
+          const expPayload = reseedData.expenses.map(e => ({
+            id: e.id,
+            event_id: e.eventId,
+            voucher_no: e.voucherNo,
+            category: e.category,
+            vendor_name: e.vendorName,
+            vendor_phone: e.vendorPhone || null,
+            total_amount: e.totalAmount,
+            amount_paid: e.amountPaid,
+            balance_due: e.balanceDue,
+            payment_mode: e.paymentMode,
+            expense_date: e.expenseDate,
+            paid_by: e.paidBy || null,
+            bill_receipt_url: e.billReceiptUrl || null,
+            notes: e.notes || null,
+          }));
+          await supabase.from('samiti_expenses').insert(expPayload);
+        }
+
+        return true;
+      } catch (err: any) {
+        console.warn('Failed to reset Durga Puja data in cloud:', err);
+        return false;
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    []
+  );
+
   return useMemo(
     () => ({
       isSyncing,
@@ -581,6 +660,7 @@ export function useSamitiDatabase() {
       saveStaffToCloud,
       deleteStaffFromCloud,
       purgeDemoEntitiesFromCloud,
+      resetDurgaPujaDataInCloud,
       subscribeToSamitiRealtime,
     }),
     [
@@ -605,7 +685,9 @@ export function useSamitiDatabase() {
       saveStaffToCloud,
       deleteStaffFromCloud,
       purgeDemoEntitiesFromCloud,
+      resetDurgaPujaDataInCloud,
       subscribeToSamitiRealtime,
     ]
   );
 }
+

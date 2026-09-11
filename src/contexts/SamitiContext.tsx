@@ -496,6 +496,7 @@ interface SamitiContextType {
   grantAllWorkspaces: (staffId: string, accessLevel: WorkspaceAccessLevel) => void;
   resetToSampleData: () => void;
   resetMasterDemoData: () => Promise<void>;
+  resetDurgaPujaUnitData: (mode?: 'wipe_clean' | 'restore_defaults') => Promise<void>;
   isCollectorMode: boolean;
   currentStaffMember: MasterStaff | null;
   isCloudConnected: boolean;
@@ -537,6 +538,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     saveStaffToCloud,
     deleteStaffFromCloud,
     purgeDemoEntitiesFromCloud,
+    resetDurgaPujaDataInCloud,
     subscribeToSamitiRealtime,
   } = db;
   // Load Entities safely
@@ -639,28 +641,28 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [donations, setDonations] = useState<SamitiDonation[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.DONATIONS);
-      if (saved) {
+      if (saved !== null) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.warn('Failed to load donations from localStorage:', e);
     }
-    return SEED_DONATIONS;
+    return [];
   });
 
   // Load Expenses safely
   const [expenses, setExpenses] = useState<SamitiExpense[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.EXPENSES);
-      if (saved) {
+      if (saved !== null) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.warn('Failed to load expenses from localStorage:', e);
     }
-    return SEED_EXPENSES;
+    return [];
   });
 
   // Load Staff safely
@@ -774,18 +776,12 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (cloudEntities && cloudEntities.length > 0) {
         setEntities(cloudEntities);
       } else if (cloudEntities && cloudEntities.length === 0) {
-        // First run on new database - auto-seed initial data to cloud
+        // First run on new database - auto-seed initial entities & staff to cloud
         for (const ent of DEFAULT_ENTITIES) {
           await saveEntityToCloud(ent);
         }
         for (const evt of DEFAULT_EVENTS) {
           await saveEventToCloud(evt);
-        }
-        for (const don of SEED_DONATIONS) {
-          await saveDonationToCloud(don);
-        }
-        for (const exp of SEED_EXPENSES) {
-          await saveExpenseToCloud(exp);
         }
         for (const st of DEFAULT_STAFF_LIST) {
           await saveStaffToCloud(st);
@@ -795,10 +791,10 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (cloudEvents && cloudEvents.length > 0) {
         setEvents(cloudEvents);
       }
-      if (cloudDonations && cloudDonations.length > 0) {
+      if (cloudDonations !== null) {
         setDonations(cloudDonations);
       }
-      if (cloudExpenses && cloudExpenses.length > 0) {
+      if (cloudExpenses !== null) {
         setExpenses(cloudExpenses);
       }
       if (cloudStaff && cloudStaff.length > 0) {
@@ -1504,6 +1500,78 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     resetMasterDemoData();
   }, [resetMasterDemoData]);
 
+  // Reset Durga Puja Unit demo data
+  const resetDurgaPujaUnitData = useCallback(
+    async (mode: 'wipe_clean' | 'restore_defaults' = 'wipe_clean') => {
+      try {
+        setIsSyncing(true);
+        toast.loading(
+          mode === 'wipe_clean'
+            ? 'दुर्गा पूजा यूनिट का डेटा साफ किया जा रहा है...'
+            : 'डिफ़ॉल्ट डेमो डेटा रीस्टोर किया जा रहा है...',
+          { id: 'dp-reset-toast' }
+        );
+
+        const targetEventId = 'evt-durga-2026';
+
+        if (mode === 'wipe_clean') {
+          await resetDurgaPujaDataInCloud(targetEventId);
+          setDonations(prev => {
+            const filtered = prev.filter(d => d.eventId !== targetEventId);
+            try {
+              localStorage.setItem(STORAGE_KEYS.DONATIONS, JSON.stringify(filtered));
+            } catch (e) {
+              console.warn(e);
+            }
+            return filtered;
+          });
+          setExpenses(prev => {
+            const filtered = prev.filter(e => e.eventId !== targetEventId);
+            try {
+              localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(filtered));
+            } catch (e) {
+              console.warn(e);
+            }
+            return filtered;
+          });
+          toast.success('दुर्गा पूजा यूनिट के सभी डेमो चंदा व खर्चा रिकॉर्ड हटा दिए गए! संदूक शून्य है।', { id: 'dp-reset-toast' });
+        } else {
+          await resetDurgaPujaDataInCloud(targetEventId, {
+            donations: SEED_DONATIONS,
+            expenses: SEED_EXPENSES,
+          });
+          setDonations(prev => {
+            const other = prev.filter(d => d.eventId !== targetEventId);
+            const next = [...other, ...SEED_DONATIONS];
+            try {
+              localStorage.setItem(STORAGE_KEYS.DONATIONS, JSON.stringify(next));
+            } catch (e) {
+              console.warn(e);
+            }
+            return next;
+          });
+          setExpenses(prev => {
+            const other = prev.filter(e => e.eventId !== targetEventId);
+            const next = [...other, ...SEED_EXPENSES];
+            try {
+              localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(next));
+            } catch (e) {
+              console.warn(e);
+            }
+            return next;
+          });
+          toast.success('दुर्गा पूजा यूनिट का डिफ़ॉल्ट डेमो डेटा सफलतापूर्वक रीस्टोर कर दिया गया!', { id: 'dp-reset-toast' });
+        }
+      } catch (err: any) {
+        console.error('Reset Durga Puja data error:', err);
+        toast.error('डेटा रीसेट में त्रुटि आई: ' + err.message, { id: 'dp-reset-toast' });
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    [setIsSyncing, resetDurgaPujaDataInCloud]
+  );
+
   return (
     <SamitiContext.Provider
       value={{
@@ -1538,6 +1606,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         grantAllWorkspaces,
         resetToSampleData,
         resetMasterDemoData,
+        resetDurgaPujaUnitData,
         isCollectorMode,
         currentStaffMember,
         isCloudConnected: db.isCloudConnected,

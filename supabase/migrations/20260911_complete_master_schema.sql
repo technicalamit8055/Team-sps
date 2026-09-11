@@ -422,23 +422,9 @@ VALUES
   ('evt-election-2026', 'ent-election-2026', 'विधानसभा चुनाव अभियान 2026 (War Room & Voter CRM)', '2026-27', 2500000, '2026-09-01', '2026-11-30', true)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.samiti_donations (id, event_id, serial_number, category, name, identity, caste, address1, address2, phone, accepted_amount, received_amount, balance_amount, payment_mode, collector_name, is_handover_done, date, remarks)
-VALUES
-  ('don-1', 'evt-durga-2026', 1, 'SHO', 'राजेश कुमार गुप्ता', 'प्रो०: गुप्ता वस्त्र भंडार', 'वैश्य', 'दुकान नं० 14, मुख्य बाजार', 'नारायणपुर चौराहा', '9835012345', 11000, 11000, 0, 'ONL', 'अमित कुमार (सचिव)', true, '2026-09-01', 'गूगल पे द्वारा प्राप्त'),
-  ('don-2', 'evt-durga-2026', 2, 'VIL', 'रामनरेश सिंह', 'आत्मज: स्वर्गीय रामखेलावन सिंह', 'क्षत्रिय', 'वार्ड नं० 4, सिंह टोला', 'पोस्ट- नारायणपुर', '9470123456', 5100, 3100, 2000, 'CASH', 'सुनील वर्मा', true, '2026-09-02', 'सप्तमी को ₹2000 शेष देंगे'),
-  ('don-3', 'evt-durga-2026', 3, 'EMP', 'डॉ० विकास रंजन', 'चिकित्सा पदाधिकारी, प्राथमिक स्वास्थ्य केंद्र', 'ब्राह्मण', 'क्वार्टर नं० 2, पीएचसी परिसर', 'नारायणपुर', '9123456789', 5100, 5100, 0, 'ONL', 'प्रमोद यादव', true, '2026-09-02', 'फोनपे द्वारा अंतरित'),
-  ('don-4', 'evt-durga-2026', 4, 'SHO', 'महेश मिष्ठान्न भंडार (महेश शाह)', 'दुकानदार संघ उपाध्यक्ष', 'साहू', 'स्टेशन रोड', 'नारायणपुर', '9801234567', 15000, 5000, 10000, 'CASH', 'अमित कुमार (सचिव)', false, '2026-09-03', 'भोग प्रसाद सामग्री भी देंगे + शेष ₹10,000 नवमी को'),
-  ('don-5', 'evt-durga-2026', 5, 'VIL', 'संजय कुमार महतो', 'पुत्र: सुखदेव महतो', 'कुर्मी', 'ग्राम- नारायणपुर पूर्वी', 'थाना- सदर', '9934567890', 2100, 2100, 0, 'CASH', 'दीपक कुमार', true, '2026-09-03', 'ससम्मान रसीद दी गई'),
-  ('don-6', 'evt-durga-2026', 6, 'OTH', 'प्रवीण आनंद (NRI/बेंगलुरु)', 'सॉफ्टवेयर इंजीनियर (मूल निवासी)', 'कायस्थ', 'आनंद निवास', 'नारायणपुर', '9876543210', 21000, 21000, 0, 'ONL', 'अमित कुमार (सचिव)', true, '2026-09-04', 'सीधे बैंक खाते में UPI ट्रान्सफर')
-ON CONFLICT (id) DO NOTHING;
+-- Clean state for live festival accounts: donations and expenses start empty
+-- Real records will be entered via app or imported from Excel/CSV
 
-INSERT INTO public.samiti_expenses (id, event_id, voucher_no, category, vendor_name, vendor_phone, total_amount, amount_paid, balance_due, payment_mode, expense_date, paid_by, notes)
-VALUES
-  ('exp-1', 'evt-durga-2026', 'VCH-001', 'idol_murti', 'मूर्तिकार विजय पाल एवं बंधु', '9835112233', 65000, 35000, 30000, 'CASH', '2026-08-25', 'कोषाध्यक्ष (मनोज कुमार)', 'भव्य 15 फीट माँ दुर्गा व महिषासुर मर्दिनी प्रतिमा अग्रिम'),
-  ('exp-2', 'evt-durga-2026', 'VCH-002', 'pandal_tent', 'भवानी टेंट हाउस & डेकोरेटर्स', '9470223344', 145000, 50000, 95000, 'ONL', '2026-09-01', 'सचिव (अमित कुमार)', 'अक्षरधाम मंदिर प्रारूप भव्य वाटरप्रूफ पंडाल निर्माण हेतु अग्रिम'),
-  ('exp-3', 'evt-durga-2026', 'VCH-003', 'sound_light', 'माँ अम्बे म्यूजिकल & लाइट डेकोरेशन', '9123334455', 55000, 20000, 35000, 'CASH', '2026-09-02', 'कोषाध्यक्ष (मनोज कुमार)', 'जेबीएल साउंड सिस्टम, तोरण द्वार लाइट व हैलोजन फिटिंग'),
-  ('exp-4', 'evt-durga-2026', 'VCH-004', 'puja_samagri', 'श्री राम पूजन भंडार', '9801445566', 22000, 22000, 0, 'ONL', '2026-09-04', 'सचिव (अमित कुमार)', 'हवन सामग्री, शुध्द देसी घी, चंदन, धूप, रोली आदि पूर्ण भुगतान')
-ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.master_staff (id, name, phone, username, primary_role, designation, status, joined_date, avatar_color, workspace_permissions)
 VALUES
