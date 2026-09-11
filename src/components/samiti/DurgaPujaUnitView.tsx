@@ -7,21 +7,13 @@ import { FinancialOverview } from './FinancialOverview';
 import { ExcelImportExport } from './ExcelImportExport';
 import { ChandaQRCodeModal } from './ChandaQRCodeModal';
 import { DailyCashierSheetModal } from './DailyCashierSheetModal';
-import { PujaScheduleModal } from './PujaScheduleModal';
 import { QuickDonationDialog } from './QuickDonationDialog';
+import { DurgaPujaSettingsModal } from './DurgaPujaSettingsModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+
 import {
   FileSpreadsheet,
   Receipt,
@@ -48,6 +40,8 @@ import {
   RotateCcw,
   Trash2,
   AlertTriangle,
+  Settings,
+  Pencil,
 } from 'lucide-react';
 
 interface DurgaPujaUnitViewProps {
@@ -119,8 +113,8 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
   // Modal triggers
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isCashierSheetOpen, setIsCashierSheetOpen] = useState(false);
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsDefaultTab, setSettingsDefaultTab] = useState<'header' | 'reset'>('header');
 
   const isMain = isMainWorkspace(currentEntity.id);
 
@@ -134,7 +128,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
     : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-500/5 via-background to-rose-500/5 text-foreground pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-amber-500/5 via-background to-rose-500/5 text-foreground pb-28">
       {/* ------------------------------------------------------------- */}
       {/* FESTIVE SACRED TOP BAR                                        */}
       {/* ------------------------------------------------------------- */}
@@ -171,6 +165,19 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <h1 className="text-xs sm:text-sm font-extrabold text-white truncate font-serif">
                     {currentEntity.name}
                   </h1>
+                  {!isCollector && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettingsDefaultTab('header');
+                        setIsSettingsModalOpen(true);
+                      }}
+                      className="text-amber-300/70 hover:text-amber-200 p-0.5 rounded transition-colors"
+                      title="शीर्षक व समिति विवरण संपादित करें"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                  )}
                   {isCollector ? (
                     <Badge className="bg-amber-500 text-slate-950 text-[9px] font-black shrink-0 inline-flex items-center gap-0.5 py-0 px-1.5 rounded-full border-none">
                       चंदा संग्रह पोर्टल
@@ -239,28 +246,19 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <span>रोकड़ पर्ची</span>
                 </Button>
 
-                {/* Puja Schedule Button */}
+                {/* Unit Settings & Header Edit Button */}
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setIsScheduleOpen(true)}
-                  className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white border-white/20 px-2 sm:px-2.5 rounded-xl hidden lg:inline-flex items-center gap-1.5"
-                  title="9 दिवसीय नवरात्र पूजा समय-सारणी"
+                  onClick={() => {
+                    setSettingsDefaultTab('header');
+                    setIsSettingsModalOpen(true);
+                  }}
+                  className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white border-white/20 px-2 sm:px-2.5 rounded-xl inline-flex items-center gap-1.5 transition-all"
+                  title="यूनिट सेटिंग्स, शीर्षक संपादन व डेटा प्रबंधन"
                 >
-                  <Calendar className="w-3.5 h-3.5 text-rose-300" />
-                  <span>पूजा पंचांग</span>
-                </Button>
-
-                {/* Reset Data Button */}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsResetModalOpen(true)}
-                  className="h-8 text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30 px-2 sm:px-2.5 rounded-xl hidden sm:inline-flex items-center gap-1.5 transition-all"
-                  title="दुर्गा पूजा यूनिट का डेटा रीसेट / शून्य करें"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                  <span>डेटा रीसेट</span>
+                  <Settings className="w-3.5 h-3.5 text-amber-300" />
+                  <span>सेटिंग्स</span>
                 </Button>
 
                 {/* Net Surplus Capsule */}
@@ -291,17 +289,17 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[11px] font-bold inline-flex items-center gap-1.5">
                   <Flame className="w-3 h-3 text-amber-300 animate-pulse" />
-                  श्री दुर्गा पूजा महोत्सव 2026 • 41वाँ वार्षिकोत्सव
+                  {currentEntity.bannerBadgeText || `${currentEvent.title} • ${currentEvent.fiscalYear || '41वाँ वार्षिकोत्सव'}`}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-white/90 text-[11px] font-medium hidden sm:inline-block">
-                  शारदीय नवरात्र: 15 अक्टूबर से 24 अक्टूबर 2026
+                  {currentEntity.bannerDatesText || 'शारदीय नवरात्र: 15 अक्टूबर से 24 अक्टूबर 2026'}
                 </span>
               </div>
 
               <h2 className="text-lg sm:text-2xl font-black text-white font-serif tracking-wide">
-                {isCollector
+                {currentEntity.bannerHeadline || (isCollector
                   ? 'माँ भगवती कृपा • अधिकृत चंदा संग्रह एवं पावती रसीद पोर्टल'
-                  : 'माँ भगवती कृपा एवं चंदा-व्यय डिजिटल प्रबंधन प्रणाली'}
+                  : 'माँ भगवती कृपा एवं चंदा-व्यय डिजिटल प्रबंधन प्रणाली')}
               </h2>
               <p className="text-xs sm:text-sm text-amber-100/90 font-serif italic max-w-2xl">
                 "{currentEntity.tagline || 'माँ दुर्गा की असीम कृपा आप और आपके परिवार पर सदा बनी रहे।'}"
@@ -314,11 +312,15 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 <>
                   <Button
                     size="sm"
-                    onClick={() => setIsScheduleOpen(true)}
-                    className="h-8 text-xs bg-white/15 hover:bg-white/25 text-white border border-white/20 rounded-xl"
+                    onClick={() => {
+                      setSettingsDefaultTab('header');
+                      setIsSettingsModalOpen(true);
+                    }}
+                    className="h-8 text-xs bg-white/15 hover:bg-white/25 text-amber-200 border border-amber-400/30 rounded-xl"
+                    title="बैनर व शीर्षक विवरण संपादित करें"
                   >
-                    <Calendar className="w-3.5 h-3.5 mr-1 text-amber-300" />
-                    <span>पूजा कार्यक्रम</span>
+                    <Pencil className="w-3.5 h-3.5 mr-1 text-amber-300" />
+                    <span>बैनर एडिट</span>
                   </Button>
 
                   <Button
@@ -343,19 +345,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 </Button>
               )}
 
-              <QuickDonationDialog
-                isCollectorMode={isCollector}
-                defaultCollectorName={workerName}
-                triggerButton={
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black rounded-xl shadow-md shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all border border-amber-300"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1 text-slate-950 stroke-[2.5]" />
-                    <span>+ नई चंदा प्रविष्टि</span>
-                  </Button>
-                }
-              />
+
             </div>
           </div>
 
@@ -739,75 +729,37 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
         />
       )}
 
-      {/* 3. Puja Schedule & Committee Modal (Admin/Manager only) */}
+      {/* 3. Durga Puja Unit Settings & Data Management Modal */}
       {!isCollector && (
-        <PujaScheduleModal
-          isOpen={isScheduleOpen}
-          onClose={() => setIsScheduleOpen(false)}
+        <DurgaPujaSettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          defaultTab={settingsDefaultTab}
         />
       )}
 
-      {/* 4. Reset Durga Puja Unit Data Dialog */}
-      {!isCollector && (
-        <AlertDialog open={isResetModalOpen} onOpenChange={setIsResetModalOpen}>
-          <AlertDialogContent className="rounded-2xl max-w-md bg-white border border-amber-200">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2 text-amber-900 text-base sm:text-lg font-serif">
-                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-                दुर्गा पूजा यूनिट डेटा रीसेट
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-600 text-xs sm:text-sm space-y-3 pt-2">
-                <p>
-                  कृपया चुनें कि आप दुर्गा पूजा समिति के चंदा व खर्च डेटा के साथ क्या करना चाहते हैं:
-                </p>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsResetModalOpen(false);
-                      await resetDurgaPujaUnitData('wipe_clean');
-                    }}
-                    className="w-full text-left p-3 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100/80 transition-all group"
-                  >
-                    <div className="flex items-center justify-between font-bold text-rose-900 text-xs sm:text-sm">
-                      <span className="flex items-center gap-1.5">
-                        <Trash2 className="w-4 h-4 text-rose-600" />
-                        1. शून्य रिकॉर्ड (Clean Slate - ₹0)
-                      </span>
-                      <Badge className="bg-rose-200 text-rose-800 text-[10px] border-none font-bold">अनुशंसित</Badge>
-                    </div>
-                    <p className="text-[11px] text-rose-700/90 mt-1">
-                      सभी डेमो चंदा और डेमो खर्चे हमेशा के लिए हटा दें। नए वास्तविक चंदा संग्रह के लिए एकदम साफ बहीखाता।
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setIsResetModalOpen(false);
-                      await resetDurgaPujaUnitData('restore_defaults');
-                    }}
-                    className="w-full text-left p-3 rounded-xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/80 transition-all group"
-                  >
-                    <div className="flex items-center justify-between font-bold text-amber-900 text-xs sm:text-sm">
-                      <span className="flex items-center gap-1.5">
-                        <RotateCcw className="w-4 h-4 text-amber-600" />
-                        2. डिफ़ॉल्ट डेमो डेटा रीस्टोर करें
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-amber-800/90 mt-1">
-                      मूल 8 नमूना चंदा और 5 नमूना खर्चे वाउचर पुनः लोड करें (प्रस्तुति एवं परीक्षण हेतु)।
-                    </p>
-                  </button>
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-3">
-              <AlertDialogCancel className="text-xs rounded-xl">रद्द करें</AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+      {/* ------------------------------------------------------------- */}
+      {/* FLOATING ACTION BUTTON FOR QUICK ENTRY                        */}
+      {/* ------------------------------------------------------------- */}
+      <div className="fixed bottom-6 right-5 sm:bottom-8 sm:right-8 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <QuickDonationDialog
+          isCollectorMode={isCollector}
+          defaultCollectorName={workerName}
+          triggerButton={
+            <Button
+              className="h-12 sm:h-14 px-4 sm:px-5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black shadow-2xl shadow-amber-500/50 hover:shadow-amber-500/70 border-2 border-amber-200 hover:scale-105 active:scale-95 transition-all flex items-center gap-2.5 group ring-4 ring-amber-400/20"
+              title="+ नया चंदा जोड़ें"
+            >
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-950 text-amber-300 flex items-center justify-center shadow-xs group-hover:rotate-90 transition-transform">
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3]" />
+              </div>
+              <span className="text-xs sm:text-sm font-black tracking-wide font-serif">
+                + नया चंदा जोड़ें
+              </span>
+            </Button>
+          }
+        />
+      </div>
     </div>
   );
 };

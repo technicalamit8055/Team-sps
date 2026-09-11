@@ -51,6 +51,10 @@ export interface MasterEntity {
   tagline?: string;
   location?: string;
   establishedYear?: number;
+  registrationNo?: string;
+  bannerHeadline?: string;
+  bannerBadgeText?: string;
+  bannerDatesText?: string;
 }
 
 export interface SamitiEvent {

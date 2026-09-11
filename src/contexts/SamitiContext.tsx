@@ -487,6 +487,7 @@ interface SamitiContextType {
   importDonations: (newDonations: Array<Omit<SamitiDonation, 'id' | 'createdAt' | 'updatedAt'>>) => number;
   addEntity: (entity: Omit<MasterEntity, 'id'>, initialEvent: Omit<SamitiEvent, 'id' | 'entityId'>) => void;
   updateEntity: (id: string, updates: Partial<MasterEntity>) => void;
+  updateEvent: (id: string, updates: Partial<SamitiEvent>) => void;
   deleteEntity: (id: string) => boolean;
   staffList: MasterStaff[];
   addStaff: (staffData: Omit<MasterStaff, 'id' | 'joinedDate'>) => MasterStaff;
@@ -1295,6 +1296,22 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     toast.success('कार्यक्षेत्र जानकारी सफलतापूर्वक अपडेट की गई!');
   }, [saveEntityToCloud]);
 
+  // Update event
+  const updateEvent = useCallback((id: string, updates: Partial<SamitiEvent>) => {
+    let updated: SamitiEvent | null = null;
+    setEvents(prev => prev.map(ev => {
+      if (ev.id === id) {
+        updated = { ...ev, ...updates };
+        return updated;
+      }
+      return ev;
+    }));
+    if (updated) {
+      saveEventToCloud(updated);
+    }
+    toast.success('महोत्सव व कार्यक्रम विवरण सफलतापूर्वक अपडेट किया गया!');
+  }, [saveEventToCloud]);
+
   // Delete entity
   const deleteEntity = useCallback(
     (entityId: string) => {
@@ -1597,6 +1614,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         importDonations,
         addEntity,
         updateEntity,
+        updateEvent,
         deleteEntity,
         staffList,
         addStaff,

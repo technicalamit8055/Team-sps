@@ -241,7 +241,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
           {triggerButton || (
             <Button className="h-9 px-3.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 flex items-center gap-1.5 border border-amber-400/40">
               <Plus className="w-4 h-4 text-slate-950" />
-              <span>+ नई चंदा प्रविष्टि</span>
+              <span>+ नया चंदा जोड़ें</span>
             </Button>
           )}
         </DialogTrigger>
