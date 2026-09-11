@@ -66,7 +66,10 @@ export interface MasterStaff {
   phone: string;
   email?: string;
   username: string;
-  password?: string;
+  // Real Supabase Auth user id this staff record is linked to. Login
+  // credentials live only in Supabase Auth (via the create-user edge
+  // function) — never stored in plaintext on this record.
+  userId?: string;
   primaryRole: MasterRole;
   designation: string; // e.g. "मुख्य प्रशासक", "वॉर रूम हेड", "कोषाध्यक्ष"
   status: 'active' | 'inactive';

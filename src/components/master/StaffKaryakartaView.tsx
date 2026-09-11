@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useSamiti } from '@/contexts/SamitiContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { MasterStaff, MasterRole, WorkspaceAccessLevel, DEFAULT_MODULE_ACCESS_MAP } from '@/types/master';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,6 +107,11 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
   searchQuery = '',
 }) => {
   const { staffList, addStaff, updateStaff, deleteStaff, entities } = useSamiti();
+  const { role: currentUserRole } = useAuth();
+  // Only admins may grant admin/manager-level roles — mirrors the server-side
+  // check in the create-user edge function. This is a UX convenience only;
+  // the edge function is the real enforcement point.
+  const canAssignElevatedRoles = currentUserRole === 'admin';
 
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [localSearch, setLocalSearch] = useState('');
@@ -127,6 +134,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
   const [editDesignation, setEditDesignation] = useState('');
   const [editRole, setEditRole] = useState<MasterRole>('karyakarta');
   const [editStatus, setEditStatus] = useState<'active' | 'inactive'>('active');
+  const [editUsername, setEditUsername] = useState('');
   const [editPassword, setEditPassword] = useState('');
   const [showEditPassword, setShowEditPassword] = useState(false);
 
@@ -140,6 +148,11 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
     assignedUnitNames: string[];
   } | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // View Credentials Dialog state — shows the current username (always
+  // available) plus a reset-password shortcut, since passwords are never
+  // stored anywhere retrievable once issued.
+  const [viewingCredsStaff, setViewingCredsStaff] = useState<MasterStaff | null>(null);
 
   const generateRandomPassword = () => {
     const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -157,7 +170,9 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const [isCreatingStaff, setIsCreatingStaff] = useState(false);
+
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || !newPhone.trim()) {
       toast.error('Please enter name and phone number');
@@ -187,17 +202,25 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
     ];
     const avatarColor = colors[Math.floor(Math.random() * colors.length)];
 
-    addStaff({
-      name: newName.trim(),
-      phone: newPhone.trim(),
-      username: finalUsername,
-      password: finalPassword,
-      designation: newDesignation.trim() || ROLE_CONFIG[newRole].label,
-      primaryRole: newRole,
-      status: 'active',
-      avatarColor,
-      workspacePermissions,
-    });
+    setIsCreatingStaff(true);
+    try {
+      await addStaff({
+        name: newName.trim(),
+        phone: newPhone.trim(),
+        username: finalUsername,
+        password: finalPassword,
+        designation: newDesignation.trim() || ROLE_CONFIG[newRole].label,
+        primaryRole: newRole,
+        status: 'active',
+        avatarColor,
+        workspacePermissions,
+      });
+    } catch {
+      // addStaff already surfaced a toast with the specific error.
+      setIsCreatingStaff(false);
+      return;
+    }
+    setIsCreatingStaff(false);
 
     const assignedUnitNames = selectedWorkspaceIds
       .map(id => entities.find(e => e.id === id)?.name)
@@ -228,24 +251,111 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
     setEditDesignation(staff.designation);
     setEditRole(staff.primaryRole);
     setEditStatus(staff.status);
-    setEditPassword(staff.password || '');
+    setEditUsername(staff.username);
+    setEditPassword('');
     setShowEditPassword(false);
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [resettingStaffId, setResettingStaffId] = useState<string | null>(null);
+
+  // Generates a brand-new password and sets it as the staff member's real
+  // Supabase Auth password. There is no way to "view" an existing password —
+  // it is never stored anywhere retrievable — so this always issues a reset.
+  const handleResetPassword = async (staff: MasterStaff) => {
+    if (!staff.userId) {
+      toast.error('इस सदस्य का कोई लिंक्ड लॉगिन खाता नहीं मिला। कृपया प्रशासक से संपर्क करें।');
+      return;
+    }
+
+    setResettingStaffId(staff.id);
+    try {
+      const newPassword = generateRandomPassword();
+      const { data, error } = await supabase.functions.invoke('reset-staff-password', {
+        body: { target_user_id: staff.userId, new_password: newPassword },
+      });
+
+      if (error || data?.error) {
+        toast.error(`पासवर्ड रीसेट करने में त्रुटि: ${error?.message || data?.error}`);
+        return;
+      }
+
+      const assignedUnitNames = Object.keys(staff.workspacePermissions)
+        .map(id => entities.find(e => e.id === id)?.name)
+        .filter(Boolean) as string[];
+
+      setCredentialModalData({
+        name: staff.name,
+        username: staff.username,
+        password: newPassword,
+        phone: staff.phone,
+        roleLabel: ROLE_CONFIG[staff.primaryRole]?.label || 'कार्यकर्ता',
+        assignedUnitNames: assignedUnitNames.length > 0 ? assignedUnitNames : ['श्री दुर्गा पूजा समिति नारायणपुर'],
+      });
+      toast.success('नया पासवर्ड सेट किया गया। इसे अभी सुरक्षित रूप से साझा करें — यह दोबारा नहीं दिखेगा।');
+    } finally {
+      setResettingStaffId(null);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingStaff || !editName.trim()) return;
 
-    updateStaff(editingStaff.id, {
-      name: editName.trim(),
-      phone: editPhone.trim(),
-      designation: editDesignation.trim(),
-      primaryRole: editRole,
-      status: editStatus,
-      password: editPassword.trim() || editingStaff.password || 'demo123',
-    });
+    const trimmedUsername = editUsername.trim();
+    const usernameChanged = trimmedUsername && trimmedUsername !== editingStaff.username;
 
-    setEditingStaff(null);
+    setIsSavingEdit(true);
+    try {
+      // A changed username renames the real Supabase Auth login (email +
+      // profile) via an edge function — it's never just a master_staff field.
+      if (usernameChanged) {
+        if (!editingStaff.userId) {
+          toast.error('इस सदस्य का कोई लिंक्ड लॉगिन खाता नहीं मिला। कृपया प्रशासक से संपर्क करें।');
+          setIsSavingEdit(false);
+          return;
+        }
+        const { data, error } = await supabase.functions.invoke('change-username', {
+          body: { target_user_id: editingStaff.userId, new_username: trimmedUsername },
+        });
+        if (error || data?.error) {
+          toast.error(`Username बदलने में त्रुटि: ${error?.message || data?.error}`);
+          setIsSavingEdit(false);
+          return;
+        }
+      }
+
+      // A new password (if entered) resets the real Supabase Auth password —
+      // login credentials are never stored on the master_staff record itself.
+      if (editPassword.trim()) {
+        if (!editingStaff.userId) {
+          toast.error('इस सदस्य का कोई लिंक्ड लॉगिन खाता नहीं मिला। कृपया प्रशासक से संपर्क करें।');
+          setIsSavingEdit(false);
+          return;
+        }
+        const { data, error } = await supabase.functions.invoke('reset-staff-password', {
+          body: { target_user_id: editingStaff.userId, new_password: editPassword.trim() },
+        });
+        if (error || data?.error) {
+          toast.error(`पासवर्ड रीसेट करने में त्रुटि: ${error?.message || data?.error}`);
+          setIsSavingEdit(false);
+          return;
+        }
+      }
+
+      updateStaff(editingStaff.id, {
+        name: editName.trim(),
+        phone: editPhone.trim(),
+        designation: editDesignation.trim(),
+        primaryRole: editRole,
+        status: editStatus,
+        ...(usernameChanged ? { username: trimmedUsername } : {}),
+      });
+
+      setEditingStaff(null);
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   const effectiveSearch = searchQuery || localSearch;
@@ -506,21 +616,25 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => setViewingCredsStaff(staff)}
+                    className="h-7 w-7 p-0 text-navy hover:text-navy-dark hover:bg-slate-100 rounded-lg"
+                    title="View Login Credentials"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={resettingStaffId === staff.id}
                     onClick={() => {
-                      const assignedUnitNames = Object.keys(staff.workspacePermissions)
-                        .map(id => entities.find(e => e.id === id)?.name)
-                        .filter(Boolean) as string[];
-                      setCredentialModalData({
-                        name: staff.name,
-                        username: staff.username,
-                        password: staff.password || 'demo123',
-                        phone: staff.phone,
-                        roleLabel: ROLE_CONFIG[staff.primaryRole]?.label || 'कार्यकर्ता',
-                        assignedUnitNames: assignedUnitNames.length > 0 ? assignedUnitNames : ['श्री दुर्गा पूजा समिति नारायणपुर'],
-                      });
+                      if (!window.confirm(`${staff.name} का पासवर्ड रीसेट करें? पुराना पासवर्ड तुरंत काम करना बंद कर देगा।`)) {
+                        return;
+                      }
+                      handleResetPassword(staff);
                     }}
                     className="h-7 w-7 p-0 text-amber-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg"
-                    title="View / Share Credentials"
+                    title="Reset Password"
                   >
                     <KeyRound className="w-3.5 h-3.5" />
                   </Button>
@@ -652,10 +766,10 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="collector">🎟️ चंदा संग्रहकर्ता (Collector)</SelectItem>
-                    <SelectItem value="manager">⭐ Incharge</SelectItem>
+                    {canAssignElevatedRoles && <SelectItem value="manager">⭐ Incharge</SelectItem>}
                     <SelectItem value="karyakarta">👥 Field Worker</SelectItem>
                     <SelectItem value="accountant">💰 Treasurer</SelectItem>
-                    <SelectItem value="admin">🛡️ Admin</SelectItem>
+                    {canAssignElevatedRoles && <SelectItem value="admin">🛡️ Admin</SelectItem>}
                     <SelectItem value="observer">👁️ Observer</SelectItem>
                   </SelectContent>
                 </Select>
@@ -732,8 +846,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm" className="btn-saffron rounded-xl font-bold">
-                Add Member
+              <Button type="submit" size="sm" disabled={isCreatingStaff} className="btn-saffron rounded-xl font-bold">
+                {isCreatingStaff ? 'बनाया जा रहा है...' : 'Add Member'}
               </Button>
             </div>
           </form>
@@ -782,10 +896,10 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="collector">🎟️ चंदा संग्रहकर्ता (Collector)</SelectItem>
-                    <SelectItem value="manager">⭐ Incharge</SelectItem>
+                    {canAssignElevatedRoles && <SelectItem value="manager">⭐ Incharge</SelectItem>}
                     <SelectItem value="karyakarta">👥 Field Worker</SelectItem>
                     <SelectItem value="accountant">💰 Treasurer</SelectItem>
-                    <SelectItem value="admin">🛡️ Admin</SelectItem>
+                    {canAssignElevatedRoles && <SelectItem value="admin">🛡️ Admin</SelectItem>}
                     <SelectItem value="observer">👁️ Observer</SelectItem>
                   </SelectContent>
                 </Select>
@@ -812,6 +926,20 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                 onChange={e => setEditDesignation(e.target.value)}
                 className="mt-1 text-xs rounded-xl"
               />
+            </div>
+
+            <div>
+              <Label className="text-xs font-semibold text-slate-700">
+                Username (लॉगिन Username)
+              </Label>
+              <Input
+                value={editUsername}
+                onChange={e => setEditUsername(e.target.value)}
+                className="mt-1 text-xs font-mono rounded-xl"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Username बदलने पर सदस्य को नया Username बताना होगा — पुराना Username काम करना बंद कर देगा।
+              </p>
             </div>
 
             <div>
@@ -849,11 +977,98 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm" className="btn-saffron rounded-xl font-bold">
-                Save Changes
+              <Button type="submit" size="sm" disabled={isSavingEdit} className="btn-saffron rounded-xl font-bold">
+                {isSavingEdit ? 'सहेजा जा रहा है...' : 'Save Changes'}
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* VIEW CREDENTIALS MODAL — current username + reset shortcut. Passwords
+          are never retrievable once issued (Supabase Auth only stores a hash),
+          so this dialog shows the username and hands off to the existing
+          reset-password flow instead of a fake "reveal password" control. */}
+      <Dialog open={!!viewingCredsStaff} onOpenChange={open => !open && setViewingCredsStaff(null)}>
+        <DialogContent className="max-w-md w-[95vw] rounded-2xl p-5 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-navy/10 text-navy">
+                <Eye className="w-5 h-5" />
+              </div>
+              <span>लॉगिन क्रेडेंशियल्स देखें (View Login Credentials)</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {viewingCredsStaff && (
+            <div className="space-y-4 mt-2 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">{viewingCredsStaff.name}</h4>
+                  <p className="text-muted-foreground">
+                    {viewingCredsStaff.phone} • {ROLE_CONFIG[viewingCredsStaff.primaryRole]?.label}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2.5 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-700">Username</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(viewingCredsStaff.username, 'view-username')}
+                      className="text-[11px] text-navy hover:text-navy-dark font-bold flex items-center gap-1"
+                    >
+                      {copiedField === 'view-username' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedField === 'view-username' ? 'कॉपी हुआ!' : 'कॉपी'}</span>
+                    </button>
+                  </div>
+                  <div className="mt-1 p-2 rounded-xl bg-white border border-slate-200 font-mono font-bold text-slate-900 text-sm">
+                    {viewingCredsStaff.username}
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[11px] font-semibold text-slate-700 block">Password</span>
+                  <div className="mt-1 p-2 rounded-xl bg-white border border-slate-200 text-slate-500 text-xs italic">
+                    सुरक्षा कारणों से मौजूदा पासवर्ड नहीं दिखाया जा सकता। नया पासवर्ड सेट करने के लिए रीसेट करें।
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setViewingCredsStaff(null);
+                    handleOpenEdit(viewingCredsStaff);
+                  }}
+                  className="flex-1 rounded-xl text-xs font-semibold"
+                >
+                  <Edit className="w-3.5 h-3.5 mr-1" />
+                  <span>Username बदलें</span>
+                </Button>
+                <Button
+                  type="button"
+                  disabled={resettingStaffId === viewingCredsStaff.id}
+                  onClick={() => {
+                    if (!window.confirm(`${viewingCredsStaff.name} का पासवर्ड रीसेट करें? पुराना पासवर्ड तुरंत काम करना बंद कर देगा।`)) {
+                      return;
+                    }
+                    const staff = viewingCredsStaff;
+                    setViewingCredsStaff(null);
+                    handleResetPassword(staff);
+                  }}
+                  className="flex-1 btn-saffron rounded-xl text-xs font-bold"
+                >
+                  <KeyRound className="w-3.5 h-3.5 mr-1" />
+                  <span>पासवर्ड रीसेट करें</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

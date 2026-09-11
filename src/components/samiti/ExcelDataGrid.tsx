@@ -21,9 +21,17 @@ import {
   Clock,
   Sparkles,
   Crown,
+  Eye,
+  MoreVertical,
   HandCoins,
   ShieldCheck,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import {
   AlertDialog,
@@ -39,11 +47,13 @@ import {
 interface ExcelDataGridProps {
   isCollectorMode?: boolean;
   collectorName?: string;
+  onOpenNewDonationModal?: () => void;
 }
 
 export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   isCollectorMode: propCollectorMode,
   collectorName: propCollectorName,
+  onOpenNewDonationModal,
 }) => {
   const { currentEntity, currentEvent, donations, updateDonation, deleteDonation, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
   const { profile } = useAuth();
@@ -172,113 +182,131 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Control & Search Bar */}
-      <div className="bg-white border border-amber-200/80 rounded-2xl p-3.5 sm:p-4 shadow-xs space-y-3">
-        {/* Top search & Primary action */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      {/* Control & Search Bar - Matching Reference Mockup */}
+      <div className="bg-white border border-amber-200/90 rounded-2xl p-3 sm:p-4 shadow-xs space-y-3">
+        {/* Top Search Input + Grid/List View Toggle + New Donation Button */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           {/* Search box */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-amber-500" />
+            <Search className="w-4 h-4 absolute left-3.5 top-3 text-amber-500" />
             <Input
-              placeholder="नाम, दुकान, पिता का नाम, पता या मोबाइल नं० खोजें..."
+              placeholder="नाम, दुकान, पिता का नाम, पता या मोबाइल नंबर खोजें..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="pl-9 text-xs border-amber-200 bg-amber-50/20 focus-visible:bg-white focus-visible:border-amber-400 h-9 rounded-xl"
+              className="pl-10 text-xs border-amber-200/80 bg-[#fffdfa] focus-visible:bg-white focus-visible:border-amber-400 h-9 rounded-xl font-medium"
             />
           </div>
 
-          {/* View Mode Toggle & Desktop Quick Add */}
-          <div className="flex items-center justify-between sm:justify-end gap-2">
+          {/* View Toggles & Red Add Button */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
             {/* View Mode Toggle Button */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs">
               <button
                 type="button"
                 onClick={() => setViewMode('cards')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${viewMode === 'cards'
+                className={`p-1.5 rounded-lg transition-all ${
+                  viewMode === 'cards'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                title="कार्ड दृश्य (Mobile Touch Friendly)"
+                }`}
+                title="कार्ड दृश्य"
               >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">कार्ड दृश्य</span>
+                <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${viewMode === 'grid'
+                className={`p-1.5 rounded-lg transition-all ${
+                  viewMode === 'grid'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                title="एक्सेल स्प्रेडशीट ग्रिड"
+                }`}
+                title="रजिस्टर ग्रिड"
               >
-                <Table className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">रजिस्टर ग्रिड</span>
+                <Table className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Desktop Add Button */}
-            <div className="hidden sm:block">
+            {/* Red + नया चंदा जोड़ें Button */}
+            {onOpenNewDonationModal ? (
+              <Button
+                size="sm"
+                onClick={onOpenNewDonationModal}
+                className="h-9 px-3.5 bg-gradient-to-r from-[#cf1d32] to-[#990e1f] hover:from-[#b91527] hover:to-[#830a18] text-white font-serif font-bold text-xs rounded-xl shadow-xs border border-rose-400/30 flex items-center gap-1.5 transition-transform active:scale-95"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>+ नया चंदा जोड़ें</span>
+              </Button>
+            ) : (
               <QuickDonationDialog
                 isCollectorMode={isCollector}
                 defaultCollectorName={workerName}
+                triggerButton={
+                  <Button
+                    size="sm"
+                    className="h-9 px-3.5 bg-gradient-to-r from-[#cf1d32] to-[#990e1f] hover:from-[#b91527] hover:to-[#830a18] text-white font-serif font-bold text-xs rounded-xl shadow-xs border border-rose-400/30 flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>+ नया चंदा जोड़ें</span>
+                  </Button>
+                }
               />
-            </div>
+            )}
           </div>
         </div>
 
         {/* Collector Scope Toggle (Mine vs All) */}
         {isCollector && (
-          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-300/70 rounded-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-amber-500/10 border border-amber-300/70 rounded-xl">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-amber-950 flex items-center gap-1">
                 <span>👤</span>
                 <span>प्रविष्टि दृश्य:</span>
               </span>
-              <div className="inline-flex bg-white/90 p-0.5 rounded-xl border border-amber-300 text-xs shadow-2xs">
+              <div className="inline-flex bg-white p-0.5 rounded-lg border border-amber-300 text-xs">
                 <button
                   type="button"
                   onClick={() => setCollectorScope('MINE')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${collectorScope === 'MINE'
+                  className={`px-2.5 py-0.5 rounded-md text-xs font-bold transition-all ${
+                    collectorScope === 'MINE'
                       ? 'bg-amber-600 text-white shadow-xs'
                       : 'text-amber-900 hover:text-amber-950'
-                    }`}
+                  }`}
                 >
                   मेरी प्रविष्टियाँ (My Entries)
                 </button>
                 <button
                   type="button"
                   onClick={() => setCollectorScope('ALL')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${collectorScope === 'ALL'
+                  className={`px-2.5 py-0.5 rounded-md text-xs font-bold transition-all ${
+                    collectorScope === 'ALL'
                       ? 'bg-amber-600 text-white shadow-xs'
                       : 'text-amber-900 hover:text-amber-950'
-                    }`}
+                  }`}
                 >
-                  समस्त यूनिट प्रविष्टियाँ (All Unit Entries)
+                  समस्त यूनिट प्रविष्टियाँ (All)
                 </button>
               </div>
             </div>
-            <div className="text-[11px] text-amber-800 font-medium flex items-center gap-1">
-              <span>संग्रहकर्ता:</span>
-              <strong className="text-slate-900 bg-white/80 px-2 py-0.5 rounded-md border border-amber-200">
-                {workerName}
-              </strong>
+            <div className="text-[11px] text-amber-800 font-medium">
+              संग्रहकर्ता: <strong className="text-slate-900">{workerName}</strong>
             </div>
           </div>
         )}
 
-        {/* Clean, Segmented Filter Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2.5 border-t border-slate-100 text-xs">
-          {/* Category Chips */}
+        {/* Segmented Filter Controls matching Reference Design */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100 text-xs">
+          {/* Category Chips: श्रेणी: सभी (N) | VIL (N) | EMP (N) | SHO (N) | OTH (N) */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-            <span className="text-slate-400 font-medium text-[11px] shrink-0">श्रेणी:</span>
+            <span className="text-slate-500 font-bold text-[11px] shrink-0 font-serif">श्रेणी:</span>
             <button
               type="button"
               onClick={() => setCategoryFilter('ALL')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all ${categoryFilter === 'ALL'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 transition-all font-mono ${
+                categoryFilter === 'ALL'
+                  ? 'bg-[#990e1f] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+              }`}
             >
               सभी ({donations.length})
             </button>
@@ -292,75 +320,82 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                   key={catKey}
                   type="button"
                   onClick={() => setCategoryFilter(catKey)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all flex items-center gap-1 border ${isSelected
-                      ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-semibold shrink-0 transition-all flex items-center gap-1 border font-mono ${
+                    isSelected
+                      ? 'bg-[#990e1f] text-white border-[#990e1f] shadow-xs'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                    }`}
+                  }`}
                 >
                   <span>{cat.code}</span>
-                  <span className="text-[10px] opacity-70">({count})</span>
+                  <span className="text-[10px] opacity-75">({count})</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Status & Mode Toggles */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 overflow-x-auto">
-            {/* Balance status */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs shrink-0">
-              <button
-                type="button"
-                onClick={() => setBalanceFilter('ALL')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${balanceFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
-                  }`}
-              >
-                सभी
-              </button>
-              <button
-                type="button"
-                onClick={() => setBalanceFilter('DUE')}
-                className={`px-2 py-0.5 rounded-md font-semibold transition-all flex items-center gap-1 ${balanceFilter === 'DUE' ? 'bg-rose-600 text-white shadow-xs' : 'text-rose-600'
-                  }`}
-              >
-                बकाया
-              </button>
-              <button
-                type="button"
-                onClick={() => setBalanceFilter('PAID')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${balanceFilter === 'PAID' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600'
-                  }`}
-              >
-                चुकता
-              </button>
-            </div>
-
-            {/* Payment Mode */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs shrink-0">
-              <button
-                type="button"
-                onClick={() => setModeFilter('ALL')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${modeFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
-                  }`}
-              >
-                सभी
-              </button>
-              <button
-                type="button"
-                onClick={() => setModeFilter('CASH')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${modeFilter === 'CASH' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
-                  }`}
-              >
-                💵 नकद
-              </button>
-              <button
-                type="button"
-                onClick={() => setModeFilter('ONL')}
-                className={`px-2 py-0.5 rounded-md font-medium transition-all ${modeFilter === 'ONL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
-                  }`}
-              >
-                📲 UPI
-              </button>
-            </div>
+          {/* Payment Method & Balance Chips: भुगतान विधि: सभी | बकाया | चुकता | नकद | UPI */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+            <span className="text-slate-500 font-bold text-[11px] shrink-0 font-serif">भुगतान विधि:</span>
+            <button
+              type="button"
+              onClick={() => {
+                setBalanceFilter('ALL');
+                setModeFilter('ALL');
+              }}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+                balanceFilter === 'ALL' && modeFilter === 'ALL'
+                  ? 'bg-[#990e1f] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+              }`}
+            >
+              सभी
+            </button>
+            <button
+              type="button"
+              onClick={() => setBalanceFilter(balanceFilter === 'DUE' ? 'ALL' : 'DUE')}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
+                balanceFilter === 'DUE'
+                  ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                  : 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50'
+              }`}
+            >
+              बकाया
+            </button>
+            <button
+              type="button"
+              onClick={() => setBalanceFilter(balanceFilter === 'PAID' ? 'ALL' : 'PAID')}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
+                balanceFilter === 'PAID'
+                  ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
+                  : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'
+              }`}
+            >
+              चुकता
+            </button>
+            <button
+              type="button"
+              onClick={() => setModeFilter(modeFilter === 'CASH' ? 'ALL' : 'CASH')}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all shrink-0 border flex items-center gap-1 ${
+                modeFilter === 'CASH'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                  : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'
+              }`}
+            >
+              <span>💵</span>
+              <span>नकद</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setModeFilter(modeFilter === 'ONL' ? 'ALL' : 'ONL')}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all shrink-0 border flex items-center gap-1 ${
+                modeFilter === 'ONL'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                  : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'
+              }`}
+            >
+              <span>📲</span>
+              <span>UPI</span>
+            </button>
           </div>
         </div>
       </div>
@@ -582,24 +617,24 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
       )}
 
       {/* ------------------------------------------------------------------ */}
-      {/* OPTION B: FULL SPREADSHEET HORIZONTAL GRID VIEW                    */}
+      {/* OPTION B: FULL SPREADSHEET HORIZONTAL GRID VIEW (Burgundy Maroon)  */}
       {/* ------------------------------------------------------------------ */}
       {viewMode === 'grid' && (
-        <div className="bg-white rounded-2xl border border-amber-200/80 shadow-xs overflow-hidden">
-          {/* Table Header Bar */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-4 sm:px-5 py-2.5 border-b border-amber-200 flex items-center justify-between text-xs">
+        <div className="bg-white rounded-2xl border border-amber-300/80 shadow-md overflow-hidden">
+          {/* Table Header Title Bar */}
+          <div className="bg-gradient-to-r from-[#fff9ec] via-[#fffbf2] to-[#fff9ec] px-4 sm:px-5 py-2.5 border-b border-amber-200 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4 text-amber-700" />
-              <span className="font-bold text-amber-950 tracking-wide uppercase font-mono">
-                चंदा रजिस्टर (Donation Ledger)
+              <FileSpreadsheet className="w-4 h-4 text-[#8a1424]" />
+              <span className="font-bold text-[#480911] tracking-wide uppercase font-serif text-xs sm:text-sm">
+                चंदा रजिस्टर (DONATION LEDGER)
               </span>
-              <span className="text-amber-400 hidden sm:inline">•</span>
-              <span className="text-amber-900 font-medium hidden sm:inline">
-                {currentEntity.name}
+              <span className="text-amber-500">•</span>
+              <span className="text-amber-950 font-serif font-bold">
+                {currentEntity.name || 'श्री दुर्गा पूजा समिति, नारायणपुर'}
               </span>
             </div>
-            <div className="text-amber-900 font-mono text-[11px]">
-              दिखाई गई प्रविष्टियाँ: <span className="font-bold text-slate-900">{filteredDonations.length}</span>
+            <div className="text-amber-900 font-mono text-[11px] hidden sm:block">
+              कुल प्रविष्टियाँ: <span className="font-bold text-slate-900">{filteredDonations.length}</span>
             </div>
           </div>
 
@@ -607,61 +642,61 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
+                <tr className="bg-[#630b16] text-white font-bold uppercase text-[10px] sm:text-[11px] tracking-wider border-b border-[#7e111f]">
                   <th
                     onClick={() => handleSort('serialNumber')}
-                    className="p-3 border-r border-slate-100 cursor-pointer hover:bg-slate-100 text-center whitespace-nowrap"
+                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-center whitespace-nowrap"
                   >
                     <div className="flex items-center justify-center gap-1 font-mono">
-                      <span>S.NUM</span>
-                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                      <span>S. NUM</span>
+                      <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
                   </th>
-                  <th className="p-3 border-r border-slate-100 whitespace-nowrap text-center">VIL/EMP/SHO/OTH</th>
+                  <th className="p-3 border-r border-[#7e111f]/60 whitespace-nowrap text-center">
+                    VIL/EMP/SHO/OTH
+                  </th>
                   <th
                     onClick={() => handleSort('name')}
-                    className="p-3 border-r border-slate-100 cursor-pointer hover:bg-slate-100 whitespace-nowrap min-w-[140px]"
+                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] whitespace-nowrap min-w-[140px]"
                   >
                     <div className="flex items-center gap-1">
                       <span>NAME</span>
-                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                      <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
                   </th>
-                  <th className="p-3 border-r border-slate-100 min-w-[150px]">IDENTITY</th>
-                  <th className="p-3 border-r border-slate-100 whitespace-nowrap">CASTE</th>
-                  <th className="p-3 border-r border-slate-100 min-w-[140px]">ADDRESS.1</th>
-                  <th className="p-3 border-r border-slate-100 min-w-[130px]">ADDRESS.2</th>
+                  <th className="p-3 border-r border-[#7e111f]/60 min-w-[140px] whitespace-nowrap">IDENTITY</th>
+                  <th className="p-3 border-r border-[#7e111f]/60 whitespace-nowrap">CASTE</th>
+                  <th className="p-3 border-r border-[#7e111f]/60 min-w-[130px] whitespace-nowrap">ADDRESS.1</th>
+                  <th className="p-3 border-r border-[#7e111f]/60 min-w-[120px] whitespace-nowrap">ADDRESS.2</th>
                   <th
                     onClick={() => handleSort('acceptedAmount')}
-                    className="p-3 border-r border-slate-100 cursor-pointer hover:bg-slate-100 text-right whitespace-nowrap min-w-[110px]"
+                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-right whitespace-nowrap min-w-[110px]"
                   >
                     <div className="flex items-center justify-end gap-1 font-mono">
-                      <span>ACCEPTED AMMOUNT</span>
-                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                      <span>ACCEPTED AMOUNT</span>
+                      <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
                   </th>
-                  <th className="p-3 border-r border-slate-100 text-right whitespace-nowrap min-w-[110px] text-emerald-700 font-mono font-bold">
+                  <th className="p-3 border-r border-[#7e111f]/60 text-right whitespace-nowrap min-w-[110px] text-amber-200 font-mono font-bold">
                     RECEIVABLE AMOUNT
                   </th>
                   <th
                     onClick={() => handleSort('balanceAmount')}
-                    className="p-3 border-r border-slate-100 cursor-pointer hover:bg-slate-100 text-right whitespace-nowrap min-w-[110px] font-mono font-bold"
+                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-right whitespace-nowrap min-w-[110px] font-mono font-bold"
                   >
                     <div className="flex items-center justify-end gap-1">
                       <span>BALANCE AMOUNT</span>
-                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                      <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
                   </th>
-                  <th className="p-3 border-r border-slate-100 text-center whitespace-nowrap">CASH/ONL</th>
-                  <th className="p-3 border-r border-slate-100 text-center whitespace-nowrap">रोकड़ जमा</th>
-                  <th className="p-3 text-center whitespace-nowrap">ACTIONS</th>
+                  <th className="p-3 text-center whitespace-nowrap min-w-[90px]">ACTION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredDonations.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="py-12 text-center text-slate-400">
-                      <p className="text-sm font-semibold text-slate-600">कोई प्रविष्टि नहीं मिली</p>
+                    <td colSpan={11} className="py-12 text-center text-slate-400">
+                      <p className="text-sm font-semibold text-slate-600 font-serif">कोई प्रविष्टि नहीं मिली</p>
                       <p className="text-xs text-slate-400 mt-1">
                         सर्च फिल्टर बदलें या नया चंदा जोड़ें।
                       </p>
@@ -676,8 +711,9 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     return (
                       <tr
                         key={row.id}
-                        className={`hover:bg-amber-50/40 transition-colors ${isVip ? 'bg-amber-50/20' : index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
-                          }`}
+                        className={`hover:bg-amber-50/50 transition-colors ${
+                          isVip ? 'bg-amber-50/20' : index % 2 === 0 ? 'bg-white' : 'bg-[#fdfbf7]'
+                        }`}
                       >
                         {/* S.NUM */}
                         <td className="p-3 border-r border-slate-100 text-center font-mono font-bold text-amber-950 text-xs">
@@ -686,12 +722,12 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
 
                         {/* VIL/EMP/SHO/OTH */}
                         <td className="p-3 border-r border-slate-100 text-center">
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                             {cat.code}
                           </span>
                         </td>
 
-                        {/* NAME */}
+                        {/* NAME with phone */}
                         <td className="p-3 border-r border-slate-100 font-semibold text-slate-900">
                           <div className="flex items-center gap-1.5">
                             <span>{row.name}</span>
@@ -702,8 +738,9 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                             )}
                           </div>
                           {row.phone && (
-                            <span className="block text-[10px] font-normal text-slate-400 font-mono">
-                              📞 {row.phone}
+                            <span className="flex items-center gap-1 text-[10px] font-normal text-slate-500 font-mono mt-0.5">
+                              <Phone className="w-2.5 h-2.5 text-emerald-600" />
+                              <span>{row.phone}</span>
                             </span>
                           )}
                         </td>
@@ -728,13 +765,13 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                           {row.address2 || <span className="text-slate-300">-</span>}
                         </td>
 
-                        {/* ACCEPTED AMMOUNT */}
-                        <td className="p-3 border-r border-slate-100 text-right font-mono font-semibold text-slate-800">
+                        {/* ACCEPTED AMOUNT */}
+                        <td className="p-3 border-r border-slate-100 text-right font-mono font-bold text-slate-900">
                           ₹{row.acceptedAmount.toLocaleString('hi-IN')}
                         </td>
 
                         {/* RECEIVABLE AMOUNT */}
-                        <td className="p-3 border-r border-slate-100 text-right font-mono font-bold text-emerald-700 bg-emerald-50/20">
+                        <td className="p-3 border-r border-slate-100 text-right font-mono font-bold text-emerald-700">
                           ₹{row.receivedAmount.toLocaleString('hi-IN')}
                         </td>
 
@@ -749,72 +786,71 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                           )}
                         </td>
 
-                        {/* CASH/ONL */}
-                        <td className="p-3 border-r border-slate-100 text-center">
-                          <span
-                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${row.paymentMode === 'ONL'
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'bg-slate-100 text-slate-700 border border-slate-200'
-                              }`}
-                          >
-                            {row.paymentMode}
-                          </span>
-                        </td>
-
-                        {/* CASHIER HANDOVER TOGGLE */}
-                        <td className="p-2 border-r border-slate-100 text-center">
-                          <button
-                            type="button"
-                            onClick={() => toggleHandover(row)}
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-all ${row.isHandoverDone
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                                : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
-                              }`}
-                          >
-                            {row.isHandoverDone ? 'जमा ✓' : 'बाकी'}
-                          </button>
-                        </td>
-
-                        {/* ACTIONS */}
+                        {/* ACTION: 'देखें' Button + 3-dots Dropdown */}
                         <td className="p-2 text-center whitespace-nowrap">
                           <div className="flex items-center justify-center gap-1">
                             <Button
                               size="sm"
-                              variant="ghost"
+                              variant="outline"
                               onClick={() => openReceiptModal(row)}
-                              title="व्हाट्सएप रसीद भेजें"
-                              className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
+                              className="h-7 px-2 text-xs bg-[#fff9ec] hover:bg-amber-100 text-amber-950 border-amber-300 rounded-lg flex items-center gap-1 font-serif font-bold shadow-2xs transition-all"
+                              title="पावती रसीद देखें"
                             >
-                              <MessageSquare className="w-3.5 h-3.5" />
+                              <Eye className="w-3.5 h-3.5 text-amber-700" />
+                              <span>देखें</span>
                             </Button>
 
-                            <QuickDonationDialog
-                              initialData={row}
-                              isCollectorMode={isCollector}
-                              defaultCollectorName={workerName}
-                              triggerButton={
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  title="संपादित करें"
-                                  className="h-7 w-7 p-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg"
+                                  className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+                                  title="अन्य विकल्प"
                                 >
-                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <MoreVertical className="w-3.5 h-3.5" />
                                 </Button>
-                              }
-                            />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="text-xs w-44 bg-white border border-amber-200 shadow-xl rounded-xl p-1">
+                                <DropdownMenuItem
+                                  onClick={() => openReceiptModal(row)}
+                                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-amber-50"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>व्हाट्सएप रसीद भेजें</span>
+                                </DropdownMenuItem>
 
-                            {!isCollector && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setDeletingId(row.id)}
-                                title="हटाएँ"
-                                className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
+                                <QuickDonationDialog
+                                  initialData={row}
+                                  isCollectorMode={isCollector}
+                                  defaultCollectorName={workerName}
+                                  triggerButton={
+                                    <div className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-700 hover:bg-amber-50 rounded-lg cursor-pointer">
+                                      <Edit2 className="w-3.5 h-3.5 text-amber-600" />
+                                      <span>संपादित करें</span>
+                                    </div>
+                                  }
+                                />
+
+                                <DropdownMenuItem
+                                  onClick={() => toggleHandover(row)}
+                                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-amber-50"
+                                >
+                                  <HandCoins className="w-3.5 h-3.5 text-amber-600" />
+                                  <span>{row.isHandoverDone ? 'रोकड़ बाकी करें' : 'रोकड़ संदूक जमा ✓'}</span>
+                                </DropdownMenuItem>
+
+                                {!isCollector && (
+                                  <DropdownMenuItem
+                                    onClick={() => setDeletingId(row.id)}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-rose-600 cursor-pointer hover:bg-rose-50 focus:text-rose-600"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>हटाएँ</span>
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </td>
                       </tr>
@@ -825,22 +861,20 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
 
               {/* Sticky Auto-Sum Footer */}
               <tfoot>
-                <tr className="bg-amber-50/80 text-slate-900 font-bold border-t-2 border-amber-300 text-xs">
-                  <td colSpan={7} className="p-3 text-right font-mono uppercase tracking-wider text-amber-950">
+                <tr className="bg-[#fff9ec] text-slate-900 font-bold border-t-2 border-amber-300 text-xs">
+                  <td colSpan={7} className="p-3 text-right font-serif uppercase tracking-wider text-amber-950">
                     कुल योग ({filteredDonations.length} रिकॉर्ड):
                   </td>
-                  <td className="p-3 text-right font-mono text-sm border-r border-amber-200 text-slate-900">
+                  <td className="p-3 text-right font-mono font-bold text-sm border-r border-amber-200 text-slate-900">
                     ₹{visibleTotals.accepted.toLocaleString('hi-IN')}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm border-r border-amber-200 text-emerald-700 bg-emerald-50/50">
+                  <td className="p-3 text-right font-mono font-bold text-sm border-r border-amber-200 text-emerald-700 bg-emerald-50/40">
                     ₹{visibleTotals.received.toLocaleString('hi-IN')}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm border-r border-amber-200 text-rose-600 bg-rose-50/50">
+                  <td className="p-3 text-right font-mono font-bold text-sm border-r border-amber-200 text-rose-600 bg-rose-50/40">
                     ₹{visibleTotals.balance.toLocaleString('hi-IN')}
                   </td>
-                  <td colSpan={3} className="p-3 text-center text-[11px] font-mono text-slate-700">
-                    नकद: ₹{visibleTotals.cash.toLocaleString('hi-IN')} | UPI: ₹{visibleTotals.online.toLocaleString('hi-IN')}
-                  </td>
+                  <td className="p-3 bg-[#fff9ec]" />
                 </tr>
               </tfoot>
             </table>

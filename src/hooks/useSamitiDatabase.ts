@@ -354,7 +354,7 @@ export function useSamitiDatabase() {
         phone: item.phone,
         email: item.email || undefined,
         username: item.username,
-        password: item.password_hash || undefined,
+        userId: (item as any).user_id || undefined,
         primaryRole: item.primary_role as any,
         designation: item.designation || '',
         status: item.status as any,
@@ -370,20 +370,23 @@ export function useSamitiDatabase() {
 
   const saveStaffToCloud = useCallback(async (staff: MasterStaff) => {
     try {
+      // Note: real login credentials live in Supabase Auth (created via the
+      // create-user edge function), not in this table — no plaintext password
+      // is ever written here for staff created through the current flow.
       const { error } = await supabase.from('master_staff').upsert({
         id: staff.id,
         name: staff.name,
         phone: staff.phone,
         email: staff.email || null,
         username: staff.username,
-        password_hash: staff.password || null,
+        user_id: staff.userId || null,
         primary_role: staff.primaryRole,
         designation: staff.designation || null,
         status: staff.status,
         joined_date: staff.joinedDate,
         avatar_color: staff.avatarColor || null,
         workspace_permissions: staff.workspacePermissions as any,
-      });
+      } as any);
       if (error) throw error;
     } catch (err: any) {
       console.warn('Failed to upsert staff to Supabase:', err.message);

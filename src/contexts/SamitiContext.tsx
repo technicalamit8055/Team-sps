@@ -19,6 +19,18 @@ import {
 } from '@/types/master';
 import { toast } from 'sonner';
 import { useSamitiDatabase } from '@/hooks/useSamitiDatabase';
+import { supabase } from '@/integrations/supabase/client';
+
+// Maps the samiti-specific MasterRole taxonomy onto the app-wide auth role
+// used by user_roles / the create-user edge function's own authorization checks.
+const MASTER_ROLE_TO_APP_ROLE: Record<string, 'admin' | 'manager' | 'worker' | 'citizen'> = {
+  admin: 'admin',
+  manager: 'manager',
+  accountant: 'manager',
+  collector: 'worker',
+  karyakarta: 'worker',
+  observer: 'worker',
+};
 
 const DEFAULT_ENTITIES: MasterEntity[] = [
   {
@@ -490,7 +502,9 @@ interface SamitiContextType {
   updateEvent: (id: string, updates: Partial<SamitiEvent>) => void;
   deleteEntity: (id: string) => boolean;
   staffList: MasterStaff[];
-  addStaff: (staffData: Omit<MasterStaff, 'id' | 'joinedDate'>) => MasterStaff;
+  addStaff: (
+    staffData: Omit<MasterStaff, 'id' | 'joinedDate' | 'userId'> & { password: string }
+  ) => Promise<MasterStaff>;
   updateStaff: (id: string, updates: Partial<MasterStaff>) => void;
   deleteStaff: (id: string) => void;
   updateStaffPermission: (staffId: string, workspaceId: string, accessLevel: WorkspaceAccessLevel, modules?: Partial<ModuleAccess>) => void;
@@ -1364,10 +1378,44 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [mainWorkspaceId, entities, events, donations, expenses, currentEntityId, deleteEntityFromCloud, saveStaffToCloud]
   );
 
-  // Add staff
-  const addStaff = useCallback((staffData: Omit<MasterStaff, 'id' | 'joinedDate'>) => {
+  // Add staff — creates a real Supabase Auth account (via the create-user
+  // edge function, which verifies the caller's own role server-side and
+  // rejects a manager trying to create an admin/manager account) before
+  // persisting the samiti-specific staff/permissions record.
+  const addStaff = useCallback(async (
+    staffData: Omit<MasterStaff, 'id' | 'joinedDate' | 'userId'> & { password: string }
+  ): Promise<MasterStaff> => {
+    const appRole = MASTER_ROLE_TO_APP_ROLE[staffData.primaryRole] || 'worker';
+
+    const { data, error } = await supabase.functions.invoke('create-user', {
+      body: {
+        username: staffData.username,
+        password: staffData.password,
+        full_name: staffData.name,
+        role: appRole,
+        phone: staffData.phone || null,
+      },
+    });
+
+    if (error) {
+      toast.error(`स्टाफ खाता बनाने में त्रुटि: ${error.message}`);
+      throw error;
+    }
+    if (data?.error) {
+      toast.error(`स्टाफ खाता बनाने में त्रुटि: ${data.error}`);
+      throw new Error(data.error);
+    }
+
     const newStaff: MasterStaff = {
-      ...staffData,
+      name: staffData.name,
+      phone: staffData.phone,
+      email: staffData.email,
+      username: staffData.username,
+      userId: data.user.id,
+      primaryRole: staffData.primaryRole,
+      designation: staffData.designation,
+      status: staffData.status,
+      workspacePermissions: staffData.workspacePermissions,
       id: `staff-${Date.now()}`,
       joinedDate: new Date().toISOString().split('T')[0],
       avatarColor: staffData.avatarColor || 'bg-slate-700',

@@ -31,6 +31,8 @@ export const ExcelImportExport: React.FC = () => {
         try {
           const rawData = results.data as Array<Record<string, string>>;
 
+          let skippedInvalidAmount = 0;
+
           const cleanedData = rawData.map((row, idx) => {
             // Fuzzy match column headers from user's image
             const findKey = (candidates: string[]) => {
@@ -82,11 +84,25 @@ export const ExcelImportExport: React.FC = () => {
               date: new Date().toISOString().split('T')[0],
               remarks: 'CSV इम्पोर्ट द्वारा दर्ज',
             };
+          }).filter(row => {
+            const isValid =
+              Number.isFinite(row.acceptedAmount) &&
+              Number.isFinite(row.receivedAmount) &&
+              row.acceptedAmount >= 0 &&
+              row.receivedAmount >= 0;
+            if (!isValid) skippedInvalidAmount++;
+            return isValid;
           });
 
           setParsedRows(cleanedData);
           setIsProcessing(false);
-          toast.success(`${cleanedData.length} रिकॉर्ड सफलतापूर्वक पढ़े गए! नीचे प्रीव्यू देखें।`);
+          if (skippedInvalidAmount > 0) {
+            toast.warning(
+              `${cleanedData.length} रिकॉर्ड पढ़े गए, ${skippedInvalidAmount} पंक्तियाँ अमान्य (ऋणात्मक) राशि के कारण छोड़ी गईं।`
+            );
+          } else {
+            toast.success(`${cleanedData.length} रिकॉर्ड सफलतापूर्वक पढ़े गए! नीचे प्रीव्यू देखें।`);
+          }
         } catch (err) {
           console.error(err);
           setIsProcessing(false);

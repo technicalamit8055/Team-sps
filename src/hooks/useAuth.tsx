@@ -31,27 +31,10 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const LOCAL_SESSION_KEY = 'victory_demo_auth_session_v1';
-
-// Helper to fetch staff member by username from local master staff store
-export const getStaffMemberByUsername = (username: string) => {
-  const cleanUser = (username || '').toLowerCase().trim();
-  if (!cleanUser) return null;
-  try {
-    const rawStaff = localStorage.getItem('victory_master_staff_v1');
-    if (rawStaff) {
-      const staffList = JSON.parse(rawStaff);
-      if (Array.isArray(staffList)) {
-        return staffList.find((s: any) => s?.username?.toLowerCase() === cleanUser) || null;
-      }
-    }
-  } catch (e) {
-    console.warn('Error reading staff by username:', e);
-  }
-  return null;
-};
-
-// Helper to determine if a username belongs to an assigned collector worker
+// Helper to determine if a username belongs to an assigned collector worker.
+// This reads the locally-cached staff roster purely for authorization/UX
+// scoping (which workspace a collector lands on) — it is never used to
+// authenticate a login. Real authentication always goes through Supabase Auth.
 export const getStaffCollectorInfo = (username: string): { assignedWorkspaceId: string | null; isCollector: boolean; staffName?: string } => {
   const cleanUser = (username || '').toLowerCase().trim();
   if (!cleanUser) return { assignedWorkspaceId: null, isCollector: false };
@@ -84,11 +67,6 @@ export const getStaffCollectorInfo = (username: string): { assignedWorkspaceId: 
     }
   } catch (e) {
     console.warn('Error reading staff for collector info:', e);
-  }
-
-  // Default fallback for sunil_collector
-  if (cleanUser.includes('collector') || cleanUser === 'sunil_collector') {
-    return { assignedWorkspaceId: 'ent-durga-narayanpur', isCollector: true, staffName: 'सुनील वर्मा' };
   }
 
   return { assignedWorkspaceId: null, isCollector: false };
@@ -151,41 +129,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Check local demo session first if Supabase is offline or using demo staff
-    const checkLocalSession = () => {
-      try {
-        const savedSession = localStorage.getItem(LOCAL_SESSION_KEY);
-        if (savedSession) {
-          const parsed = JSON.parse(savedSession);
-          if (parsed && parsed.user && parsed.role) {
-            setUser(parsed.user);
-            setRole(parsed.role);
-            setProfile(parsed.profile);
-            setAssignedWorkspaceId(parsed.assignedWorkspaceId || null);
-            setIsCollector(!!parsed.isCollector);
-            setIsLoading(false);
-            return true;
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to parse local demo session:', e);
-      }
-      return false;
-    };
-
-    const hasLocal = checkLocalSession();
-
-    // Set up Supabase auth listener
+    // Set up Supabase auth listener — the only source of truth for a session.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session) {
-          localStorage.removeItem(LOCAL_SESSION_KEY);
           setSession(session);
           setUser(session.user);
           setTimeout(() => {
             fetchUserData(session.user.id);
           }, 0);
-        } else if (!hasLocal) {
+        } else {
           setSession(null);
           setUser(null);
           setRole(null);
@@ -197,16 +150,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    if (!hasLocal) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setSession(session);
-          setUser(session.user);
-          fetchUserData(session.user.id);
-        }
-        setIsLoading(false);
-      });
-    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSession(session);
+        setUser(session.user);
+        fetchUserData(session.user.id);
+      }
+      setIsLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -221,75 +172,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Convert username to proxy email for Supabase Auth
       const proxyEmail = `${cleanUser.replace(/[^a-z0-9]/g, '')}@victory.local`;
-      
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: proxyEmail,
         password: password,
       });
 
       if (error) {
-        // Fallback for pre-configured staff accounts or any staff created in Master OS
-        const localStaff = getStaffMemberByUsername(cleanUser);
-        const isCollector = cleanUser === 'sunil_collector' || collectorInfo.isCollector || localStaff?.primaryRole === 'collector';
-        const isKnownStaff = !!localStaff || isCollector || cleanUser.includes('admin') || cleanUser.includes('treasurer');
-
-        if (isKnownStaff) {
-          // If a specific password is set for this staff member, verify it!
-          if (localStaff?.password && localStaff.password.trim() !== '') {
-            if (password !== localStaff.password) {
-              return { error: 'गलत Password। कृपया सही पासवर्ड दर्ज करें।' };
-            }
-          }
-
-          const assignedWs = collectorInfo.assignedWorkspaceId ||
-            (localStaff ? Object.keys(localStaff.workspacePermissions || {})[0] : null) ||
-            (isCollector ? 'ent-durga-narayanpur' : null);
-
-          const detectedRole: AppRole = (localStaff?.primaryRole === 'admin' || cleanUser.includes('admin'))
-            ? 'admin'
-            : (isCollector ? 'worker' : 'manager');
-
-          const staffDisplayName = localStaff?.name || collectorInfo.staffName || (isCollector ? 'सुनील वर्मा' : cleanUser);
-          const staffPhone = localStaff?.phone || (cleanUser === 'sunil_collector' ? '9470123456' : null);
-
-          const mockUser: any = {
-            id: localStaff ? `staff-user-${localStaff.id}` : (isCollector ? 'mock-user-sunil-collector' : `mock-user-${cleanUser}`),
-            email: proxyEmail,
-            created_at: new Date().toISOString(),
-          };
-
-          const mockProfile: AuthUserProfile = {
-            username: cleanUser,
-            full_name: staffDisplayName,
-            ward_number: 1,
-            phone: staffPhone,
-            assigned_workspace_id: assignedWs,
-            is_collector: isCollector,
-          };
-
-          const demoSessionData = {
-            user: mockUser,
-            role: detectedRole,
-            profile: mockProfile,
-            assignedWorkspaceId: assignedWs,
-            isCollector: isCollector,
-          };
-
-          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(demoSessionData));
-          setUser(mockUser);
-          setRole(detectedRole);
-          setProfile(mockProfile);
-          setAssignedWorkspaceId(assignedWs);
-          setIsCollector(isCollector);
-
-          return {
-            error: null,
-            role: detectedRole,
-            assignedWorkspaceId: assignedWs,
-            isCollector: isCollector,
-          };
-        }
-
         if (error.message.includes('Invalid login credentials')) {
           return { error: 'गलत Username या Password। कृपया पुनः प्रयास करें।' };
         }
@@ -331,7 +220,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    localStorage.removeItem(LOCAL_SESSION_KEY);
     await supabase.auth.signOut().catch(() => {});
     setUser(null);
     setSession(null);
@@ -339,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setAssignedWorkspaceId(null);
     setIsCollector(false);
-    toast.success('Logged out successfully');
+    toast.success('सफलतापूर्वक लॉगआउट हो गया।');
   };
 
   return (

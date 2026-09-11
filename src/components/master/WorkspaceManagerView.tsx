@@ -167,7 +167,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
   return (
     <div className="space-y-5">
       {/* Top Banner: KPI Cards with Tricolor Top Bar Accent */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {/* KPI 1: Total Units */}
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">

@@ -101,7 +101,7 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/igicimymnfkcmvuuysjr\.supabase\.co\/rest\/v1\/.*/i,
+            urlPattern: /^https:\/\/ylbczxvtiyzughykhbtj\.supabase\.co\/rest\/v1\/.*/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "supabase-api-cache",
@@ -116,7 +116,7 @@ export default defineConfig(({ mode }) => ({
             },
           },
           {
-            urlPattern: /^https:\/\/igicimymnfkcmvuuysjr\.supabase\.co\/storage\/v1\/.*/i,
+            urlPattern: /^https:\/\/ylbczxvtiyzughykhbtj\.supabase\.co\/storage\/v1\/.*/i,
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "supabase-storage-cache",

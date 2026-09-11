@@ -28,6 +28,7 @@ import {
   Check,
 } from 'lucide-react';
 import { WhatsAppReceiptModal } from './WhatsAppReceiptModal';
+import { toast } from 'sonner';
 
 interface QuickDonationDialogProps {
   initialData?: SamitiDonation | null;
@@ -35,6 +36,8 @@ interface QuickDonationDialogProps {
   triggerButton?: React.ReactNode;
   defaultCollectorName?: string;
   isCollectorMode?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const PRESET_AMOUNTS = [
@@ -82,13 +85,17 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   triggerButton,
   defaultCollectorName,
   isCollectorMode: propCollectorMode,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }) => {
   const { addDonation, updateDonation, currentEvent, currentEntity, donations, staffList, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
 
   const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
   const workerCollectorName = defaultCollectorName || currentStaffMember?.name || 'सुनील वर्मा';
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setIsOpen = controlledOnOpenChange || setInternalOpen;
   const [createdDonation, setCreatedDonation] = useState<SamitiDonation | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
@@ -187,6 +194,16 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    if (
+      !Number.isFinite(parsedAccepted) ||
+      !Number.isFinite(parsedReceived) ||
+      parsedAccepted < 0 ||
+      parsedReceived < 0
+    ) {
+      toast.error('राशि ऋणात्मक (negative) नहीं हो सकती। कृपया सही राशि दर्ज करें।');
+      return;
+    }
 
     if (initialData) {
       updateDonation(initialData.id, {
