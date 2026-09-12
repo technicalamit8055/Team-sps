@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { useSamitiDatabase } from '@/hooks/useSamitiDatabase';
 import { supabase } from '@/integrations/supabase/client';
+import { extractFunctionErrorMessage } from '@/integrations/supabase/functionError';
 
 // Maps the samiti-specific MasterRole taxonomy onto the app-wide auth role
 // used by user_roles / the create-user edge function's own authorization checks.
@@ -1398,8 +1399,9 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
 
     if (error) {
-      toast.error(`स्टाफ खाता बनाने में त्रुटि: ${error.message}`);
-      throw error;
+      const message = await extractFunctionErrorMessage(error);
+      toast.error(`स्टाफ खाता बनाने में त्रुटि: ${message}`);
+      throw new Error(message);
     }
     if (data?.error) {
       toast.error(`स्टाफ खाता बनाने में त्रुटि: ${data.error}`);

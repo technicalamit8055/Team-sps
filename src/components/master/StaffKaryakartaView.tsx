@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSamiti } from '@/contexts/SamitiContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { extractFunctionErrorMessage } from '@/integrations/supabase/functionError';
 import { MasterStaff, MasterRole, WorkspaceAccessLevel, DEFAULT_MODULE_ACCESS_MAP } from '@/types/master';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -276,7 +277,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       });
 
       if (error || data?.error) {
-        toast.error(`पासवर्ड रीसेट करने में त्रुटि: ${error?.message || data?.error}`);
+        const message = error ? await extractFunctionErrorMessage(error) : data?.error;
+        toast.error(`पासवर्ड रीसेट करने में त्रुटि: ${message}`);
         return;
       }
 
@@ -319,7 +321,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
           body: { target_user_id: editingStaff.userId, new_username: trimmedUsername },
         });
         if (error || data?.error) {
-          toast.error(`Username बदलने में त्रुटि: ${error?.message || data?.error}`);
+          const message = error ? await extractFunctionErrorMessage(error) : data?.error;
+          toast.error(`Username बदलने में त्रुटि: ${message}`);
           setIsSavingEdit(false);
           return;
         }
@@ -337,7 +340,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
           body: { target_user_id: editingStaff.userId, new_password: editPassword.trim() },
         });
         if (error || data?.error) {
-          toast.error(`पासवर्ड रीसेट करने में त्रुटि: ${error?.message || data?.error}`);
+          const message = error ? await extractFunctionErrorMessage(error) : data?.error;
+          toast.error(`पासवर्ड रीसेट करने में त्रुटि: ${message}`);
           setIsSavingEdit(false);
           return;
         }
