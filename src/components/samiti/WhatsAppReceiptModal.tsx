@@ -227,7 +227,7 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
             <div className="flex flex-col items-center space-y-3">
               <div className="relative w-full max-w-md mx-auto bg-amber-50/50 rounded-2xl p-2 border-2 border-amber-300/80 shadow-md">
                 {generatingPreview ? (
-                  <div className="w-full aspect-[1055/1491] flex flex-col items-center justify-center bg-amber-50/70 rounded-xl space-y-2 text-amber-800">
+                  <div className="w-full aspect-[1084/1451] flex flex-col items-center justify-center bg-amber-50/70 rounded-xl space-y-2 text-amber-800">
                     <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
                     <span className="text-xs font-semibold">भव्य रसीद तैयार हो रही है…</span>
                   </div>
@@ -244,7 +244,7 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="w-full aspect-[1055/1491] flex items-center justify-center bg-slate-50 text-slate-400 text-xs">
+                  <div className="w-full aspect-[1084/1451] flex items-center justify-center bg-slate-50 text-slate-400 text-xs">
                     पूर्वावलोकन उपलब्ध नहीं
                   </div>
                 )}
@@ -319,15 +319,6 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
                   <p className="text-slate-500 text-[11px]">सहयोगकर्ता का नाम (Donor Name):</p>
                   <p className="text-base font-bold text-slate-950">{donation.name}</p>
                 </div>
-
-                {donation.identity && (
-                  <div>
-                    <p className="text-slate-500 text-[11px]">
-                      पहचान / दुकान / पिता (Identity / Firm):
-                    </p>
-                    <p className="font-semibold text-slate-800">{donation.identity}</p>
-                  </div>
-                )}
               </div>
 
               <div className="mt-3 bg-amber-50/70 rounded-xl p-3 border border-amber-300">

@@ -56,6 +56,7 @@ export const ExcelImportExport: React.FC = () => {
             const name = findKey(['NAME', 'DONOR', 'PERSON']) || 'अनाम दानदाता';
             const identity = findKey(['IDENTITY', 'FATHER', 'SHOP', 'FIRM', 'POST']);
             const caste = findKey(['CASTE', 'COMMUNITY', 'SUBGROUP']);
+            const village = findKey(['VILLAGE', 'GAON', 'GRAM', 'गाँव', 'गांव']);
             const address1 = findKey(['ADDRESS.1', 'ADDRESS 1', 'MOHALLA', 'WARD']);
             const address2 = findKey(['ADDRESS.2', 'ADDRESS 2', 'POST', 'DISTRICT']);
             const phone = findKey(['PHONE', 'MOBILE', 'WHATSAPP', 'CONTACT']).replace(/\D/g, '');
@@ -74,6 +75,7 @@ export const ExcelImportExport: React.FC = () => {
               name,
               identity,
               caste,
+              village,
               address1,
               address2,
               phone,
@@ -138,6 +140,7 @@ export const ExcelImportExport: React.FC = () => {
       'NAME': d.name,
       'IDENTITY': d.identity || '',
       'CASTE': d.caste || '',
+      'VILLAGE': d.village || '',
       'ADDRESS.1': d.address1 || '',
       'ADDRESS.2': d.address2 || '',
       'ACCEPTED AMMOUNT': d.acceptedAmount,
@@ -171,6 +174,7 @@ export const ExcelImportExport: React.FC = () => {
         'NAME': 'राजेश कुमार गुप्ता',
         'IDENTITY': 'प्रो०: गुप्ता वस्त्र भंडार',
         'CASTE': 'वैश्य',
+        'VILLAGE': 'नारायणपुर',
         'ADDRESS.1': 'दुकान नं० 14, मुख्य बाजार',
         'ADDRESS.2': 'नारायणपुर चौराहा',
         'ACCEPTED AMMOUNT': 11000,
@@ -185,6 +189,7 @@ export const ExcelImportExport: React.FC = () => {
         'NAME': 'रामनरेश सिंह',
         'IDENTITY': 'आत्मज: स्वर्गीय रामखेलावन सिंह',
         'CASTE': 'क्षत्रिय',
+        'VILLAGE': 'छपरापुर',
         'ADDRESS.1': 'वार्ड नं० 4, सिंह टोला',
         'ADDRESS.2': 'पोस्ट- नारायणपुर',
         'ACCEPTED AMMOUNT': 5100,
@@ -199,6 +204,7 @@ export const ExcelImportExport: React.FC = () => {
         'NAME': 'डॉ० विकास रंजन',
         'IDENTITY': 'चिकित्सा पदाधिकारी, पीएचसी',
         'CASTE': 'ब्राह्मण',
+        'VILLAGE': 'नारायणपुर',
         'ADDRESS.1': 'क्वार्टर नं० 2, पीएचसी परिसर',
         'ADDRESS.2': 'नारायणपुर',
         'ACCEPTED AMMOUNT': 5100,
@@ -343,6 +349,7 @@ export const ExcelImportExport: React.FC = () => {
                   <th className="p-2.5">NAME</th>
                   <th className="p-2.5">IDENTITY</th>
                   <th className="p-2.5">CASTE</th>
+                  <th className="p-2.5">VILLAGE</th>
                   <th className="p-2.5">ADDRESS.1</th>
                   <th className="p-2.5 text-right">ACCEPTED</th>
                   <th className="p-2.5 text-right">RECEIVED</th>
@@ -362,6 +369,7 @@ export const ExcelImportExport: React.FC = () => {
                     <td className="p-2.5 font-bold">{row.name}</td>
                     <td className="p-2.5 text-gray-600">{row.identity || '-'}</td>
                     <td className="p-2.5 text-gray-500">{row.caste || '-'}</td>
+                    <td className="p-2.5 text-gray-600">{row.village || '-'}</td>
                     <td className="p-2.5 text-gray-600">{row.address1 || '-'}</td>
                     <td className="p-2.5 text-right font-mono font-semibold">₹{row.acceptedAmount}</td>
                     <td className="p-2.5 text-right font-mono font-bold text-emerald-700">₹{row.receivedAmount}</td>

@@ -4,6 +4,7 @@ import {
   MasterEntity,
   SamitiEvent,
   SamitiDonation,
+  DonationPayment,
   SamitiExpense,
   SamitiFinancialSummary,
   DonationCategory,
@@ -294,7 +295,7 @@ const SEED_EXPENSES: SamitiExpense[] = [
     id: 'exp-3',
     eventId: 'evt-durga-2026',
     voucherNo: 'VCH-003',
-    category: 'sound_light',
+    category: 'sound_system',
     vendorName: 'माँ अम्बे म्यूजिकल & लाइट डेकोरेशन',
     vendorPhone: '9123334455',
     totalAmount: 55000,
@@ -493,6 +494,7 @@ interface SamitiContextType {
   mainWorkspace: MasterEntity;
   addDonation: (donation: Omit<SamitiDonation, 'id' | 'serialNumber' | 'balanceAmount' | 'createdAt' | 'updatedAt'>) => SamitiDonation;
   updateDonation: (id: string, updates: Partial<SamitiDonation>) => void;
+  recordDonationPayment: (id: string, payment: { amount: number; paymentMode: PaymentMode; date: string; collectorName?: string; note?: string }) => void;
   deleteDonation: (id: string) => void;
   addExpense: (expense: Omit<SamitiExpense, 'id' | 'voucherNo' | 'balanceDue' | 'createdAt'>) => SamitiExpense;
   updateExpense: (id: string, updates: Partial<SamitiExpense>) => void;
@@ -869,6 +871,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               date: newRow.date,
               remarks: newRow.remarks || undefined,
               receiptUrl: newRow.receipt_url || undefined,
+              payments: Array.isArray(newRow.payments) ? newRow.payments : [],
               createdAt: newRow.created_at || new Date().toISOString(),
               updatedAt: newRow.updated_at || new Date().toISOString(),
             }];
@@ -894,6 +897,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             date: newRow.date,
             remarks: newRow.remarks || undefined,
             receiptUrl: newRow.receipt_url || undefined,
+            payments: Array.isArray(newRow.payments) ? newRow.payments : [],
             updatedAt: newRow.updated_at || new Date().toISOString(),
           } : d));
         } else if (eventType === 'DELETE' && oldRow) {
@@ -1129,14 +1133,34 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const maxSerial = currentDonations.reduce((max, d) => Math.max(max, d.serialNumber || 0), 0);
       const serialNumber = maxSerial + 1;
       const balanceAmount = Math.max(0, donationData.acceptedAmount - donationData.receivedAmount);
+      const now = new Date().toISOString();
+      const id = `don-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+      // Open the instalment log with whatever was handed over at entry time, so
+      // a donor who pays the rest later builds on a complete history.
+      const payments: DonationPayment[] =
+        donationData.payments && donationData.payments.length > 0
+          ? donationData.payments
+          : donationData.receivedAmount > 0
+            ? [{
+                id: `pay-${id}-opening`,
+                amount: donationData.receivedAmount,
+                paymentMode: donationData.paymentMode,
+                date: donationData.date,
+                collectorName: donationData.collectorName,
+                note: 'प्रथम जमा',
+                createdAt: now,
+              }]
+            : [];
 
       const newDonation: SamitiDonation = {
         ...donationData,
-        id: `don-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id,
         serialNumber,
         balanceAmount,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        payments,
+        createdAt: now,
+        updatedAt: now,
       };
 
       setDonations(prev => [...prev, newDonation]);
@@ -1157,9 +1181,32 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const received = updates.receivedAmount !== undefined ? updates.receivedAmount : item.receivedAmount;
           const balanceAmount = Math.max(0, accepted - received);
 
+          // A manual edit of the received total is the authority — collapse the
+          // instalment log to that corrected figure rather than leaving a
+          // history whose sum no longer matches receivedAmount.
+          const receivedChanged =
+            updates.receivedAmount !== undefined && updates.receivedAmount !== item.receivedAmount;
+          const payments =
+            updates.payments !== undefined
+              ? updates.payments
+              : receivedChanged
+                ? (received > 0
+                    ? [{
+                        id: `pay-${item.id}-opening`,
+                        amount: received,
+                        paymentMode: (updates.paymentMode ?? item.paymentMode),
+                        date: updates.date ?? item.date,
+                        collectorName: updates.collectorName ?? item.collectorName,
+                        note: 'संशोधित जमा',
+                        createdAt: new Date().toISOString(),
+                      }]
+                    : [])
+                : item.payments;
+
           updatedItem = {
             ...item,
             ...updates,
+            payments,
             balanceAmount,
             updatedAt: new Date().toISOString(),
           };
@@ -1173,6 +1220,102 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     toast.success('दान प्रविष्टि सफलतापूर्वक अपडेट की गई!');
   }, [saveDonationToCloud]);
+
+  /**
+   * Record a follow-up instalment (बकाया जमा) against an existing pledge.
+   *
+   * The instalment is appended to the donation's payment log and
+   * receivedAmount grows by that amount — so a donor who paid part of the
+   * pledge on entry day and the rest later keeps one receipt row while every
+   * visit stays individually visible.
+   *
+   * Rows that pre-date the log carry an empty `payments`, which means "the
+   * whole received amount came in on `date`". Seeding that opening instalment
+   * here keeps the log's total equal to receivedAmount for those rows too.
+   */
+  const recordDonationPayment = useCallback(
+    (
+      id: string,
+      payment: { amount: number; paymentMode: PaymentMode; date: string; collectorName?: string; note?: string }
+    ) => {
+      const amount = Number(payment.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        toast.error('जमा राशि शून्य से अधिक होनी चाहिए।');
+        return;
+      }
+
+      let updatedItem: SamitiDonation | null = null;
+      let rejected = false;
+
+      setDonations(prev =>
+        prev.map(item => {
+          if (item.id !== id) return item;
+
+          const balance = Math.max(0, item.acceptedAmount - item.receivedAmount);
+          if (amount > balance) {
+            rejected = true;
+            return item;
+          }
+
+          const now = new Date().toISOString();
+          const existing = Array.isArray(item.payments) ? item.payments : [];
+          // Backfill the opening instalment for rows saved before the log existed.
+          const history: DonationPayment[] =
+            existing.length === 0 && item.receivedAmount > 0
+              ? [{
+                  id: `pay-${item.id}-opening`,
+                  amount: item.receivedAmount,
+                  paymentMode: item.paymentMode,
+                  date: item.date,
+                  collectorName: item.collectorName,
+                  note: 'प्रथम जमा',
+                  createdAt: item.createdAt,
+                }]
+              : existing;
+
+          const newPayment: DonationPayment = {
+            id: `pay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            amount,
+            paymentMode: payment.paymentMode,
+            date: payment.date,
+            collectorName: payment.collectorName?.trim() || item.collectorName,
+            note: payment.note?.trim() || undefined,
+            createdAt: now,
+          };
+
+          const payments = [...history, newPayment];
+          const receivedAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+          updatedItem = {
+            ...item,
+            payments,
+            receivedAmount,
+            balanceAmount: Math.max(0, item.acceptedAmount - receivedAmount),
+            updatedAt: now,
+          };
+          return updatedItem;
+        })
+      );
+
+      if (rejected) {
+        toast.error('जमा राशि शेष बकाया से अधिक नहीं हो सकती।');
+        return;
+      }
+      if (!updatedItem) {
+        toast.error('दान प्रविष्टि नहीं मिली।');
+        return;
+      }
+
+      saveDonationToCloud(updatedItem);
+      const settled = (updatedItem as SamitiDonation).balanceAmount === 0;
+      toast.success(
+        settled
+          ? `₹${amount.toLocaleString('hi-IN')} जमा — बकाया पूरा चुकता हो गया! ✅`
+          : `₹${amount.toLocaleString('hi-IN')} जमा — शेष बकाया ₹${(updatedItem as SamitiDonation).balanceAmount.toLocaleString('hi-IN')}`
+      );
+    },
+    [saveDonationToCloud]
+  );
 
   // Delete donation
   const deleteDonation = useCallback(
@@ -1657,6 +1800,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         mainWorkspace,
         addDonation,
         updateDonation,
+        recordDonationPayment,
         deleteDonation,
         addExpense,
         updateExpense,

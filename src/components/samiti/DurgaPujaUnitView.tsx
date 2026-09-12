@@ -35,9 +35,7 @@ import {
   Hourglass,
   Coins,
   QrCode,
-  Calendar,
   Sparkles,
-  Plus,
   Bell,
   Settings,
   Pencil,
@@ -344,65 +342,34 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           {/* ----------------------------------------------------------- */}
           {/* A. GRAND FESTIVE HERO BANNER (Maa Durga Lion + Temple Arch)   */}
           {/* ----------------------------------------------------------- */}
-          <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-400/60 shadow-xl min-h-[220px] sm:min-h-[260px] flex items-center">
+          <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-400/60 shadow-xl min-h-[150px] sm:min-h-[200px] lg:min-h-[240px] flex items-center">
             {/* Background Art Image */}
             <div
               className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: `url('/images/durga/durga-banner-bg.jpg')` }}
             />
 
-            {/* Subtle soft gradient overlay so text remains readable in center */}
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-900/10 via-amber-50/70 to-amber-900/20" />
+            {/* Soft gradient overlay: transparent over the artwork (left), readable wash on the right */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-50/60 to-amber-50/85" />
 
             {/* Hero Banner Content Layer */}
-            <div className="relative z-10 w-full p-4 sm:p-6 lg:p-8 flex flex-col md:flex-row items-center justify-between gap-4">
-              {/* Left spacer for Goddess Durga on Lion artwork */}
-              <div className="hidden lg:block w-48 shrink-0" />
+            <div className="relative z-10 w-full flex items-center">
+              {/* Spacer reserving the Goddess Durga on Lion artwork area */}
+              <div className="w-[34%] sm:w-[32%] lg:w-[30%] shrink-0" aria-hidden="true" />
 
-              {/* Center: Majestic Typography & Call to Actions */}
-              <div className="text-center flex-1 max-w-xl mx-auto space-y-2">
-                <h2 className="text-xl sm:text-3xl lg:text-4xl font-black font-serif text-[#480911] tracking-wide drop-shadow-xs">
+              {/* Majestic Typography, placed beside the artwork */}
+              <div className="flex-1 min-w-0 py-4 pr-3 sm:py-6 sm:pr-6 lg:py-8 lg:pr-10 text-center space-y-1.5 sm:space-y-2">
+                <h2 className="text-sm sm:text-2xl lg:text-4xl font-black font-serif text-[#480911] tracking-wide drop-shadow-xs leading-tight text-balance">
                   {currentEntity.name || 'श्री दुर्गा पूजा समिति, नारायणपुर'}
                 </h2>
 
-                <p className="text-xs sm:text-base font-extrabold font-serif text-amber-950">
+                <p className="text-[10px] sm:text-sm lg:text-base font-extrabold font-serif text-amber-950">
                   {currentEntity.bannerBadgeText || 'श्री दुर्गा पूजा महोत्सव 2026'}
                 </p>
 
-                <p className="text-[11px] sm:text-sm font-serif italic text-slate-800 max-w-md mx-auto">
+                <p className="text-[9px] sm:text-xs lg:text-sm font-serif italic text-slate-800 max-w-md mx-auto leading-snug">
                   "{currentEntity.tagline || 'माँ दुर्गा की असीम कृपा आप और आपके परिवार पर सदा बनी रहे।'}"
                 </p>
-
-                {/* Primary Action Buttons */}
-                <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('chanda')}
-                    className="h-9 sm:h-10 px-4 rounded-full bg-[#faedd2]/90 hover:bg-[#faedd2] text-amber-950 border border-amber-500/60 font-serif font-bold text-xs sm:text-sm shadow-sm flex items-center gap-1.5 transition-all hover:border-amber-600"
-                  >
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-amber-800" />
-                    <span>चंदा रजिस्टर देखें</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Right Side: Festival Dates Badge, Year & Calligraphy */}
-              <div className="hidden md:flex flex-col items-end gap-2 text-right shrink-0">
-                <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs border border-amber-300 px-3 py-1 rounded-full shadow-xs text-[10px] sm:text-xs font-serif font-bold text-amber-950">
-                  <Calendar className="w-3 h-3 text-rose-600" />
-                  <span>भारत का नवरात्र: 15 अक्टूबर से 24 अक्टूबर 2026</span>
-                </div>
-
-                <Badge className="bg-[#480911] text-amber-200 border border-amber-400/40 font-mono text-[10px] px-2 py-0.5 rounded-md">
-                  2026 - 27
-                </Badge>
-
-                {/* Calligraphy Callout: शक्ति, भक्ति, एकता */}
-                <div className="font-serif font-black text-xs sm:text-sm text-amber-950/90 tracking-widest leading-snug pr-1">
-                  <div>शक्ति</div>
-                  <div>भक्ति</div>
-                  <div>एकता</div>
-                </div>
               </div>
             </div>
           </div>
@@ -595,13 +562,6 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 </button>
               )}
             </div>
-
-            {/* Right Sanskrit Shloka Flourish: सर्वे भवन्तु सुखिनः */}
-            <div className="hidden md:flex items-center gap-2 text-amber-900/80 font-serif font-bold text-xs shrink-0 pr-2">
-              <span className="text-amber-500 text-sm">❧</span>
-              <span className="tracking-wide">· सर्वे भवन्तु सुखिनः ·</span>
-              <span className="text-amber-500 text-sm">☙</span>
-            </div>
           </div>
 
           {/* ----------------------------------------------------------- */}
@@ -611,6 +571,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             <ExcelDataGrid
               isCollectorMode={isCollector}
               collectorName={workerName}
+              onAddDonation={() => setIsQuickDonationOpen(true)}
             />
           )}
 
@@ -710,18 +671,6 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           {/* Top Traditional Motif */}
           <div className="text-amber-600 text-sm">🪔</div>
 
-          {/* Sacred Vertical Calligraphy: माँ दुर्गा की कृपा सदा आपके साथ रहे। */}
-          <div className="flex flex-col items-center gap-1 font-serif font-black text-xs text-amber-950/90 leading-tight">
-            <span>माँ</span>
-            <span>दुर्गा</span>
-            <span>की</span>
-            <span>कृपा</span>
-            <span>सदा</span>
-            <span>आपके</span>
-            <span>साथ</span>
-            <span>रहे।</span>
-          </div>
-
           {/* Bottom Glowing Golden Diya */}
           <div className="relative group cursor-pointer" title="शुभ दीपावली व नवरात्र ज्योति">
             <div className="w-10 h-10 rounded-full overflow-hidden p-0.5 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-600 shadow-md ring-2 ring-amber-400/50">
@@ -735,21 +684,6 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           </div>
         </aside>
       </div>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 3B. FLOATING "नया चंदा जोड़ें" ACTION BUTTON                    */}
-      {/* Single entry point for new chanda across the whole unit view.  */}
-      {/* ------------------------------------------------------------- */}
-      <button
-        type="button"
-        onClick={() => setIsQuickDonationOpen(true)}
-        className="fixed bottom-5 right-5 sm:bottom-7 sm:right-7 z-50 h-14 sm:h-16 px-5 sm:px-7 rounded-full bg-gradient-to-r from-[#cf1d32] to-[#990e1f] hover:from-[#b91527] hover:to-[#830a18] text-white font-serif font-black text-sm sm:text-base tracking-wide shadow-2xl shadow-rose-950/60 border-2 border-amber-400/70 ring-2 ring-rose-500/20 flex items-center gap-2 transition-transform hover:scale-105 active:scale-95"
-        title="नया चंदा जोड़ें"
-        aria-label="नया चंदा जोड़ें"
-      >
-        <Plus className="w-6 h-6 sm:w-7 sm:h-7 stroke-[3.5] text-amber-300 shrink-0" />
-        <span className="font-black whitespace-nowrap">नया चंदा जोड़ें</span>
-      </button>
 
       {/* ------------------------------------------------------------- */}
       {/* 4. MODALS (Quick Donation, QR, Cashier Sheet, Settings)        */}

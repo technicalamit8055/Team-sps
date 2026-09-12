@@ -180,6 +180,7 @@ export function useSamitiDatabase() {
         date: item.date,
         remarks: item.remarks || undefined,
         receiptUrl: item.receipt_url || undefined,
+        payments: Array.isArray((item as any).payments) ? ((item as any).payments as SamitiDonation["payments"]) : [],
         createdAt: item.created_at || new Date().toISOString(),
         updatedAt: item.updated_at || new Date().toISOString(),
       }));
@@ -212,6 +213,7 @@ export function useSamitiDatabase() {
         date: donation.date,
         remarks: donation.remarks || null,
         receipt_url: donation.receiptUrl || null,
+        payments: donation.payments ?? [],
         updated_at: new Date().toISOString(),
       });
       if (error) throw error;
@@ -253,6 +255,7 @@ export function useSamitiDatabase() {
         date: d.date,
         remarks: d.remarks || null,
         receipt_url: d.receiptUrl || null,
+        payments: d.payments ?? [],
         updated_at: new Date().toISOString(),
       }));
 
@@ -610,6 +613,7 @@ export function useSamitiDatabase() {
             date: d.date,
             remarks: d.remarks || null,
             receipt_url: d.receiptUrl || null,
+            payments: d.payments ?? [],
             updated_at: new Date().toISOString(),
           }));
           await supabase.from('samiti_donations').insert(payload);

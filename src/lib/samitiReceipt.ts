@@ -16,10 +16,6 @@ export function buildSamitiReceiptMessage(
       ? '✅ पूर्ण भुगतान (कोई बकाया नहीं)'
       : `⚠️ शेष बकाया राशि: ₹${donation.balanceAmount.toLocaleString('hi-IN')}`;
 
-  const identityLine = donation.identity
-    ? `\n🏢 *पहचान / फर्म:* ${donation.identity}`
-    : '';
-
   const locationLine = entity.location ? `📍 ${entity.location}\n` : '';
 
   return `🚩 *${entity.name}* 🚩
@@ -29,7 +25,7 @@ ${locationLine}🎉 ${event.title}
 ===========================
 🔢 *रसीद सं० (Receipt No):* #${String(donation.serialNumber).padStart(4, '0')}
 📅 *दिनांक (Date):* ${donation.date || new Date().toISOString().split('T')[0]}
-👤 *सहयोगकर्ता (Donor):* ${donation.name}${identityLine}
+👤 *सहयोगकर्ता (Donor):* ${donation.name}
 
 💰 *स्वीकृत राशि (Pledged):* ₹${donation.acceptedAmount.toLocaleString('hi-IN')}
 💵 *प्राप्त राशि (Received):* ₹${donation.receivedAmount.toLocaleString('hi-IN')} (${donation.paymentMode === 'ONL' ? '📲 ऑनलाइन/UPI' : '💵 नकद/Cash'})

@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   Smartphone,
   User,
-  Building2,
   MapPin,
   Tag,
   Coins,
@@ -81,6 +80,9 @@ const CATEGORY_META: Record<DonationCategory, { icon: React.FC<{ className?: str
   },
 };
 
+/** Quick-pick collector names shown as chips under the संग्रहकर्ता field */
+const QUICK_COLLECTORS = ['सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत'];
+
 export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   initialData,
   onSuccess,
@@ -90,7 +92,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
 }) => {
-  const { addDonation, updateDonation, currentEvent, currentEntity, donations, staffList, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
+  const { addDonation, updateDonation, currentEvent, currentEntity, donations, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
 
   const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
   const workerCollectorName = defaultCollectorName || currentStaffMember?.name || 'सुनील वर्मा';
@@ -357,7 +359,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <Tag className="w-3.5 h-3.5 text-amber-600" />
-                    <span>सहयोगकर्ता की श्रेणी *</span>
+                    <span>सहयोगकर्ता की श्रेणी</span>
                   </Label>
                   <span className="text-[10px] text-slate-500 font-medium">VIL / EMP / SHO / OTH</span>
                 </div>
@@ -404,33 +406,20 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
               {/* SECTION 1: DEVOTEE & IDENTITY DETAILS                   */}
               {/* ------------------------------------------------------- */}
               <div className="bg-white rounded-2xl p-4 border border-amber-200/70 shadow-xs space-y-3.5">
-                {/* Name & Identity */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1">
-                      <User className="w-3.5 h-3.5 text-amber-600" />
-                      <span>सहयोगकर्ता का नाम *</span>
-                    </Label>
-                    <Input
-                      ref={nameInputRef}
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      required
-                      className="h-10 text-sm font-semibold text-slate-900 border-slate-200 focus-visible:ring-amber-500 focus-visible:border-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1">
-                      <Building2 className="w-3.5 h-3.5 text-slate-500" />
-                      <span>पहचान</span>
-                    </Label>
-                    <Input
-                      value={identity}
-                      onChange={e => setIdentity(e.target.value)}
-                      className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
-                    />
-                  </div>
+                {/* Devotee Name */}
+                <div>
+                  <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1">
+                    <User className="w-3.5 h-3.5 text-amber-600" />
+                    <span>सहयोगकर्ता का नाम *</span>
+                  </Label>
+                  <Input
+                    ref={nameInputRef}
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    required
+                    placeholder="उदा. राहुल कुमार / अमित शर्मा"
+                    className="h-10 text-sm font-semibold text-slate-900 border-slate-200 focus-visible:ring-amber-500 focus-visible:border-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
+                  />
                 </div>
 
                 {/* WhatsApp Phone & Caste */}
@@ -557,7 +546,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                   <div className="bg-white p-3 rounded-xl border border-amber-200/80 shadow-2xs space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-bold text-slate-800">
-                        स्वीकृत राशि *
+                        स्वीकृत राशि
                       </Label>
                     </div>
                     <div className="relative">
@@ -571,37 +560,13 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         className="pl-7 h-10 text-base font-mono font-black text-slate-900 border-amber-200 focus-visible:ring-amber-500 rounded-xl"
                       />
                     </div>
-                    <div className="flex gap-1 pt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = parsedAccepted + 500;
-                          setAcceptedAmount(String(next));
-                          if (parsedReceived === parsedAccepted) setReceivedAmount(String(next));
-                        }}
-                        className="text-[10px] font-mono font-bold px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-md transition-colors"
-                      >
-                        +₹500
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = parsedAccepted + 1000;
-                          setAcceptedAmount(String(next));
-                          if (parsedReceived === parsedAccepted) setReceivedAmount(String(next));
-                        }}
-                        className="text-[10px] font-mono font-bold px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-md transition-colors"
-                      >
-                        +₹1000
-                      </button>
-                    </div>
                   </div>
 
                   {/* Card 2: Received */}
                   <div className="bg-white p-3 rounded-xl border border-emerald-200/80 shadow-2xs space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-bold text-emerald-900">
-                        जमा राशि *
+                        जमा राशि
                       </Label>
                     </div>
                     <div className="relative">
@@ -655,7 +620,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-amber-200/80">
                   <div>
                     <Label className="text-xs font-bold text-slate-800 block mb-1.5">
-                      भुगतान माध्यम *
+                      भुगतान माध्यम
                     </Label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -709,21 +674,19 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       </p>
                     ) : (
                       /* Quick collector selection chips */
-                      staffList && staffList.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-1 mt-1">
-                          <span className="text-[9px] text-slate-400">कार्यकर्ता:</span>
-                          {staffList.slice(0, 4).map(s => (
-                            <button
-                              key={s.id}
-                              type="button"
-                              onClick={() => setCollectorName(s.name)}
-                              className="text-[9px] px-1.5 py-0.2 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
-                            >
-                              {s.name}
-                            </button>
-                          ))}
-                        </div>
-                      )
+                      <div className="flex flex-wrap items-center gap-1 mt-1">
+                        <span className="text-[9px] text-slate-400">कार्यकर्ता:</span>
+                        {QUICK_COLLECTORS.map(name => (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => setCollectorName(name)}
+                            className="text-[9px] px-1.5 py-0.2 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
+                          >
+                            {name}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -778,15 +741,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
           {/* ------------------------------------------------------------- */}
           {/* DIALOG FOOTER / ACTION BAR                                    */}
           {/* ------------------------------------------------------------- */}
-          <div className="p-3.5 sm:px-5 sm:py-4 bg-white border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5 shrink-0">
-            <div className="text-[11px] text-slate-400 hidden sm:flex items-center gap-1.5">
-              <span>शॉर्टकट:</span>
-              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 text-slate-600 rounded border border-slate-200 font-bold">
-                Ctrl + Enter
-              </kbd>
-              <span>से तुरंत सुरक्षित करें</span>
-            </div>
-
+          <div className="p-3.5 sm:px-5 sm:py-4 bg-white border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5 shrink-0">
             <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
               <Button
                 type="button"

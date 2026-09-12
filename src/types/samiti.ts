@@ -68,6 +68,21 @@ export interface SamitiEvent {
   isActive: boolean;
 }
 
+/**
+ * One instalment against a donor's pledge. A donor who pays part of the
+ * pledge on the day of entry and clears the rest on a later visit gets one
+ * entry per visit, so the book shows when each rupee actually came in.
+ */
+export interface DonationPayment {
+  id: string;
+  amount: number;
+  paymentMode: PaymentMode;
+  date: string; // YYYY-MM-DD — the day this instalment was collected
+  collectorName?: string;
+  note?: string;
+  createdAt: string;
+}
+
 export interface SamitiDonation {
   id: string;
   eventId: string;
@@ -89,23 +104,33 @@ export interface SamitiDonation {
   date: string; // Date of entry
   remarks?: string;
   receiptUrl?: string; // Digital / cloud receipt URL
+  /**
+   * Instalment log behind receivedAmount. Rows created before this existed
+   * (and Excel imports) carry no log, so an empty list means "the received
+   * amount came in on `date`" — never "nothing was paid".
+   */
+  payments?: DonationPayment[];
   createdAt: string;
   updatedAt: string;
 }
 
 
-export type ExpenseCategory = 
-  | 'pandal_tent' 
-  | 'idol_murti' 
-  | 'sound_light' 
-  | 'bhog_prasad' 
-  | 'puja_samagri' 
-  | 'priest_dakshina' 
-  | 'generator_fuel' 
-  | 'security_permits' 
-  | 'cultural_stage' 
-  | 'visarjan' 
-  | 'misc';
+export type ExpenseCategory =
+  | 'pandal_tent'
+  | 'stage_manch'
+  | 'idol_murti'
+  | 'idol_decoration'
+  | 'sound_system'
+  | 'lighting'
+  | 'puja_samagri'
+  | 'priest_dakshina'
+  | 'generator_rent'
+  | 'diesel_fuel'
+  | 'security_permits'
+  | 'cultural_stage'
+  | 'visarjan'
+  | 'misc'
+  | 'other_essential';
 
 export interface ExpenseCategoryInfo {
   code: ExpenseCategory;
@@ -115,17 +140,21 @@ export interface ExpenseCategoryInfo {
 }
 
 export const EXPENSE_CATEGORIES: Record<ExpenseCategory, ExpenseCategoryInfo> = {
-  pandal_tent: { code: 'pandal_tent', labelEn: 'Tent & Pandal Decoration', labelHi: 'टेंट एवं भव्य पंडाल निर्माण', icon: '⛺' },
-  idol_murti: { code: 'idol_murti', labelEn: 'Maa Durga Murti / Idol', labelHi: 'माँ दुर्गा भव्य प्रतिमा निर्माण', icon: '🪔' },
-  sound_light: { code: 'sound_light', labelEn: 'Sound System & Illumination', labelHi: 'ध्वनि विस्तारक एवं प्रकाश सज्जा', icon: '💡' },
-  bhog_prasad: { code: 'bhog_prasad', labelEn: 'Bhog, Prasad & Bhandara', labelHi: 'भोग, महाप्रसाद एवं भंडारा सामग्री', icon: '🍲' },
-  puja_samagri: { code: 'puja_samagri', labelEn: 'Puja Ritual Samagri & Flowers', labelHi: 'हवन, पूजन सामग्री एवं पुष्पमाला', icon: '🌸' },
-  priest_dakshina: { code: 'priest_dakshina', labelEn: 'Acharya & Pandit Dakshina', labelHi: 'आचार्य, पुरोहित एवं ब्राह्मण दक्षिणा', icon: '🙏' },
-  generator_fuel: { code: 'generator_fuel', labelEn: 'Silent Generator & Diesel', labelHi: 'जनरेटर किराया एवं डीजल ईंधन', icon: '⚡' },
-  security_permits: { code: 'security_permits', labelEn: 'Permissions, CCTV & Security', labelHi: 'प्रशासनिक अनुमति, CCTV एवं सुरक्षा', icon: '🛡️' },
-  cultural_stage: { code: 'cultural_stage', labelEn: 'Cultural Stage & Artists', labelHi: 'सांस्कृतिक मंच, भजन संध्या व कलाकार', icon: '🎭' },
-  visarjan: { code: 'visarjan', labelEn: 'Shobhayatra & Visarjan Rituals', labelHi: 'शोभायात्रा, वाहन किराया एवं विसर्जन', icon: '🚜' },
-  misc: { code: 'misc', labelEn: 'Printing, Stationery & Misc', labelHi: 'रसीद बुक, बैनर, प्रचार एवं विविध', icon: '📋' },
+  pandal_tent: { code: 'pandal_tent', labelEn: 'Grand Pandal Construction', labelHi: 'भव्य पंडाल निर्माण', icon: '⛺' },
+  stage_manch: { code: 'stage_manch', labelEn: 'Grand Stage Construction', labelHi: 'भव्य मंच निर्माण', icon: '🎪' },
+  idol_murti: { code: 'idol_murti', labelEn: 'Maa Durga Idol Construction', labelHi: 'माँ दुर्गा भव्य प्रतिमा निर्माण', icon: '🪔' },
+  idol_decoration: { code: 'idol_decoration', labelEn: 'Maa Durga Grand Decoration', labelHi: 'माँ दुर्गा भव्य सजावट', icon: '🌺' },
+  sound_system: { code: 'sound_system', labelEn: 'Sound System', labelHi: 'ध्वनि विस्तारक', icon: '🔊' },
+  lighting: { code: 'lighting', labelEn: 'Illumination & Lighting', labelHi: 'प्रकाश सज्जा', icon: '💡' },
+  puja_samagri: { code: 'puja_samagri', labelEn: 'Havan, Puja, Mahaprasad & Flowers', labelHi: 'हवन, पूजन, महाप्रसाद सामग्री एवं पुष्पमाला', icon: '🌸' },
+  priest_dakshina: { code: 'priest_dakshina', labelEn: 'Acharya, Purohit & Brahmin Dakshina', labelHi: 'आचार्य, पुरोहित एवं ब्राह्मण दक्षिणा', icon: '🙏' },
+  generator_rent: { code: 'generator_rent', labelEn: 'Generator Rent', labelHi: 'जनरेटर किराया', icon: '⚡' },
+  diesel_fuel: { code: 'diesel_fuel', labelEn: 'Diesel Fuel', labelHi: 'डीजल ईंधन', icon: '🛢️' },
+  security_permits: { code: 'security_permits', labelEn: 'Permissions, CCTV & Security', labelHi: 'प्रशासनिक अनुमति, सीसीटीवी एवं सुरक्षा', icon: '🛡️' },
+  cultural_stage: { code: 'cultural_stage', labelEn: 'Cultural Stage, Bhajan Sandhya & Artists', labelHi: 'सांस्कृतिक मंच, भजन संध्या व कलाकार', icon: '🎭' },
+  visarjan: { code: 'visarjan', labelEn: 'Shobhayatra Vehicle Rent & Visarjan', labelHi: 'शोभायात्रा वाहन किराया एवं विसर्जन', icon: '🚜' },
+  misc: { code: 'misc', labelEn: 'Receipt Books, Banners, Publicity & Misc', labelHi: 'रसीद बुक, बैनर, प्रचार एवं विविध', icon: '📋' },
+  other_essential: { code: 'other_essential', labelEn: 'Other Essential Expenses', labelHi: 'अन्य जरूरी खर्च', icon: '📌' },
 };
 
 export interface SamitiExpense {

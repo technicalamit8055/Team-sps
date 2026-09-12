@@ -19,6 +19,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+// भुगतानकर्ता (payer) field ke liye quick-fill naam
+const QUICK_PAYERS = ['सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत'];
+
 export const ExpenseManager: React.FC = () => {
   const { currentEvent, expenses, addExpense, deleteExpense } = useSamiti();
 
@@ -287,6 +290,24 @@ export const ExpenseManager: React.FC = () => {
                           className="mt-1 text-xs rounded-xl"
                         />
                       </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] text-slate-500 shrink-0">जल्दी भरें:</span>
+                      {QUICK_PAYERS.map(name => (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => setPaidBy(name)}
+                          className={`px-2.5 py-1 rounded-full border text-[11px] transition-colors ${
+                            paidBy === name
+                              ? 'bg-amber-500 border-amber-500 text-white font-medium'
+                              : 'bg-white border-amber-200 text-amber-800 hover:bg-amber-50'
+                          }`}
+                        >
+                          {name}
+                        </button>
+                      ))}
                     </div>
 
                     <div>

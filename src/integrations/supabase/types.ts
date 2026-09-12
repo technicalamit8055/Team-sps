@@ -807,6 +807,7 @@ export type Database = {
           is_handover_done: boolean | null
           name: string
           payment_mode: string
+          payments: Json
           phone: string | null
           receipt_url: string | null
           received_amount: number
@@ -831,6 +832,7 @@ export type Database = {
           is_handover_done?: boolean | null
           name: string
           payment_mode?: string
+          payments?: Json
           phone?: string | null
           receipt_url?: string | null
           received_amount?: number
@@ -855,6 +857,7 @@ export type Database = {
           is_handover_done?: boolean | null
           name?: string
           payment_mode?: string
+          payments?: Json
           phone?: string | null
           receipt_url?: string | null
           received_amount?: number

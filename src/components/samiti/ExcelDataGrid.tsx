@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WhatsAppReceiptModal } from './WhatsAppReceiptModal';
 import { QuickDonationDialog } from './QuickDonationDialog';
+import { DuePaymentDialog } from './DuePaymentDialog';
 import { toast } from 'sonner';
 import { sendWhatsAppReceipt, toBase64Pdf } from '@/lib/whatsapp';
 import { toReceiptPayload } from '@/lib/samitiReceipt';
@@ -27,8 +28,10 @@ import {
   Eye,
   MoreVertical,
   HandCoins,
+  Wallet,
   ShieldCheck,
   Loader2,
+  Plus,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -51,11 +54,14 @@ import {
 interface ExcelDataGridProps {
   isCollectorMode?: boolean;
   collectorName?: string;
+  /** नया चंदा जोड़ने का संवाद खोलें (parent-owned QuickDonationDialog) */
+  onAddDonation?: () => void;
 }
 
 export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   isCollectorMode: propCollectorMode,
   collectorName: propCollectorName,
+  onAddDonation,
 }) => {
   const { currentEntity, currentEvent, donations, updateDonation, deleteDonation, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
   const { profile } = useAuth();
@@ -120,6 +126,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
             d.name.toLowerCase().includes(term) ||
             (d.identity && d.identity.toLowerCase().includes(term)) ||
             (d.caste && d.caste.toLowerCase().includes(term)) ||
+            (d.village && d.village.toLowerCase().includes(term)) ||
             (d.address1 && d.address1.toLowerCase().includes(term)) ||
             (d.address2 && d.address2.toLowerCase().includes(term)) ||
             (d.phone && d.phone.includes(term)) ||
@@ -281,6 +288,16 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
               </button>
             </div>
 
+            {/* नया चंदा जोड़ें — पंडाल व पूजा व्यय के "नया खर्चा वाउचर" जैसा */}
+            {onAddDonation && (
+              <Button
+                onClick={onAddDonation}
+                className="bg-gradient-to-r from-[#cf1d32] to-[#990e1f] hover:from-[#b91527] hover:to-[#830a18] text-white font-serif font-black text-xs sm:text-sm tracking-wide h-9 px-4 rounded-xl shrink-0 border border-amber-400/70 shadow-md shadow-rose-900/30 ring-1 ring-amber-300/30 transition-transform hover:scale-105 active:scale-95"
+              >
+                <Plus className="w-4 h-4 mr-1 stroke-[3.5] text-amber-300 shrink-0" />
+                <span className="whitespace-nowrap font-black">नया चंदा जोड़ें</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -511,9 +528,9 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                         </p>
                       )}
 
-                      {(row.address1 || row.address2) && (
+                      {(row.village || row.address1 || row.address2) && (
                         <p className="text-xs text-slate-500 line-clamp-1">
-                          📍 {row.address1} {row.address2 ? `, ${row.address2}` : ''}
+                          📍 {[row.village, row.address1, row.address2].filter(Boolean).join(', ')}
                         </p>
                       )}
 
@@ -602,6 +619,22 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                       </Button>
 
                       <div className="flex items-center gap-1">
+                        {isDue && (
+                          <DuePaymentDialog
+                            donation={row}
+                            triggerButton={
+                              <Button
+                                size="sm"
+                                className="h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs"
+                                title={`शेष बकाया ₹${row.balanceAmount.toLocaleString('hi-IN')} जमा करें`}
+                              >
+                                <Wallet className="w-3.5 h-3.5 mr-1" />
+                                <span>बकाया जमा</span>
+                              </Button>
+                            }
+                          />
+                        )}
+
                         <QuickDonationDialog
                           initialData={row}
                           isCollectorMode={isCollector}
@@ -689,64 +722,118 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
             </div>
           </div>
 
-          {/* The 11 Columns DataGrid */}
+          {/* The 13 Columns DataGrid */}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#630b16] text-white font-bold uppercase text-[10px] sm:text-[11px] tracking-wider border-b border-[#7e111f]">
+                  {/* S.NUM — रसीद क्रमांक (Quick Entry: रसीद क्रमांक badge) */}
                   <th
                     onClick={() => handleSort('serialNumber')}
-                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-center whitespace-nowrap"
+                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-center align-bottom whitespace-nowrap"
                   >
-                    <div className="flex items-center justify-center gap-1 font-mono">
-                      <span>S. NUM</span>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="font-serif normal-case text-[11px]">रसीद क्रमांक</span>
                       <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">S. NUM</div>
                   </th>
-                  <th className="p-3 border-r border-[#7e111f]/60 whitespace-nowrap text-center">
-                    VIL/EMP/SHO/OTH
+
+                  {/* VIL/EMP/SHO/OTH — सहयोगकर्ता की श्रेणी */}
+                  <th className="p-3 border-r border-[#7e111f]/60 whitespace-nowrap text-center align-bottom">
+                    <div className="font-serif normal-case text-[11px]">श्रेणी</div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">VIL/EMP/SHO/OTH</div>
                   </th>
+
+                  {/* NAME — सहयोगकर्ता का नाम */}
                   <th
                     onClick={() => handleSort('name')}
-                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] whitespace-nowrap min-w-[140px]"
+                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-left align-bottom whitespace-nowrap min-w-[140px]"
                   >
                     <div className="flex items-center gap-1">
-                      <span>NAME</span>
+                      <span className="font-serif normal-case text-[11px]">सहयोगकर्ता का नाम</span>
                       <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">NAME</div>
                   </th>
-                  <th className="p-3 border-r border-[#7e111f]/60 min-w-[140px] whitespace-nowrap">IDENTITY</th>
-                  <th className="p-3 border-r border-[#7e111f]/60 whitespace-nowrap">CASTE</th>
-                  <th className="p-3 border-r border-[#7e111f]/60 min-w-[130px] whitespace-nowrap">ADDRESS.1</th>
-                  <th className="p-3 border-r border-[#7e111f]/60 min-w-[120px] whitespace-nowrap">ADDRESS.2</th>
+
+                  {/* IDENTITY — पहचान */}
+                  <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom min-w-[140px] whitespace-nowrap">
+                    <div className="font-serif normal-case text-[11px]">पहचान</div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">IDENTITY</div>
+                  </th>
+
+                  {/* CASTE — जाति */}
+                  <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom whitespace-nowrap">
+                    <div className="font-serif normal-case text-[11px]">जाति</div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">CASTE</div>
+                  </th>
+
+                  {/* VILLAGE — गाँव */}
+                  <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom min-w-[120px] whitespace-nowrap">
+                    <div className="font-serif normal-case text-[11px]">गाँव</div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">VILLAGE</div>
+                  </th>
+
+                  {/* ADDRESS.1 — वार्ड नं० */}
+                  <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom min-w-[130px] whitespace-nowrap">
+                    <div className="font-serif normal-case text-[11px]">वार्ड नं०</div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">ADDRESS.1</div>
+                  </th>
+
+                  {/* ADDRESS.2 — लैंडमार्क */}
+                  <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom min-w-[120px] whitespace-nowrap">
+                    <div className="font-serif normal-case text-[11px]">लैंडमार्क</div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">ADDRESS.2</div>
+                  </th>
+
+                  {/* ACCEPTED AMOUNT — स्वीकृत राशि */}
                   <th
                     onClick={() => handleSort('acceptedAmount')}
-                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-right whitespace-nowrap min-w-[110px]"
-                  >
-                    <div className="flex items-center justify-end gap-1 font-mono">
-                      <span>ACCEPTED AMOUNT</span>
-                      <ArrowUpDown className="w-3 h-3 opacity-70" />
-                    </div>
-                  </th>
-                  <th className="p-3 border-r border-[#7e111f]/60 text-right whitespace-nowrap min-w-[110px] text-amber-200 font-mono font-bold">
-                    RECEIVABLE AMOUNT
-                  </th>
-                  <th
-                    onClick={() => handleSort('balanceAmount')}
-                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-right whitespace-nowrap min-w-[110px] font-mono font-bold"
+                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-right align-bottom whitespace-nowrap min-w-[110px]"
                   >
                     <div className="flex items-center justify-end gap-1">
-                      <span>BALANCE AMOUNT</span>
+                      <span className="font-serif normal-case text-[11px]">स्वीकृत राशि</span>
                       <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">ACCEPTED AMOUNT</div>
                   </th>
-                  <th className="p-3 text-center whitespace-nowrap min-w-[90px]">ACTION</th>
+
+                  {/* RECEIVABLE AMOUNT — जमा राशि */}
+                  <th className="p-3 border-r border-[#7e111f]/60 text-right align-bottom whitespace-nowrap min-w-[110px]">
+                    <div className="font-serif normal-case text-[11px] text-amber-200">जमा राशि</div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">RECEIVABLE AMOUNT</div>
+                  </th>
+
+                  {/* BALANCE AMOUNT — शेष बकाया */}
+                  <th
+                    onClick={() => handleSort('balanceAmount')}
+                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-right align-bottom whitespace-nowrap min-w-[110px]"
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      <span className="font-serif normal-case text-[11px]">शेष बकाया</span>
+                      <ArrowUpDown className="w-3 h-3 opacity-70" />
+                    </div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">BALANCE AMOUNT</div>
+                  </th>
+
+                  {/* PAYMENT MODE — भुगतान माध्यम */}
+                  <th className="p-3 border-r border-[#7e111f]/60 text-center align-bottom whitespace-nowrap min-w-[100px]">
+                    <div className="font-serif normal-case text-[11px]">भुगतान माध्यम</div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">CASH/ONL</div>
+                  </th>
+
+                  {/* ACTION — कार्रवाई */}
+                  <th className="p-3 text-center align-bottom whitespace-nowrap min-w-[90px]">
+                    <div className="font-serif normal-case text-[11px]">कार्रवाई</div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">ACTION</div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredDonations.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="py-12 text-center text-slate-400">
+                    <td colSpan={13} className="py-12 text-center text-slate-400">
                       <p className="text-sm font-semibold text-slate-600 font-serif">कोई प्रविष्टि नहीं मिली</p>
                       <p className="text-xs text-slate-400 mt-1">
                         सर्च फिल्टर बदलें या नया चंदा जोड़ें।
@@ -776,6 +863,9 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                             {cat.code}
                           </span>
+                          <div className="text-[9px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">
+                            {cat.labelHi.split('/')[0].trim()}
+                          </div>
                         </td>
 
                         {/* NAME with phone */}
@@ -806,9 +896,20 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                           {row.caste || <span className="text-slate-300">-</span>}
                         </td>
 
-                        {/* ADDRESS.1 */}
+                        {/* VILLAGE — गाँव */}
                         <td className="p-3 border-r border-slate-100 text-slate-600">
-                          {row.address1 || <span className="text-slate-300">-</span>}
+                          {row.village || <span className="text-slate-300">-</span>}
+                        </td>
+
+                        {/* ADDRESS.1 — वार्ड नं० */}
+                        <td className="p-3 border-r border-slate-100 text-slate-600">
+                          {row.address1 && row.address1 !== 'N/A' ? (
+                            <span className="whitespace-nowrap">
+                              वार्ड नं० <span className="font-mono font-bold text-slate-800">{row.address1}</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
                         </td>
 
                         {/* ADDRESS.2 */}
@@ -829,12 +930,38 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                         {/* BALANCE AMOUNT */}
                         <td className="p-3 border-r border-slate-100 text-right font-mono">
                           {isDue ? (
-                            <span className="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                              ₹{row.balanceAmount.toLocaleString('hi-IN')}
-                            </span>
+                            /* The due chip doubles as the "collect the rest" button. */
+                            <DuePaymentDialog
+                              donation={row}
+                              triggerButton={
+                                <button
+                                  type="button"
+                                  title={`₹${row.balanceAmount.toLocaleString('hi-IN')} बकाया जमा करें`}
+                                  className="group font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 hover:bg-emerald-600 hover:text-white hover:border-emerald-700 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Wallet className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  <span>₹{row.balanceAmount.toLocaleString('hi-IN')}</span>
+                                </button>
+                              }
+                            />
                           ) : (
                             <span className="text-slate-400 font-medium">₹0</span>
                           )}
+                        </td>
+
+                        {/* PAYMENT MODE */}
+                        <td className="p-3 border-r border-slate-100 text-center">
+                          <span
+                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${row.paymentMode === 'ONL'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              }`}
+                          >
+                            {row.paymentMode === 'ONL' ? '📲 ONL' : '💵 CASH'}
+                          </span>
+                          <div className="text-[9px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">
+                            {row.paymentMode === 'ONL' ? 'ऑनलाइन' : 'नकद'}
+                          </div>
                         </td>
 
                         {/* ACTION: 'देखें' Button + 3-dots Dropdown */}
@@ -887,6 +1014,18 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                                   <Eye className="w-3.5 h-3.5 text-slate-500" />
                                   <span>रसीद देखें / नंबर बदलें</span>
                                 </DropdownMenuItem>
+
+                                {row.balanceAmount > 0 && (
+                                  <DuePaymentDialog
+                                    donation={row}
+                                    triggerButton={
+                                      <div className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50 rounded-lg cursor-pointer">
+                                        <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span>बकाया जमा करें (₹{row.balanceAmount.toLocaleString('hi-IN')})</span>
+                                      </div>
+                                    }
+                                  />
+                                )}
 
                                 <QuickDonationDialog
                                   initialData={row}
@@ -941,6 +1080,14 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                   </td>
                   <td className="p-3 text-right font-mono font-bold text-sm border-r border-amber-200 text-rose-600 bg-rose-50/40">
                     ₹{visibleTotals.balance.toLocaleString('hi-IN')}
+                  </td>
+                  <td className="p-3 text-center border-r border-amber-200 leading-tight">
+                    <div className="font-mono text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+                      💵 ₹{visibleTotals.cash.toLocaleString('hi-IN')}
+                    </div>
+                    <div className="font-mono text-[10px] font-bold text-blue-700 whitespace-nowrap">
+                      📲 ₹{visibleTotals.online.toLocaleString('hi-IN')}
+                    </div>
                   </td>
                   <td className="p-3 bg-[#fff9ec]" />
                 </tr>
