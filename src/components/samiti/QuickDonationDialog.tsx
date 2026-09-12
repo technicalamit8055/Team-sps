@@ -29,6 +29,8 @@ import {
 } from 'lucide-react';
 import { WhatsAppReceiptModal } from './WhatsAppReceiptModal';
 import { toast } from 'sonner';
+import { sendWhatsAppReceipt } from '@/lib/whatsapp';
+import { toReceiptPayload } from '@/lib/samitiReceipt';
 
 interface QuickDonationDialogProps {
   initialData?: SamitiDonation | null;
@@ -116,7 +118,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   const [paymentMode, setPaymentMode] = useState<PaymentMode>(initialData?.paymentMode || 'CASH');
   const [collectorName, setCollectorName] = useState(initialData?.collectorName || (isCollector ? workerCollectorName : 'कार्यकर्ता प्रतिनिधि'));
   const [remarks, setRemarks] = useState(initialData?.remarks || '');
-  const [openReceiptAfterSave, setOpenReceiptAfterSave] = useState(true);
+  const [autoSendReceipt, setAutoSendReceipt] = useState(true);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -191,6 +193,42 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
     ? Math.max(...donations.map(d => d.serialNumber || 0)) + 1
     : 1;
 
+  /**
+   * Fire the receipt at the donor's saved number the moment the entry is
+   * stored. Runs detached from the dialog (which closes straight after save),
+   * so the collector can start the next entry while it goes out.
+   *
+   * Anything that stops an automatic send — no usable number, no linked
+   * WhatsApp session, server down — falls back to the receipt modal so the
+   * receipt can still be fixed up and sent by hand.
+   */
+  const autoSendReceiptFor = async (donation: SamitiDonation) => {
+    const cleanPhone = (donation.phone || '').replace(/\D/g, '');
+
+    if (cleanPhone.length < 10) {
+      toast.info('नंबर सेव नहीं है — रसीद विंडो में नंबर दर्ज करके भेजें।');
+      setCreatedDonation(donation);
+      setIsReceiptModalOpen(true);
+      return;
+    }
+
+    const toastId = toast.loading(`रसीद ${donation.name} को भेजी जा रही है…`);
+    try {
+      await sendWhatsAppReceipt({
+        phone: cleanPhone,
+        ...toReceiptPayload(donation, currentEntity, currentEvent),
+      });
+      toast.success(`रसीद ${donation.name} को भेज दी गई! ✅`, { id: toastId });
+    } catch (err) {
+      toast.error((err as Error).message, {
+        id: toastId,
+        description: 'रसीद विंडो से दोबारा कोशिश करें।',
+      });
+      setCreatedDonation(donation);
+      setIsReceiptModalOpen(true);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -244,9 +282,8 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setIsOpen(false);
       onSuccess?.();
 
-      if (openReceiptAfterSave) {
-        setCreatedDonation(newDonation);
-        setIsReceiptModalOpen(true);
+      if (autoSendReceipt) {
+        void autoSendReceiptFor(newDonation);
       }
     }
   };
@@ -387,7 +424,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     </Label>
                     <Input
                       ref={nameInputRef}
-                      placeholder="उदा० राजेश कुमार गुप्ता"
                       value={name}
                       onChange={e => setName(e.target.value)}
                       required
@@ -401,7 +437,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <span>पहचान / पिता / दुकान का नाम (Firm / Identity)</span>
                     </Label>
                     <Input
-                      placeholder="उदा० प्रो०: गुप्ता वस्त्र भंडार / S/o रामदास"
                       value={identity}
                       onChange={e => setIdentity(e.target.value)}
                       className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
@@ -425,7 +460,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <span className="absolute left-3 top-2.5 text-xs text-slate-400 font-mono font-bold">+91</span>
                       <Input
                         type="tel"
-                        placeholder="98350 12345"
                         value={phone}
                         onChange={e => {
                           const val = e.target.value.replace(/[^\d\s]/g, '');
@@ -445,7 +479,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <span className="text-[10px] text-slate-400 font-medium">सांख्यिकी हेतु</span>
                     </div>
                     <Input
-                      placeholder="उदा० वैश्य, क्षत्रिय, ब्राह्मण, आदि"
                       value={caste}
                       onChange={e => setCaste(e.target.value)}
                       className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
@@ -479,7 +512,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <span>पता १: मोहल्ला / वार्ड नं० / गली (ADDRESS.1)</span>
                     </Label>
                     <Input
-                      placeholder="उदा० वार्ड नं० 14, मुख्य बाजार"
                       value={address1}
                       onChange={e => setAddress1(e.target.value)}
                       className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
@@ -492,7 +524,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <span>पता २: पोस्ट / थाना / लैंडमार्क (ADDRESS.2)</span>
                     </Label>
                     <Input
-                      placeholder="उदा० नारायणपुर चौराहा"
                       value={address2}
                       onChange={e => setAddress2(e.target.value)}
                       className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
@@ -721,7 +752,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       )}
                     </div>
                     <Input
-                      placeholder="उदा० अमित कुमार / समिति कोषाध्यक्ष"
                       value={collectorName}
                       onChange={e => setCollectorName(e.target.value)}
                       disabled={isCollector}
@@ -759,7 +789,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     विशेष टिप्पणी / रसीद नोट (Optional Remarks)
                   </Label>
                   <Input
-                    placeholder="उदा० महाअष्टमी के दिन भोग प्रसाद हेतु / चेक सं० / UPI Ref ID"
                     value={remarks}
                     onChange={e => setRemarks(e.target.value)}
                     className="h-9 text-xs text-slate-800 border-slate-200 rounded-xl bg-white"
@@ -778,18 +807,20 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     </div>
                     <div>
                       <div className="text-xs font-bold text-emerald-950">
-                        प्रविष्टि होते ही WhatsApp डिजिटल रसीद खोलें
+                        प्रविष्टि होते ही WhatsApp रसीद स्वतः भेजें
                       </div>
                       <div className="text-[10px] text-emerald-700">
-                        सुरक्षित करते ही दाता के WhatsApp नंबर पर रसीद प्रेषित करने का आधिकारिक संवाद खुलेगा
+                        {phone.replace(/\D/g, '').length >= 10
+                          ? `सुरक्षित करते ही रसीद ${phone.trim()} पर अपने आप चली जाएगी`
+                          : 'नंबर दर्ज न होने पर रसीद विंडो खुलेगी, जहाँ से नंबर डालकर भेज सकते हैं'}
                       </div>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer shrink-0">
                     <input
                       type="checkbox"
-                      checked={openReceiptAfterSave}
-                      onChange={e => setOpenReceiptAfterSave(e.target.checked)}
+                      checked={autoSendReceipt}
+                      onChange={e => setAutoSendReceipt(e.target.checked)}
                       className="sr-only peer"
                     />
                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>

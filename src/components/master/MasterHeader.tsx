@@ -4,6 +4,7 @@ import { MasterNavSection } from '@/types/master';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  MessageSquare,
   Menu,
   Search,
   Plus,
@@ -57,6 +58,11 @@ const SECTION_TITLES: Record<
     title: 'Analytics & Intel',
     subtitle: 'Consolidated financial, budget, and ground metrics',
     icon: <BarChart3 className="w-4 h-4 text-saffron" />,
+  },
+  integrations: {
+    title: 'Integrations',
+    subtitle: 'WhatsApp connection, messaging, and delivery settings',
+    icon: <MessageSquare className="w-4 h-4 text-emerald-600" />,
   },
 };
 

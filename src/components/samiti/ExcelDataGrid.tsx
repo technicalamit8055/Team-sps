@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WhatsAppReceiptModal } from './WhatsAppReceiptModal';
 import { QuickDonationDialog } from './QuickDonationDialog';
+import { toast } from 'sonner';
+import { sendWhatsAppReceipt, toBase64Pdf } from '@/lib/whatsapp';
+import { toReceiptPayload } from '@/lib/samitiReceipt';
+import { generateReceiptPdfDataUrl } from '@/lib/receiptPdfGenerator';
 import {
   Search,
   MessageSquare,
@@ -25,6 +29,7 @@ import {
   MoreVertical,
   HandCoins,
   ShieldCheck,
+  Loader2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -95,6 +100,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   // Modals state
   const [selectedDonationForReceipt, setSelectedDonationForReceipt] = useState<SamitiDonation | null>(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [sendingReceiptId, setSendingReceiptId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Filtered and sorted records
@@ -183,6 +189,46 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   const openReceiptModal = (donation: SamitiDonation) => {
     setSelectedDonationForReceipt(donation);
     setIsReceiptOpen(true);
+  };
+
+  /**
+   * One-tap send straight to the donor's saved number. Falls back to the
+   * receipt modal when no number is on file, or when the send fails so the
+   * collector can fix the number or use the manual wa.me route.
+   */
+  const sendReceiptDirect = async (donation: SamitiDonation) => {
+    if (!donation.phone || donation.phone.replace(/\D/g, '').length < 10) {
+      toast.info('इस दानदाता का नंबर सेव नहीं है — रसीद विंडो में नंबर दर्ज करें।');
+      openReceiptModal(donation);
+      return;
+    }
+
+    setSendingReceiptId(donation.id);
+    try {
+      let pdfBuffer: string | undefined = undefined;
+      try {
+        const pdfDataUrl = await generateReceiptPdfDataUrl(donation, currentEntity, currentEvent);
+        pdfBuffer = toBase64Pdf(pdfDataUrl);
+      } catch (pdfErr) {
+        console.warn('Direct send: failed to generate PDF, falling back to text:', pdfErr);
+      }
+
+      await sendWhatsAppReceipt({
+        phone: donation.phone,
+        ...toReceiptPayload(donation, currentEntity, currentEvent),
+        pdfBuffer,
+      });
+      toast.success(
+        pdfBuffer
+          ? `भव्य PDF रसीद ${donation.name} को भेज दी गई! ✅`
+          : `रसीद ${donation.name} को भेज दी गई! ✅`,
+      );
+    } catch (err) {
+      toast.error((err as Error).message, { description: 'रसीद विंडो से दोबारा कोशिश करें।' });
+      openReceiptModal(donation);
+    } finally {
+      setSendingReceiptId(null);
+    }
   };
 
   const toggleHandover = (donation: SamitiDonation) => {
@@ -554,11 +600,33 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                       <Button
                         size="sm"
-                        onClick={() => openReceiptModal(row)}
+                        onClick={() => sendReceiptDirect(row)}
+                        disabled={sendingReceiptId === row.id}
                         className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-8 rounded-xl shadow-xs"
+                        title={
+                          row.phone
+                            ? `${row.phone} पर सीधे भेजें`
+                            : 'नंबर सेव नहीं है — रसीद विंडो खुलेगी'
+                        }
                       >
-                        <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
-                        <span>व्हाट्सएप रसीद भेजें</span>
+                        {sendingReceiptId === row.id ? (
+                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        ) : (
+                          <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                        )}
+                        <span>
+                          {sendingReceiptId === row.id ? 'भेजा जा रहा है…' : 'व्हाट्सएप रसीद भेजें'}
+                        </span>
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openReceiptModal(row)}
+                        className="h-8 w-8 p-0 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900"
+                        title="रसीद देखें / नंबर बदलें"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
                       </Button>
 
                       <div className="flex items-center gap-1">
@@ -824,11 +892,28 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="text-xs w-44 bg-white border border-amber-200 shadow-xl rounded-xl p-1">
                                 <DropdownMenuItem
+                                  onClick={() => sendReceiptDirect(row)}
+                                  disabled={sendingReceiptId === row.id}
+                                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-amber-50"
+                                >
+                                  {sendingReceiptId === row.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                                  ) : (
+                                    <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                                  )}
+                                  <span>
+                                    {row.phone
+                                      ? `रसीद भेजें (${row.phone})`
+                                      : 'व्हाट्सएप रसीद भेजें'}
+                                  </span>
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem
                                   onClick={() => openReceiptModal(row)}
                                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-amber-50"
                                 >
-                                  <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>व्हाट्सएप रसीद भेजें</span>
+                                  <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                  <span>रसीद देखें / नंबर बदलें</span>
                                 </DropdownMenuItem>
 
                                 <QuickDonationDialog

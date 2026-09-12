@@ -5,6 +5,7 @@ import { MasterNavSection } from '@/types/master';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+  MessageSquare,
   Layers,
   FolderKanban,
   Users2,
@@ -89,6 +90,12 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
           label: 'Analytics',
           subtitle: 'Consolidated stats',
           icon: <BarChart3 className="w-4 h-4 text-saffron-light" />,
+        },
+        {
+          id: 'integrations' as MasterNavSection,
+          label: 'Integrations',
+          subtitle: 'WhatsApp & messaging',
+          icon: <MessageSquare className="w-4 h-4 text-emerald-400" />,
         },
       ],
     },

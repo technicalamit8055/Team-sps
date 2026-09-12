@@ -83,4 +83,5 @@ export type MasterNavSection =
   | 'manage-workspaces'
   | 'staff-team'
   | 'access-control'
-  | 'master-analytics';
+  | 'master-analytics'
+  | 'integrations';

@@ -9,6 +9,7 @@ import { WorkspaceManagerView } from '@/components/master/WorkspaceManagerView';
 import { StaffKaryakartaView } from '@/components/master/StaffKaryakartaView';
 import { AccessControlMatrixView } from '@/components/master/AccessControlMatrixView';
 import { MasterAnalyticsView } from '@/components/master/MasterAnalyticsView';
+import { IntegrationsView } from '@/components/master/IntegrationsView';
 import { DurgaPujaUnitView } from '@/components/samiti/DurgaPujaUnitView';
 import VictoryApp from '@/pages/Index';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -237,6 +238,8 @@ export const MasterOS: React.FC = () => {
           {activeSection === 'master-analytics' && (
             <MasterAnalyticsView onOpenWorkspace={openWorkspace} />
           )}
+
+          {activeSection === 'integrations' && <IntegrationsView />}
         </main>
       </div>
     </div>

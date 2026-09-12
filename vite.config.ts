@@ -10,6 +10,14 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      // The Baileys WhatsApp server runs as its own long-lived process
+      // (npm run server). Proxying keeps the SPA on a single origin in dev.
+      "/api/whatsapp": {
+        target: process.env.WHATSAPP_SERVER_URL || "http://localhost:8787",
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     react(),

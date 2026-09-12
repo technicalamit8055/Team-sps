@@ -28,3 +28,6 @@ dist-ssr
 *.sw?
 vite.config.ts.timestamp*
 *.timestamp-*.mjs
+
+# WhatsApp (Baileys) session credentials - never commit
+whatsapp_auth/

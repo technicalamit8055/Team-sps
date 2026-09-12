@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Download, Upload, RotateCcw, Save, AlertTriangle, FileSpreadsheet } from 'lucide-react';
+import { Download, Upload, RotateCcw, Save, AlertTriangle, FileSpreadsheet, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { LinktreeAdmin } from '@/components/LinktreeAdmin';
 import { CSVImporter } from '@/components/CSVImporter';
+import { WhatsAppConnectionCard } from '@/components/samiti/WhatsAppConnectionCard';
 
 export const Settings: React.FC = () => {
   const { data, updateSettings, exportDataFile, importDataFile, factoryReset } = useVictory();
@@ -93,6 +94,23 @@ export const Settings: React.FC = () => {
               CSV फाइल से वोटर डेटा अपलोड करें (Narayanpur Panchayat फॉर्मेट)
             </p>
             <CSVImporter />
+          </div>
+          <Separator />
+        </>
+      )}
+
+      {/* WhatsApp receipt sender - Admin Only */}
+      {isAdmin && (
+        <>
+          <div>
+            <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-emerald-600" />
+              व्हाट्सएप रसीद कनेक्शन
+            </h2>
+            <p className="text-muted-foreground text-sm mb-4">
+              एक बार QR स्कैन करें — फिर रसीदें सीधे व्हाट्सएप पर भेजी जा सकेंगी
+            </p>
+            <WhatsAppConnectionCard />
           </div>
           <Separator />
         </>
