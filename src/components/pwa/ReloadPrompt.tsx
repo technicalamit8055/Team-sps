@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { RefreshCw, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const UPDATE_CHECK_INTERVAL_MS = 60 * 1000;
+
 export const ReloadPrompt: React.FC = () => {
+  const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
+
   const {
     offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
@@ -11,11 +15,34 @@ export const ReloadPrompt: React.FC = () => {
   } = useRegisterSW({
     onRegistered(r) {
       console.log('SW Registered:', r);
+      registrationRef.current = r;
     },
     onRegisterError(error) {
       console.error('SW registration error', error);
     },
   });
+
+  useEffect(() => {
+    const checkForUpdate = () => {
+      registrationRef.current?.update().catch(() => {});
+    };
+
+    const interval = setInterval(checkForUpdate, UPDATE_CHECK_INTERVAL_MS);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkForUpdate();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', checkForUpdate);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', checkForUpdate);
+    };
+  }, []);
 
   const close = () => {
     setOfflineReady(false);

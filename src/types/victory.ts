@@ -115,4 +115,4 @@ export interface VictoryData {
   pollData: { time: string; votes: number }[];
 }
 
-export type TabType = 'dashboard' | 'crm' | 'ops' | 'strategy' | 'ground' | 'team' | 'settings';
+export type TabType = 'dashboard' | 'crm' | 'ops' | 'strategy' | 'ground' | 'settings';

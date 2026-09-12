@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useVictory } from '@/contexts/VictoryContext';
 import { useAuth } from '@/hooks/useAuth';
 import { TabType } from '@/types/victory';
-import { Home, Users, Briefcase, Brain, MapPin, Settings, UserPlus, Building2, Layers } from 'lucide-react';
+import { Home, Users, Briefcase, Brain, MapPin, Settings, Layers } from 'lucide-react';
 
 const navItems: { id: TabType; label: string; icon: React.ReactNode; roles?: string[] }[] = [
   { id: 'dashboard', label: 'Home', icon: <Home className="w-5 h-5" /> },
@@ -11,7 +11,6 @@ const navItems: { id: TabType; label: string; icon: React.ReactNode; roles?: str
   { id: 'ops', label: 'Ops', icon: <Briefcase className="w-5 h-5" /> },
   { id: 'strategy', label: 'AI', icon: <Brain className="w-5 h-5" /> },
   { id: 'ground', label: 'Ground', icon: <MapPin className="w-5 h-5" /> },
-  { id: 'team', label: 'Team', icon: <UserPlus className="w-5 h-5" />, roles: ['admin', 'manager'] },
 ];
 
 export const Sidebar: React.FC = () => {

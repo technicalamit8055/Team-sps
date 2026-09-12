@@ -17,7 +17,6 @@ const Operations = lazy(() => import('@/pages/Operations').then(m => ({ default:
 const Strategy = lazy(() => import('@/pages/Strategy').then(m => ({ default: m.Strategy })));
 const GroundZero = lazy(() => import('@/pages/GroundZero').then(m => ({ default: m.GroundZero })));
 const Settings = lazy(() => import('@/pages/Settings').then(m => ({ default: m.Settings })));
-const TeamManagement = lazy(() => import('@/pages/TeamManagement'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center py-20">
@@ -41,8 +40,6 @@ const MainContent: React.FC = () => {
         return <Strategy />;
       case 'ground':
         return <GroundZero />;
-      case 'team':
-        return <TeamManagement />;
       case 'settings':
         return <Settings />;
       default:
