@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import legacy from "@vitejs/plugin-legacy";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -20,6 +21,7 @@ export default defineConfig(({ mode }) => ({
         "favicon.png",
         "team-logo.png",
         "apple-touch-icon.png",
+        "pwa-144x144.png",
         "placeholder.svg",
         "offline.html",
       ],
@@ -39,6 +41,11 @@ export default defineConfig(({ mode }) => ({
           {
             src: "/pwa-64x64.png",
             sizes: "64x64",
+            type: "image/png",
+          },
+          {
+            src: "/pwa-144x144.png",
+            sizes: "144x144",
             type: "image/png",
           },
           {
@@ -146,7 +153,16 @@ export default defineConfig(({ mode }) => ({
         ],
       },
     }),
+    legacy({
+      targets: ["chrome >= 61", "android >= 5", "ios >= 11", "safari >= 11"],
+      modernPolyfills: true,
+      renderLegacyChunks: true,
+    }),
   ].filter(Boolean),
+  build: {
+    target: "es2015",
+    cssTarget: "chrome61",
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
