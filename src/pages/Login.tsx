@@ -29,15 +29,17 @@ export default function Login() {
       toast.error(error);
     } else {
       toast.success('स्वागत है! Login सफल।');
+      // Replace (not push) so the login screen is not left on the history
+      // stack, and so no intermediate dashboard is ever rendered first.
       if (isCollector || assignedWorkspaceId) {
         // Directly redirect assigned collector worker to their unit (e.g. Durga Puja Unit)
-        navigate('/durga-puja-unit');
+        navigate('/durga-puja-unit', { replace: true });
       } else if (role === 'admin') {
-        navigate('/master');
+        navigate('/master', { replace: true });
       } else if (role === 'citizen') {
-        navigate('/janta');
+        navigate('/janta', { replace: true });
       } else {
-        navigate('/election');
+        navigate('/election', { replace: true });
       }
     }
   };

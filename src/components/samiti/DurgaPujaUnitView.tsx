@@ -93,15 +93,13 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
 
   // Personal metrics for worker collections
   const myDonations = useMemo(() => {
+    // Exact (trimmed, case-insensitive) match on the collector name. Loose
+    // substring matching plus hardcoded demo names previously credited other
+    // collectors' entries to whoever was logged in.
+    const wName = workerName.trim().toLowerCase();
     return donations.filter(d => {
-      const cName = (d.collectorName || '').toLowerCase();
-      const wName = workerName.toLowerCase();
-      return (
-        cName.includes(wName) ||
-        wName.includes(cName) ||
-        cName.includes('सुनील') ||
-        cName.includes('कार्यकर्ता')
-      );
+      const cName = (d.collectorName || '').trim().toLowerCase();
+      return !!cName && cName === wName;
     });
   }, [donations, workerName]);
 

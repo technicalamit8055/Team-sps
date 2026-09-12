@@ -61,8 +61,10 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
   const workerName = propCollectorName || profile?.full_name || currentStaffMember?.name || 'सुनील वर्मा';
 
-  // Toggle between worker's own entries vs all unit entries
-  const [collectorScope, setCollectorScope] = useState<'MINE' | 'ALL'>('MINE');
+  // Toggle between worker's own entries vs all unit entries.
+  // Defaults to ALL so a collector immediately sees the existing unit-wide
+  // chanda register and can verify who has already donated before collecting.
+  const [collectorScope, setCollectorScope] = useState<'MINE' | 'ALL'>('ALL');
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -101,14 +103,12 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
       .filter(d => {
         // In collector mode, filter by worker's own collections when scope is 'MINE'
         if (isCollector && collectorScope === 'MINE') {
-          const cName = (d.collectorName || '').toLowerCase();
-          const wName = workerName.toLowerCase();
-          const isMine =
-            cName.includes(wName) ||
-            wName.includes(cName) ||
-            cName.includes('सुनील') ||
-            cName.includes('कार्यकर्ता');
-          if (!isMine) return false;
+          // Exact (trimmed, case-insensitive) name match. Substring matching
+          // plus hardcoded demo names used to attribute other collectors'
+          // entries to whoever was logged in.
+          const cName = (d.collectorName || '').trim().toLowerCase();
+          const wName = workerName.trim().toLowerCase();
+          if (!cName || cName !== wName) return false;
         }
 
         if (searchTerm.trim()) {
@@ -143,7 +143,18 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
         }
         return sortAsc ? (valA as number) - (valB as number) : (valB as number) - (valA as number);
       });
-  }, [donations, searchTerm, categoryFilter, balanceFilter, modeFilter, sortField, sortAsc]);
+  }, [
+    donations,
+    isCollector,
+    collectorScope,
+    workerName,
+    searchTerm,
+    categoryFilter,
+    balanceFilter,
+    modeFilter,
+    sortField,
+    sortAsc,
+  ]);
 
   // Column totals for visible records
   const visibleTotals = useMemo(() => {
