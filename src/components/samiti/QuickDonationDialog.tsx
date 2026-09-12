@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Plus,
   IndianRupee,
@@ -28,6 +29,8 @@ import {
   Check,
 } from 'lucide-react';
 import { WhatsAppReceiptModal } from './WhatsAppReceiptModal';
+import { CasteCombobox } from './CasteCombobox';
+import { LocalityCombobox } from './LocalityCombobox';
 import { toast } from 'sonner';
 import { sendWhatsAppReceipt } from '@/lib/whatsapp';
 import { toReceiptPayload } from '@/lib/samitiReceipt';
@@ -42,6 +45,8 @@ interface QuickDonationDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+const WARD_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i + 1));
+
 const PRESET_AMOUNTS = [
   { amount: 501, title: 'शुभ शगुन' },
   { amount: 1100, title: 'विशेष भेंट' },
@@ -51,8 +56,6 @@ const PRESET_AMOUNTS = [
   { amount: 21000, title: 'महायजमान' },
   { amount: 51000, title: 'संरक्षक दान' },
 ];
-
-const COMMON_CASTE_TAGS = ['वैश्य', 'क्षत्रिय / राजपूत', 'ब्राह्मण', 'यादव', 'कुर्मी', 'स्वर्णकार', 'अन्य'];
 
 const CATEGORY_META: Record<DonationCategory, { icon: React.FC<{ className?: string }>; sublabel: string; activeClass: string; badgeText: string }> = {
   VIL: {
@@ -403,18 +406,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
               {/* SECTION 1: DEVOTEE & IDENTITY DETAILS                   */}
               {/* ------------------------------------------------------- */}
               <div className="bg-white rounded-2xl p-4 border border-amber-200/70 shadow-xs space-y-3.5">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-800 uppercase tracking-wide">
-                    <div className="w-5 h-5 rounded-md bg-amber-100 text-amber-900 flex items-center justify-center font-black text-xs">
-                      १
-                    </div>
-                    <span>श्रद्धालु एवं प्रतिष्ठान विवरण (Devotee & Identity)</span>
-                  </div>
-                  <span className="text-[10px] text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                    * अनिवार्य विवरण
-                  </span>
-                </div>
-
                 {/* Name & Identity */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -478,30 +469,12 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       </Label>
                       <span className="text-[10px] text-slate-400 font-medium">सांख्यिकी हेतु</span>
                     </div>
-                    <Input
+                    <CasteCombobox
                       value={caste}
-                      onChange={e => setCaste(e.target.value)}
+                      onChange={setCaste}
                       className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
                     />
                   </div>
-                </div>
-
-                {/* Quick Caste Tag Chips */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  <span className="text-[10px] font-medium text-slate-400">त्वरित टैग:</span>
-                  {COMMON_CASTE_TAGS.map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => setCaste(tag)}
-                      className={`text-[10px] px-2 py-0.5 rounded-lg border font-medium transition-all ${caste === tag
-                          ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold shadow-2xs'
-                          : 'bg-slate-100/70 text-slate-600 border-slate-200 hover:bg-amber-50 hover:border-amber-200'
-                        }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
                 </div>
 
                 {/* Address 1 & Address 2 */}
@@ -509,13 +482,20 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                   <div>
                     <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                      <span>पता १: मोहल्ला / वार्ड नं० / गली (ADDRESS.1)</span>
+                      <span>वार्ड नं० (WARD NO)</span>
                     </Label>
-                    <Input
-                      value={address1}
-                      onChange={e => setAddress1(e.target.value)}
-                      className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
-                    />
+                    <Select value={address1} onValueChange={setAddress1}>
+                      <SelectTrigger className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors">
+                        <SelectValue placeholder="वार्ड नं० चुनें" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {WARD_OPTIONS.map(ward => (
+                          <SelectItem key={ward} value={ward} className="text-xs">
+                            वार्ड नं० {ward}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
@@ -523,9 +503,9 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <MapPin className="w-3.5 h-3.5 text-slate-400" />
                       <span>पता २: पोस्ट / थाना / लैंडमार्क (ADDRESS.2)</span>
                     </Label>
-                    <Input
+                    <LocalityCombobox
                       value={address2}
-                      onChange={e => setAddress2(e.target.value)}
+                      onChange={setAddress2}
                       className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
                     />
                   </div>
