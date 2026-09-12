@@ -1,7 +1,10 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  darkMode: ["class"],
+  // "variant" with an explicit descendant selector avoids the `:is(.dark *)`
+  // form Tailwind emits for ["class"]. Old Chrome (Android 5/6, < v88) treats
+  // an unknown `:is()` selector as a parse error and drops the whole rule.
+  darkMode: ["variant", ".dark &"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
