@@ -1,0 +1,35 @@
+# Keep the build context small and never ship local secrets or sessions.
+
+node_modules
+dist
+dist-ssr
+.git
+.vercel
+
+# Local WhatsApp login. Baking this into the image would ship your session to
+# the registry AND collide with the volume copy at runtime.
+whatsapp_auth
+
+.env
+.env.*
+!.env.example
+
+# Frontend-only — the server image needs none of it. Vercel builds the SPA.
+src
+public
+index.html
+vite.config.ts
+tailwind.config.ts
+postcss.config.js
+components.json
+eslint.config.js
+tsconfig*.json
+supabase
+scripts
+docs
+*.png
+*.log
+.vscode
+.idea
+.claude
+README.md

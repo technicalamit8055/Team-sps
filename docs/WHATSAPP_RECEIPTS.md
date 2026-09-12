@@ -167,7 +167,45 @@ Railway, Render, Fly.io, or a VPS.
 browser requests `/api/whatsapp/status` on the Vercel domain, the catch-all
 rewrite in `vercel.json` serves `index.html`, and there is no server to answer.
 
-### 1. Deploy the server
+### 1a. Deploy to Fly.io (the configured path)
+
+[`Dockerfile`](../Dockerfile) and [`fly.toml`](../fly.toml) are set up for this.
+Fly has **no true free tier**: a card is required and the Hobby plan includes a
+**$5/month usage allowance**. The committed config (1× `shared-cpu-1x`, 256 MB,
+1 GB volume, Mumbai) is sized to sit inside that allowance, but *watch the first
+invoice* rather than assuming ₹0.
+
+```bash
+# One-time
+curl -L https://fly.io/install.sh | sh     # or: iwr https://fly.io/install.ps1 -useb | iex
+fly auth signup                            # card required
+fly launch --no-deploy --copy-config       # pick a unique app name
+
+# Persistent session storage — MUST exist before the first deploy.
+fly volumes create whatsapp_data --region bom --size 1
+
+# Secrets (never put these in fly.toml — it is committed)
+fly secrets set WHATSAPP_API_TOKEN="$(openssl rand -hex 32)"
+fly secrets set WHATSAPP_ALLOWED_ORIGINS="https://your-app.vercel.app"
+fly secrets set WHATSAPP_BUSINESS_NAME="श्री दुर्गा पूजा समिति"
+
+fly deploy
+fly logs                                   # confirm: "API listening on 0.0.0.0:8787"
+```
+
+Your server URL is `https://<app-name>.fly.dev` — already allowed by the CSP.
+
+Two settings in `fly.toml` must not be "optimized":
+
+- `auto_stop_machines = false` / `min_machines_running = 1` — stopping the
+  machine drops the WebSocket, so WhatsApp marks the device offline. Autostop
+  would save money and break the integration.
+- `WHATSAPP_AUTH_DIR=/data/whatsapp_auth` — on the mounted volume. Anywhere
+  else and every deploy wipes the login.
+
+To read the token back later: `fly ssh console -C "printenv WHATSAPP_API_TOKEN"`.
+
+### 1b. Any other host
 
 Start command `npm run server`. Required settings:
 
