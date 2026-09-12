@@ -16,13 +16,13 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      // Only small, always-needed files belong here. favicon.png (846KB) and
+      // team-logo.png (846KB) are deliberately left out of the precache and
+      // served/cached on demand instead.
       includeAssets: [
         "favicon.ico",
-        "favicon.png",
-        "team-logo.png",
         "apple-touch-icon.png",
         "pwa-144x144.png",
-        "placeholder.svg",
         "offline.html",
       ],
       manifest: {
@@ -103,7 +103,14 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff,woff2}"],
+        // Keep the install-time precache small. Low-RAM devices (e.g. a 2016
+        // Galaxy Tab A, ~1.5GB) crash the WebAPK when the service worker tries
+        // to fetch and store several MB in one go on first launch.
+        globPatterns: ["**/*.{js,css,html}", "pwa-*.png", "favicon.ico"],
+        // Never precache both bundle variants: a device uses one or the other.
+        // Legacy chunks are fetched on demand by the browsers that need them.
+        globIgnores: ["**/*-legacy-*.js", "**/polyfills-legacy-*.js"],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
@@ -130,6 +137,23 @@ export default defineConfig(({ mode }) => ({
               expiration: {
                 maxEntries: 150,
                 maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // Images are no longer precached (see globPatterns). Cache them as
+            // they are actually viewed so offline use still works, without a
+            // multi-MB fetch storm at install time.
+            urlPattern: ({ request }) => request.destination === "image",
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "image-cache",
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200],
