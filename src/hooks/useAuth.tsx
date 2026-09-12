@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isCollector, setIsCollector] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUserData = async (userId: string, overrideUsername?: string) => {
+  const fetchUserData = async (userId: string, overrideUsername?: string): Promise<AppRole | null> => {
     try {
       // Fetch role
       const { data: roleData } = await supabase
@@ -91,10 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('role')
         .eq('user_id', userId)
         .single();
-      
-      let fetchedRole: AppRole = 'worker';
-      if (roleData) {
-        fetchedRole = roleData.role as AppRole;
+
+      const fetchedRole = (roleData?.role as AppRole) ?? null;
+      if (fetchedRole) {
         setRole(fetchedRole);
       }
 
@@ -104,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('username, full_name, ward_number, phone')
         .eq('id', userId)
         .single();
-      
+
       const username = profileData?.username || overrideUsername || '';
       const collectorInfo = getStaffCollectorInfo(username);
 
@@ -123,8 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsCollector(false);
         setAssignedWorkspaceId(null);
       }
+
+      return fetchedRole;
     } catch (error) {
       console.error('Error fetching user data:', error);
+      return null;
     }
   };
 
@@ -132,6 +134,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up Supabase auth listener — the only source of truth for a session.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Sign-ins are handled end-to-end by signIn() itself (it awaits
+        // fetchUserData before returning), so skip this event here to avoid
+        // a second, racing fetch that can overwrite state mid-navigation.
+        if (event === 'SIGNED_IN') {
+          return;
+        }
+
         if (session) {
           setSession(session);
           setUser(session.user);
@@ -190,22 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
         setSession(data.session);
 
-        try {
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', data.user.id)
-            .single();
-
-          if (roleData?.role) {
-            userRole = roleData.role as AppRole;
-            setRole(userRole);
-          }
-        } catch (e) {
-          console.error('Error fetching role in signIn:', e);
-        }
-
-        fetchUserData(data.user.id, cleanUser);
+        userRole = await fetchUserData(data.user.id, cleanUser);
       }
 
       return {

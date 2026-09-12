@@ -153,6 +153,7 @@ export function useSamitiDatabase() {
 
       if (error) {
         console.warn('Could not fetch donations from Supabase:', error.message);
+        toast.error(`दान सूची लोड नहीं हो सकी: ${error.message}`);
         return null;
       }
 
@@ -214,6 +215,7 @@ export function useSamitiDatabase() {
       if (error) throw error;
     } catch (err: any) {
       console.warn('Failed to upsert donation to Supabase:', err.message);
+      toast.error(`दान प्रविष्टि सेव नहीं हो सकी: ${err.message}`);
     }
   }, []);
 
