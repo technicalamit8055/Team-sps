@@ -812,6 +812,7 @@ export type Database = {
           received_amount: number
           remarks: string | null
           serial_number: number
+          village: string | null
           updated_at: string | null
         }
         Insert: {
@@ -835,6 +836,7 @@ export type Database = {
           received_amount?: number
           remarks?: string | null
           serial_number: number
+          village?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -858,6 +860,7 @@ export type Database = {
           received_amount?: number
           remarks?: string | null
           serial_number?: number
+          village?: string | null
           updated_at?: string | null
         }
         Relationships: [

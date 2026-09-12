@@ -4,7 +4,7 @@
 # Rename `app` to something unique before the first deploy.
 
 app = "team-sps-whatsapp"
-primary_region = "bom"            # Mumbai — closest to users, lowest latency
+primary_region = "sin"            # Singapore — nearest available region to India
 
 [build]
   dockerfile = "Dockerfile"

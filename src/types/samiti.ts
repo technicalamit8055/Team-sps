@@ -76,6 +76,7 @@ export interface SamitiDonation {
   name: string; // NAME
   identity: string; // IDENTITY (Father/Firm/Mobile/Designation)
   caste: string; // CASTE (Demographic tag)
+  village?: string; // गाँव (Village)
   address1: string; // ADDRESS.1 (Mohalla/Ward/Street)
   address2: string; // ADDRESS.2 (Post/District/Landmark)
   phone: string; // WhatsApp Mobile No.
