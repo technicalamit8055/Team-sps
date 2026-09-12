@@ -297,11 +297,7 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
                 <h2 className="text-xl font-extrabold text-amber-950 tracking-wide font-serif">
                   {currentEntity.name}
                 </h2>
-                <p className="text-xs text-amber-900 font-medium mt-0.5">
-                  📍 {currentEntity.location || 'नारायणपुर'} • स्थापना वर्ष:{' '}
-                  {currentEntity.establishedYear || 1985}
-                </p>
-                <p className="text-xs font-semibold text-rose-700 mt-0.5">
+                <p className="text-xs font-semibold text-rose-700 mt-1">
                   {currentEvent.title}
                 </p>
                 <div className="mt-2 inline-block bg-gradient-to-r from-amber-600 to-rose-600 text-white font-bold text-[11px] px-3.5 py-0.5 rounded-full shadow-xs">

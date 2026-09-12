@@ -19,7 +19,6 @@ import {
   LayoutGrid,
   Table,
   Phone,
-  Plus,
   ArrowUpDown,
   CheckCircle2,
   Clock,
@@ -52,13 +51,11 @@ import {
 interface ExcelDataGridProps {
   isCollectorMode?: boolean;
   collectorName?: string;
-  onOpenNewDonationModal?: () => void;
 }
 
 export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   isCollectorMode: propCollectorMode,
   collectorName: propCollectorName,
-  onOpenNewDonationModal,
 }) => {
   const { currentEntity, currentEvent, donations, updateDonation, deleteDonation, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
   const { profile } = useAuth();
@@ -284,31 +281,6 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
               </button>
             </div>
 
-            {/* Red + नया चंदा जोड़ें Button */}
-            {onOpenNewDonationModal ? (
-              <Button
-                size="sm"
-                onClick={onOpenNewDonationModal}
-                className="h-9 px-3.5 bg-gradient-to-r from-[#cf1d32] to-[#990e1f] hover:from-[#b91527] hover:to-[#830a18] text-white font-serif font-bold text-xs rounded-xl shadow-xs border border-rose-400/30 flex items-center gap-1.5 transition-transform active:scale-95"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span>+ नया चंदा जोड़ें</span>
-              </Button>
-            ) : (
-              <QuickDonationDialog
-                isCollectorMode={isCollector}
-                defaultCollectorName={workerName}
-                triggerButton={
-                  <Button
-                    size="sm"
-                    className="h-9 px-3.5 bg-gradient-to-r from-[#cf1d32] to-[#990e1f] hover:from-[#b91527] hover:to-[#830a18] text-white font-serif font-bold text-xs rounded-xl shadow-xs border border-rose-400/30 flex items-center gap-1.5"
-                  >
-                    <Plus className="w-4 h-4 stroke-[3]" />
-                    <span>+ नया चंदा जोड़ें</span>
-                  </Button>
-                }
-              />
-            )}
           </div>
         </div>
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Home,
-  PlusCircle,
   FileSpreadsheet,
   Receipt,
   FolderKanban,
@@ -17,7 +16,6 @@ import {
 interface DurgaPujaSidebarProps {
   activeTab: string;
   onSelectTab: (tab: any) => void;
-  onOpenAddDonation: () => void;
   onOpenQR: () => void;
   onOpenCashierSheet: () => void;
   onOpenSettings: () => void;
@@ -30,7 +28,6 @@ interface DurgaPujaSidebarProps {
 export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
   activeTab,
   onSelectTab,
-  onOpenAddDonation,
   onOpenQR,
   onOpenCashierSheet,
   onOpenSettings,
@@ -46,14 +43,6 @@ export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
       icon: Home,
       action: () => onSelectTab('chanda'),
       isActive: activeTab === 'dashboard' || activeTab === 'chanda',
-    },
-    {
-      id: 'add_donation',
-      label: 'नया चंदा जोड़ें',
-      icon: PlusCircle,
-      action: onOpenAddDonation,
-      isAction: true,
-      highlight: true,
     },
     {
       id: 'chanda',
@@ -175,14 +164,12 @@ export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
               className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-serif font-bold rounded-xl transition-all text-left ${
                 active
                   ? 'bg-gradient-to-r from-[#cf1d32] to-[#990e1f] text-white shadow-lg shadow-rose-950/70 border border-rose-400/50 ring-1 ring-amber-400/30 font-extrabold translate-x-0.5'
-                  : item.highlight
-                  ? 'text-amber-200 hover:text-white hover:bg-white/10 bg-amber-500/10 border border-amber-400/20'
                   : 'text-rose-100/80 hover:text-white hover:bg-white/10 border border-transparent'
               }`}
             >
               <item.icon
                 className={`w-4 h-4 shrink-0 transition-transform ${
-                  active ? 'text-amber-200 scale-110' : item.highlight ? 'text-amber-400' : 'text-rose-300/80'
+                  active ? 'text-amber-200 scale-110' : 'text-rose-300/80'
                 }`}
               />
               <span className="truncate">{item.label}</span>

@@ -203,9 +203,6 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   </button>
                 )}
               </div>
-              <p className="text-[10px] sm:text-xs text-amber-200/90 font-serif truncate">
-                📍 {currentEntity.location || 'मुख्य चौक, नारायणपुर'} • स्थापना वर्ष: 1985
-              </p>
             </div>
           </div>
 

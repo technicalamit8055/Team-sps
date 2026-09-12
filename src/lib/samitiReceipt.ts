@@ -20,9 +20,10 @@ export function buildSamitiReceiptMessage(
     ? `\n🏢 *पहचान / फर्म:* ${donation.identity}`
     : '';
 
+  const locationLine = entity.location ? `📍 ${entity.location}\n` : '';
+
   return `🚩 *${entity.name}* 🚩
-📍 ${entity.location || 'मुख्य चौक, नारायणपुर'}
-🎉 ${event.title}
+${locationLine}🎉 ${event.title}
 ===========================
 📜 *डिजिटल चंदा / सहयोग रसीद (Official Receipt)*
 ===========================

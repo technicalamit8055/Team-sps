@@ -19,7 +19,17 @@ import {
 } from './whatsapp.js';
 
 const app = express();
-const PORT = Number(process.env.WHATSAPP_SERVER_PORT || 8787);
+
+// Cloud hosts (Railway, Render, Fly) inject the port to bind as PORT and
+// route external traffic to it; WHATSAPP_SERVER_PORT stays the local default.
+const PORT = Number(process.env.PORT || process.env.WHATSAPP_SERVER_PORT || 8787);
+
+// Those platforms route to the container's external interface, so binding to
+// localhost would make the service unreachable and fail their health checks.
+const HOST = process.env.WHATSAPP_SERVER_HOST || '0.0.0.0';
+
+// Behind a platform proxy, so req.ip / secure reflect the real client.
+app.set('trust proxy', 1);
 
 // PDFs arrive as base64 in JSON, so allow a generous body size.
 app.use(express.json({ limit: '15mb' }));
@@ -31,12 +41,33 @@ const allowedOrigins = (process.env.WHATSAPP_ALLOWED_ORIGINS || '')
   .map((o) => o.trim())
   .filter(Boolean);
 
+// Vercel builds a new preview origin per deployment, so match those by
+// pattern rather than listing every one in WHATSAPP_ALLOWED_ORIGINS.
+const originPatterns = (process.env.WHATSAPP_ALLOWED_ORIGIN_PATTERNS || '')
+  .split(',')
+  .map((p) => p.trim())
+  .filter(Boolean)
+  .map((p) => new RegExp(`^${p.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^.]+')}$`));
+
 app.use(
   cors({
-    origin: allowedOrigins.length ? allowedOrigins : true,
+    origin(origin, cb) {
+      // Same-origin/curl/server-to-server requests send no Origin header.
+      if (!origin) return cb(null, true);
+      // Nothing configured: dev default, reflect whatever asks.
+      if (!allowedOrigins.length && !originPatterns.length) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      if (originPatterns.some((re) => re.test(origin))) return cb(null, true);
+      return cb(new Error(`Origin not allowed: ${origin}`));
+    },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'x-whatsapp-token'],
   }),
 );
+
+// Unauthenticated liveness probe for the platform's health check. Must stay
+// above the token gate, and must not leak session details.
+app.get('/health', (_req, res) => res.json({ ok: true, state: getStatus().state }));
 
 /**
  * Optional shared-secret gate. Set WHATSAPP_API_TOKEN to require callers to
@@ -131,9 +162,21 @@ app.post('/api/whatsapp/send-receipt', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`[whatsapp] API listening on http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`[whatsapp] API listening on ${HOST}:${PORT}`);
   console.log(`[whatsapp] session dir: ${config.AUTH_DIR}`);
+
+  // An open server on a public host lets anyone send messages from the linked
+  // WhatsApp account — and get it banned. Make that impossible to miss.
+  if (!API_TOKEN) {
+    console.warn(
+      '[whatsapp] WARNING: WHATSAPP_API_TOKEN is not set — the API is UNAUTHENTICATED.\n' +
+        '[whatsapp]          Fine on localhost; never deploy publicly like this.',
+    );
+  }
+  if (!allowedOrigins.length && !originPatterns.length) {
+    console.warn('[whatsapp] WARNING: no WHATSAPP_ALLOWED_ORIGINS set — all origins accepted.');
+  }
   console.log(`[whatsapp] country code: +${config.COUNTRY_CODE}, min gap: ${config.MIN_SEND_GAP_MS}ms`);
 
   // Reconnect automatically if the device was linked in a previous run.

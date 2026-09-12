@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import {
   connectWhatsApp,
   getWhatsAppStatus,
+  isWhatsAppConfigured,
   logoutWhatsApp,
   WhatsAppError,
   type WhatsAppStatus,
@@ -136,24 +137,46 @@ export const WhatsAppConnectionCard: React.FC<{ className?: string }> = ({ class
         </Badge>
       </div>
 
-      {/* Server process not running — the most common reason no QR appears. */}
+      {/* No server reachable — the most common reason no QR appears. The
+          remedy differs by environment, so don't show dev advice in prod. */}
       {serverDown && (
         <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3">
           <div className="flex items-start gap-2">
             <ServerCrash className="w-4 h-4 text-rose-600 mt-0.5 shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs font-bold text-rose-900">WhatsApp सर्वर नहीं चल रहा है</p>
-              <p className="text-[11px] text-rose-800 leading-relaxed mt-0.5">
-                QR बनाने के लिए बैकग्राउंड सर्वर ज़रूरी है। टर्मिनल में यह चलाएँ:
-              </p>
-              <code className="mt-1.5 block text-[11px] font-mono bg-white border border-rose-200 rounded-lg px-2 py-1 text-rose-900">
-                npm run dev:all
-              </code>
-              <p className="text-[10px] text-rose-700/80 mt-1.5 leading-relaxed">
-                पहले से <code className="font-mono">npm run dev</code> चल रहा हो तो उसे बंद करके
-                यह चलाएँ, या अलग टर्मिनल में{' '}
-                <code className="font-mono">npm run server</code> चलाएँ।
-              </p>
+              {isWhatsAppConfigured ? (
+                <>
+                  <p className="text-xs font-bold text-rose-900">
+                    WhatsApp सर्वर नहीं चल रहा है
+                  </p>
+                  <p className="text-[11px] text-rose-800 leading-relaxed mt-0.5">
+                    QR बनाने के लिए बैकग्राउंड सर्वर ज़रूरी है। टर्मिनल में यह चलाएँ:
+                  </p>
+                  <code className="mt-1.5 block text-[11px] font-mono bg-white border border-rose-200 rounded-lg px-2 py-1 text-rose-900">
+                    npm run dev:all
+                  </code>
+                  <p className="text-[10px] text-rose-700/80 mt-1.5 leading-relaxed">
+                    पहले से <code className="font-mono">npm run dev</code> चल रहा हो तो उसे बंद
+                    करके यह चलाएँ, या अलग टर्मिनल में{' '}
+                    <code className="font-mono">npm run server</code> चलाएँ।
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs font-bold text-rose-900">
+                    WhatsApp सर्वर कॉन्फ़िगर नहीं है
+                  </p>
+                  <p className="text-[11px] text-rose-800 leading-relaxed mt-0.5">
+                    WhatsApp को एक हमेशा चलने वाले सर्वर की ज़रूरत है, जो Vercel पर नहीं चल
+                    सकता। उसे Railway/Render पर डिप्लॉय करें, फिर Vercel में{' '}
+                    <code className="font-mono">VITE_WHATSAPP_API_URL</code> सेट करके दोबारा
+                    डिप्लॉय करें।
+                  </p>
+                  <p className="text-[10px] text-rose-700/80 mt-1.5 leading-relaxed">
+                    पूरी जानकारी: <code className="font-mono">docs/WHATSAPP_RECEIPTS.md</code>
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -125,7 +125,8 @@ Failures return `{ ok: false, code, error }` with a matching HTTP status:
 | `INVALID_PHONE` | 400 | Number could not be normalized |
 | `NO_RECIPIENT` | 400 | No `phone` and no `WHATSAPP_DEFAULT_PHONE` |
 | `NOT_ON_WHATSAPP` | 422 | Number is not registered on WhatsApp |
-| `SERVER_UNREACHABLE` | — | Client-side: the server isn't running |
+| `SERVER_UNREACHABLE` | — | Client-side: server not running, or URL/CORS/CSP wrong |
+| `NOT_CONFIGURED` | — | Client-side: deployed build with no `VITE_WHATSAPP_API_URL` |
 
 ## Phone normalization
 
@@ -154,10 +155,67 @@ rate-limited deliberately:
 Blasting large volumes can still get a number banned. Keep to real receipts
 sent to people who expect them.
 
-## Deployment note
+## Deploying (Vercel frontend + separate server)
 
-The SPA deploys to Vercel, but **this server does not** — it needs a persistent
-process and a writable disk (a small VPS, Railway, Fly.io, or an always-on
-machine at the office). Point `VITE_WHATSAPP_API_URL` at it, set
-`WHATSAPP_API_TOKEN` plus `WHATSAPP_ALLOWED_ORIGINS`, and add the host to the
-`connect-src` directive in [`vercel.json`](../vercel.json) so the CSP allows it.
+The SPA deploys to Vercel, but **this server cannot**. Vercel functions are
+stateless, frozen between requests, and have an ephemeral read-only disk;
+Baileys needs a socket alive for hours and a durable `whatsapp_auth/`. Deploy
+`server/` to a host with long-lived processes and a persistent volume —
+Railway, Render, Fly.io, or a VPS.
+
+**Symptom when this step is skipped:** no QR ever appears in production. The
+browser requests `/api/whatsapp/status` on the Vercel domain, the catch-all
+rewrite in `vercel.json` serves `index.html`, and there is no server to answer.
+
+### 1. Deploy the server
+
+Start command `npm run server`. Required settings:
+
+| Setting | Value |
+| --- | --- |
+| Persistent volume | mounted at e.g. `/data` |
+| `WHATSAPP_AUTH_DIR` | `/data/whatsapp_auth` — **on the volume** |
+| `WHATSAPP_API_TOKEN` | `openssl rand -hex 32` |
+| `WHATSAPP_ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
+| `WHATSAPP_ALLOWED_ORIGIN_PATTERNS` | `https://your-app-*.vercel.app` (previews, optional) |
+| `WHATSAPP_BUSINESS_NAME`, `WHATSAPP_COUNTRY_CODE` | as in `.env.example` |
+
+`PORT` is injected by the platform; the server binds `0.0.0.0` automatically.
+Point the platform's health check at `GET /health` (unauthenticated).
+
+> If `WHATSAPP_AUTH_DIR` is not on the volume, the session is wiped on every
+> redeploy and the QR must be re-scanned each time.
+
+### 2. Configure Vercel
+
+In **Project → Settings → Environment Variables**:
+
+```
+VITE_WHATSAPP_API_URL=https://your-server.up.railway.app   # no trailing slash
+VITE_WHATSAPP_API_TOKEN=<same value as WHATSAPP_API_TOKEN>
+```
+
+Then **redeploy** — Vite inlines `VITE_*` at build time, so a restart alone
+changes nothing.
+
+### 3. Allow the origin in the CSP
+
+`connect-src` in [`vercel.json`](../vercel.json) already permits
+`*.up.railway.app`, `*.onrender.com` and `*.fly.dev`. On any other host add it
+there, or the browser blocks the request before it is sent — silently, except
+for a console error.
+
+### 4. Link the device
+
+Open the app → WhatsApp card → **WhatsApp जोड़ें** → scan the QR. The session
+persists on the volume across redeploys.
+
+### Security
+
+`VITE_WHATSAPP_API_TOKEN` ships inside the JS bundle and is readable by anyone
+who opens devtools. It stops drive-by abuse, not a determined attacker. Since
+the server can send messages from your WhatsApp account, prefer also
+restricting it to your Vercel origins — and treat a leaked token as a reason to
+rotate both values. For anything high-volume or business-critical, the official
+WhatsApp Cloud API is the durable path; Baileys is an unofficial client and the
+number can be banned, a risk that is higher from a datacenter IP.
