@@ -21,7 +21,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
   label,
   className = '',
 }) => {
-  const { isInstallable, isInstalled, isIOS, promptInstall } = usePWAInstall();
+  const { isInstallable, isInstalled, isIOS, isAndroid, promptInstall } = usePWAInstall();
   const [isIOSModalOpen, setIsIOSModalOpen] = useState(false);
 
   // If already installed, show small indicator or return null based on context
@@ -136,6 +136,17 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
                   </div>
                 </div>
               </>
+            ) : isAndroid ? (
+              <div className="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-600">
+                <p className="font-medium text-slate-800">Chrome मेन्यू से इंस्टॉल करें:</p>
+                <p>1. ऊपर दायीं ओर ब्राउज़र मेन्यू (तीन बिंदु <strong>⋮</strong>) पर टैप करें।</p>
+                <p>2. <strong>'Add to Home screen'</strong> या <strong>'Install app'</strong> चुनें।</p>
+                <p>3. <strong>'Install'</strong> पर टैप करें — ऐप होम स्क्रीन पर आ जाएगा।</p>
+                <p className="text-[11px] text-slate-500 pt-1">
+                  नोट: यह विकल्प Chrome में ही उपलब्ध है। यदि आप किसी अन्य ब्राउज़र या
+                  इन-ऐप ब्राउज़र (WhatsApp, Instagram) से खोल रहे हैं, तो पहले Chrome में खोलें।
+                </p>
+              </div>
             ) : (
               <div className="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-600">
                 <p className="font-medium text-slate-800">ब्राउज़र मेन्यू से इंस्टॉल करें:</p>

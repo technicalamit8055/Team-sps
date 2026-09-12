@@ -24,6 +24,11 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      // Without this the service worker is generated but never registered, so
+      // Chrome never fires `beforeinstallprompt` and "Install app" is unavailable
+      // on every Android device. Injecting the registration script keeps
+      // src/main.tsx free of PWA wiring.
+      injectRegister: "script-defer",
       // Only small, always-needed files belong here. favicon.png (846KB) and
       // team-logo.png (846KB) are deliberately left out of the precache and
       // served/cached on demand instead.
