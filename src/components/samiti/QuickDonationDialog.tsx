@@ -45,7 +45,8 @@ interface QuickDonationDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const WARD_OPTIONS = Array.from({ length: 13 }, (_, i) => String(i + 1));
+// 'N/A' is a real, selectable value for donors whose ward is unknown.
+const WARD_OPTIONS = ['N/A', ...Array.from({ length: 13 }, (_, i) => String(i + 1))];
 
 const PRESET_AMOUNTS = [
   { amount: 501, title: 'शुभ शगुन' },
@@ -491,7 +492,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <SelectContent>
                         {WARD_OPTIONS.map(ward => (
                           <SelectItem key={ward} value={ward} className="text-xs">
-                            वार्ड नं० {ward}
+                            {ward === 'N/A' ? 'N/A (लागू नहीं)' : `वार्ड नं० ${ward}`}
                           </SelectItem>
                         ))}
                       </SelectContent>

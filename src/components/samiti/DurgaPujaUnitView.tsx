@@ -301,7 +301,6 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           <DurgaPujaSidebar
             activeTab={activeTab}
             onSelectTab={setActiveTab}
-            onOpenAddDonation={() => setIsQuickDonationOpen(true)}
             onOpenQR={() => setIsQRModalOpen(true)}
             onOpenCashierSheet={() => setIsCashierSheetOpen(true)}
             onOpenSettings={() => {
@@ -325,7 +324,6 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               <DurgaPujaSidebar
                 activeTab={activeTab}
                 onSelectTab={setActiveTab}
-                onOpenAddDonation={() => setIsQuickDonationOpen(true)}
                 onOpenQR={() => setIsQRModalOpen(true)}
                 onOpenCashierSheet={() => setIsCashierSheetOpen(true)}
                 onOpenSettings={() => {
@@ -368,7 +366,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 </h2>
 
                 <p className="text-xs sm:text-base font-extrabold font-serif text-amber-950">
-                  {currentEntity.bannerBadgeText || 'श्री दुर्गा पूजा महोत्सव 2026 (भव्य 41वाँ वार्षिकोत्सव)'}
+                  {currentEntity.bannerBadgeText || 'श्री दुर्गा पूजा महोत्सव 2026'}
                 </p>
 
                 <p className="text-[11px] sm:text-sm font-serif italic text-slate-800 max-w-md mx-auto">
@@ -377,15 +375,6 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
 
                 {/* Primary Action Buttons */}
                 <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsQuickDonationOpen(true)}
-                    className="h-9 sm:h-10 px-5 rounded-full bg-gradient-to-r from-[#cf1d32] to-[#990e1f] hover:from-[#b91527] hover:to-[#830a18] text-white font-serif font-bold text-xs sm:text-sm shadow-lg shadow-rose-900/40 border border-rose-400/40 flex items-center gap-1.5 transition-transform hover:scale-105 active:scale-95"
-                  >
-                    <Plus className="w-4 h-4 stroke-[3]" />
-                    <span>+ नया चंदा जोड़ें</span>
-                  </button>
-
                   <button
                     type="button"
                     onClick={() => setActiveTab('chanda')}
@@ -421,7 +410,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           {/* ----------------------------------------------------------- */}
           {/* B. 5 PASTEL KPI METRIC CARDS (Exact match to reference)      */}
           {/* ----------------------------------------------------------- */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className={`grid grid-cols-2 md:grid-cols-3 gap-3 ${isCollector ? '' : 'lg:grid-cols-5'}`}>
             {/* Card 1: Pledged Funds (Warm Cream / Gold) */}
             <div className="bg-[#fff9ec] border border-[#f0dcaf] rounded-2xl p-3.5 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-start justify-between">
@@ -483,7 +472,8 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               </div>
             </div>
 
-            {/* Card 4: Total Expenses (Sky Blue / Cream) */}
+            {/* Card 4: Total Expenses (Sky Blue / Cream) — hidden from collectors */}
+            {!isCollector && (
             <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-2xl p-3.5 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-start justify-between">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#e0f2fe] border border-[#7dd3fc] flex items-center justify-center text-sky-600 shrink-0">
@@ -503,8 +493,10 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 <span className="text-rose-500 font-semibold">देनदारी: ₹{summary.expenseBalanceDue.toLocaleString('hi-IN')}</span>
               </div>
             </div>
+            )}
 
-            {/* Card 5: Net Surplus / Active Participation (Amber / Cream) */}
+            {/* Card 5: Net Surplus / Active Participation (Amber / Cream) — hidden from collectors */}
+            {!isCollector && (
             <div className="col-span-2 sm:col-span-1 bg-[#fffbeb] border border-[#fde68a] rounded-2xl p-3.5 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-start justify-between">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#fef3c7] border border-[#fcd34d] flex items-center justify-center text-amber-700 shrink-0">
@@ -523,6 +515,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 सर्व भुगतान बाद लगाना होई
               </div>
             </div>
+            )}
           </div>
 
           {/* ----------------------------------------------------------- */}
@@ -618,7 +611,6 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             <ExcelDataGrid
               isCollectorMode={isCollector}
               collectorName={workerName}
-              onOpenNewDonationModal={() => setIsQuickDonationOpen(true)}
             />
           )}
 
@@ -743,6 +735,21 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           </div>
         </aside>
       </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 3B. FLOATING "नया चंदा जोड़ें" ACTION BUTTON                    */}
+      {/* Single entry point for new chanda across the whole unit view.  */}
+      {/* ------------------------------------------------------------- */}
+      <button
+        type="button"
+        onClick={() => setIsQuickDonationOpen(true)}
+        className="fixed bottom-5 right-5 sm:bottom-7 sm:right-7 z-50 h-14 sm:h-16 px-5 sm:px-7 rounded-full bg-gradient-to-r from-[#cf1d32] to-[#990e1f] hover:from-[#b91527] hover:to-[#830a18] text-white font-serif font-black text-sm sm:text-base tracking-wide shadow-2xl shadow-rose-950/60 border-2 border-amber-400/70 ring-2 ring-rose-500/20 flex items-center gap-2 transition-transform hover:scale-105 active:scale-95"
+        title="नया चंदा जोड़ें"
+        aria-label="नया चंदा जोड़ें"
+      >
+        <Plus className="w-6 h-6 sm:w-7 sm:h-7 stroke-[3.5] text-amber-300 shrink-0" />
+        <span className="font-black whitespace-nowrap">नया चंदा जोड़ें</span>
+      </button>
 
       {/* ------------------------------------------------------------- */}
       {/* 4. MODALS (Quick Donation, QR, Cashier Sheet, Settings)        */}

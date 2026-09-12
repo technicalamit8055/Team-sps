@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Check, ChevronDown } from 'lucide-react';
-import { filterCasteGroups, CASTE_OPTIONS } from '@/lib/casteOptions';
+import { filterCasteOptions, CASTE_OPTIONS } from '@/lib/casteOptions';
 
 interface CasteComboboxProps {
   value: string;
@@ -26,11 +26,10 @@ export const CasteCombobox: React.FC<CasteComboboxProps> = ({
   const listRef = useRef<HTMLDivElement>(null);
 
   // While closed the list shows everything, so the chevron always reveals the full set.
-  const groups = useMemo(
-    () => (isOpen ? filterCasteGroups(value) : filterCasteGroups('')),
+  const flatOptions = useMemo(
+    () => (isOpen ? filterCasteOptions(value) : CASTE_OPTIONS),
     [isOpen, value]
   );
-  const flatOptions = useMemo(() => groups.flatMap(g => g.options), [groups]);
 
   // Close on outside click.
   useEffect(() => {
@@ -84,7 +83,6 @@ export const CasteCombobox: React.FC<CasteComboboxProps> = ({
   };
 
   const isKnown = CASTE_OPTIONS.some(o => o.value === value);
-  let runningIndex = -1;
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -119,40 +117,31 @@ export const CasteCombobox: React.FC<CasteComboboxProps> = ({
           role="listbox"
           className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg py-1"
         >
-          {groups.length === 0 ? (
+          {flatOptions.length === 0 ? (
             <div className="px-3 py-2 text-[10px] text-slate-400 font-medium">
               कोई मिलान नहीं — टाइप किया हुआ मान ही सहेजा जाएगा
             </div>
           ) : (
-            groups.map(group => (
-              <div key={group.group}>
-                <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-wide text-slate-400 bg-slate-50/80 sticky top-0">
-                  {group.group}
-                </div>
-                {group.options.map(option => {
-                  runningIndex += 1;
-                  const index = runningIndex;
-                  const isSelected = option.value === value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      data-index={index}
-                      onMouseEnter={() => setActiveIndex(index)}
-                      onClick={() => select(option.value)}
-                      className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors ${
-                        index === activeIndex ? 'bg-amber-50 text-amber-900' : 'text-slate-700'
-                      }`}
-                    >
-                      <span>{option.value}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-            ))
+            flatOptions.map((option, index) => {
+              const isSelected = option.value === value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  data-index={index}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => select(option.value)}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors ${
+                    index === activeIndex ? 'bg-amber-50 text-amber-900' : 'text-slate-700'
+                  }`}
+                >
+                  <span>{option.value}</span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                </button>
+              );
+            })
           )}
           {value.trim() && !isKnown && (
             <div className="px-3 py-1.5 mt-1 border-t border-slate-100 text-[10px] text-slate-500 font-medium">
