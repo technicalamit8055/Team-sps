@@ -1,13 +1,6 @@
-export type MasterRole = 'admin' | 'manager' | 'accountant' | 'karyakarta' | 'collector' | 'tablet' | 'observer';
+export type MasterRole = 'admin' | 'manager' | 'accountant' | 'karyakarta' | 'collector' | 'observer';
 
-/**
- * `tablet` is a shared-device account, not a person. The tablet sits at the
- * pandal and whichever member picks it up enters chanda on it, so unlike a
- * `collector` account — which is locked to the one person it belongs to — a
- * tablet account must let the operator pick the संग्रहकर्ता by name from the
- * registered list on every receipt.
- */
-export type WorkspaceAccessLevel = 'full_control' | 'editor' | 'viewer' | 'collector' | 'tablet' | 'no_access';
+export type WorkspaceAccessLevel = 'full_control' | 'editor' | 'viewer' | 'collector' | 'no_access';
 
 export interface ModuleAccess {
   votersCRM: boolean;       // Election CRM, voter lists, surveys
@@ -28,6 +21,17 @@ export interface ModuleAccess {
    * that only ever moves the received figure upward.
    */
   editFinalizedAmounts: boolean;
+  /**
+   * Choose the संग्रहकर्ता by name on every receipt, instead of having it
+   * locked to the account holder.
+   *
+   * For a device that is shared rather than carried by one person — it sits at
+   * the pandal and whoever picks it up enters chanda on it, so each receipt
+   * must be credited to the member who actually collected the money. Off by
+   * default: a personal account stays locked to its own owner's name, which is
+   * what makes "मेरी प्रविष्टियाँ" and per-collector totals meaningful.
+   */
+  chooseCollectorName: boolean;
 }
 
 export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAccess> = {
@@ -40,6 +44,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     karyakartaMgmt: true,
     exportData: true,
     editFinalizedAmounts: true,
+    chooseCollectorName: true,
   },
   editor: {
     votersCRM: true,
@@ -50,6 +55,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     karyakartaMgmt: false,
     exportData: true,
     editFinalizedAmounts: false, // may add entries, but not revise saved amounts
+    chooseCollectorName: true,
   },
   viewer: {
     votersCRM: true,
@@ -60,6 +66,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     karyakartaMgmt: false,
     exportData: false,
     editFinalizedAmounts: false,
+    chooseCollectorName: true,
   },
   collector: {
     votersCRM: false,
@@ -70,18 +77,9 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     karyakartaMgmt: false,   // Strictly hidden
     exportData: false,       // Strictly hidden
     editFinalizedAmounts: false, // Corrections must be made by an admin
-  },
-  // Same restrictions as a collector — the difference is only that the
-  // संग्रहकर्ता name is chosen per receipt rather than locked to the account.
-  tablet: {
-    votersCRM: false,
-    donationsLedger: true,   // The whole point of the device
-    expenses: false,         // Strictly hidden
-    pandalPujaKharcha: false,
-    analytics: false,        // Strictly hidden — a shared device shows no totals
-    karyakartaMgmt: false,
-    exportData: false,       // Strictly hidden
-    editFinalizedAmounts: false, // Corrections must be made by an admin
+    // Locked to the account holder by default. Tick this in the access matrix
+    // for a device that is shared between members at the pandal.
+    chooseCollectorName: false,
   },
   no_access: {
     votersCRM: false,
@@ -92,6 +90,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     karyakartaMgmt: false,
     exportData: false,
     editFinalizedAmounts: false,
+    chooseCollectorName: false,
   },
 };
 

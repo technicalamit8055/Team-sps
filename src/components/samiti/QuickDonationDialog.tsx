@@ -84,8 +84,29 @@ const CATEGORY_META: Record<DonationCategory, { icon: React.FC<{ className?: str
   },
 };
 
-// संग्रहकर्ता dropdown ke tay naam — in ke alawa koi aur naam nahi chuna ja sakta
-const COLLECTOR_OPTIONS = ['कार्यकर्ता प्रतिनिधि', 'सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत', 'सुनील वर्मा', 'अमित कुमार'];
+// Names always offered in the संग्रहकर्ता dropdown, merged with whatever the
+// live roster returns — see `collectorOptions` below.
+//
+// These are kept even once the roster has synced. A collector account may only
+// read its own `master_staff` row plus co-members of its unit, so on a shared
+// device the cloud list can come back holding a single name; dropping these
+// would leave the operator unable to credit anyone but the account holder.
+const COLLECTOR_OPTIONS = ['सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत'];
+
+/**
+ * Names never offered as a संग्रहकर्ता, even when the roster returns them.
+ *
+ * The dropdown is for the members who actually collect chanda at the pandal.
+ * Admin and desk accounts sync into the roster like anyone else, and a login
+ * name such as `Niraj01` is an account label rather than a person to credit on
+ * a printed receipt — the member's real name (नीरज) is already in the list.
+ *
+ * Matched case-insensitively on the trimmed name, so a roster row that differs
+ * only in spacing or capitalisation is still excluded.
+ */
+const NON_COLLECTOR_NAMES = new Set(
+  ['कार्यकर्ता प्रतिनिधि', 'सुनील वर्मा', 'अमित कुमार', 'Niraj01'].map(n => n.toLowerCase())
+);
 
 /**
  * Green tick shown beside a label once its field carries a value. Sits in the
@@ -104,7 +125,47 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
 }) => {
-  const { addDonation, updateDonation, currentEvent, currentEntity, donations, isCollectorMode: contextCollectorMode, isTabletMode, currentStaffMember, canEditFinalizedAmounts } = useSamiti();
+  const { addDonation, updateDonation, currentEvent, currentEntity, donations, isCollectorMode: contextCollectorMode, canChooseCollectorName, currentStaffMember, canEditFinalizedAmounts, staffList } = useSamiti();
+
+  /**
+   * Names offered in the संग्रहकर्ता dropdown.
+   *
+   * The unit's own active staff, unioned with `COLLECTOR_OPTIONS`. The roster
+   * is what credits a receipt to a real, registered member; the standing names
+   * keep the field usable while it is syncing, and on a shared collector device
+   * whose account can only read part of it.
+   */
+  const collectorOptions = React.useMemo(() => {
+    const names = (staffList || [])
+      .filter(s => s?.status === 'active' && s?.name)
+      // Keep members of this unit; a member with no permission map recorded is
+      // left in rather than silently dropped from every unit's list.
+      .filter(s => {
+        const perms = s.workspacePermissions || {};
+        const wsIds = Object.keys(perms);
+        if (wsIds.length === 0) return true;
+        return !currentEntity?.id || wsIds.includes(currentEntity.id);
+      })
+      .map(s => s.name.trim());
+
+    // Roster names first (they are the registered, creditable members), then the
+    // standing names the roster did not return. A union rather than either/or: a
+    // partial roster must not shrink the list the operator can pick from.
+    //
+    // The exclusion is applied after the merge so it covers both sources: the
+    // signed-in account's own row arrives via the roster, not `COLLECTOR_OPTIONS`.
+    const offered = Array.from(new Set([...names, ...COLLECTOR_OPTIONS]))
+      .filter(Boolean)
+      .filter(n => !NON_COLLECTOR_NAMES.has(n.toLowerCase()));
+
+    // An existing receipt keeps whoever it was already credited to, even if that
+    // name is no longer offered for new entries. Without this the Select would
+    // render blank while editing an old receipt and refuse to save it unchanged.
+    const saved = initialData?.collectorName?.trim();
+    if (saved && !offered.includes(saved)) offered.push(saved);
+
+    return offered;
+  }, [staffList, currentEntity?.id, initialData?.collectorName]);
 
   const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
   const workerCollectorName = defaultCollectorName || currentStaffMember?.name || 'सुनील वर्मा';
@@ -112,12 +173,13 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   /**
    * Lock संग्रहकर्ता to the account holder's own name?
    *
-   * Only for a personal collector account. A shared tablet is passed between
-   * members at the pandal, so its operator must pick their own name from the
-   * registered list on every receipt — otherwise every entry made on the
-   * device would be credited to the tablet's own account.
+   * The default for a personal collector account, so their entries are their
+   * own. Lifted by the `chooseCollectorName` permission, for a device shared
+   * between members at the pandal — there the operator picks their own name on
+   * every receipt, otherwise the whole day's collection is credited to one
+   * account.
    */
-  const lockCollector = isCollector && !isTabletMode;
+  const lockCollector = isCollector && !canChooseCollectorName;
 
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -195,14 +257,14 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setPaymentMode('CASH');
       if (lockCollector) {
         setCollectorName(workerCollectorName);
-      } else if (isTabletMode) {
-        // Clear between donors: the next entry on a shared device is very
+      } else if (canChooseCollectorName) {
+        // Clear between donors: on a shared device the next entry is very
         // often made by a different member, and a name left over from the
         // previous receipt would silently miscredit the collection.
         setCollectorName('');
       }
     }
-  }, [initialData, isOpen, isCollector, lockCollector, isTabletMode, workerCollectorName]);
+  }, [initialData, isOpen, isCollector, lockCollector, canChooseCollectorName, workerCollectorName]);
 
   // Keyboard shortcut: Ctrl+Enter to save
   useEffect(() => {
@@ -336,7 +398,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
         });
         return;
       }
-      if (!COLLECTOR_OPTIONS.includes(trimmedCollector)) {
+      if (!collectorOptions.includes(trimmedCollector)) {
         toast.error('यह संग्रहकर्ता सूची में पंजीकृत नहीं है।', {
           description: 'केवल सूची में दिए गए नाम ही चुने जा सकते हैं।',
         });
@@ -839,18 +901,12 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     <div className="flex items-center justify-between mb-1.5">
                       <Label className="text-xs font-bold text-slate-800">
                         संग्रहकर्ता
-                        {isTabletMode && <span className="text-rose-600 ml-0.5">*</span>}
+                        {canChooseCollectorName && <span className="text-rose-600 ml-0.5">*</span>}
                       </Label>
                       {lockCollector && (
                         <span className="text-[12px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <span>🔒</span>
                           <span>लॉक्ड</span>
-                        </span>
-                      )}
-                      {isTabletMode && (
-                        <span className="text-[12px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <span>📱</span>
-                          <span>साझा टैबलेट</span>
                         </span>
                       )}
                     </div>
@@ -870,24 +926,24 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         <Select value={collectorName} onValueChange={val => setCollectorName(val)}>
                           <SelectTrigger
                             className={`h-11 text-xs font-semibold text-slate-900 rounded-xl bg-white ${
-                              isTabletMode && !collectorName
+                              canChooseCollectorName && !collectorName
                                 ? 'border-2 border-indigo-400 ring-2 ring-indigo-200 focus:ring-indigo-500'
                                 : 'border-slate-200 focus:ring-amber-500'
                             }`}
                           >
-                            <SelectValue placeholder={isTabletMode ? 'अपना नाम चुनें' : 'नाम चुनें'} />
+                            <SelectValue placeholder={canChooseCollectorName ? 'अपना नाम चुनें' : 'नाम चुनें'} />
                           </SelectTrigger>
                           <SelectContent>
-                            {COLLECTOR_OPTIONS.map(name => (
+                            {collectorOptions.map(name => (
                               <SelectItem key={name} value={name} className="text-xs">
                                 {name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        {isTabletMode && (
+                        {canChooseCollectorName && (
                           <p className="text-[12px] text-indigo-800 mt-1 font-medium">
-                            यह साझा टैबलेट है — रसीद दर्ज करने से पहले सूची में से अपना नाम चुनें।
+                            रसीद दर्ज करने से पहले सूची में से अपना नाम चुनें।
                           </p>
                         )}
                       </>

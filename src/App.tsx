@@ -10,7 +10,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ReloadPrompt } from "@/components/pwa/ReloadPrompt";
 
 // Static page imports for rock-solid reliability across HMR, dev servers, and PWA
-import Index from "./pages/Index";
 import Login from "./pages/Login";
 import JantaPortal from "./pages/JantaPortal";
 import LandingPage from "./pages/LandingPage";
@@ -26,35 +25,6 @@ const PageLoader = () => (
 );
 
 const queryClient = new QueryClient();
-
-// Protected route wrapper for team (admin, manager, worker)
-function TeamRoute({ children }: { children: React.ReactNode }) {
-  const { user, role, isCollector, assignedWorkspaceId, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-victory-saffron border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Citizens go to Janta Portal
-  if (role === 'citizen') {
-    return <Navigate to="/janta" replace />;
-  }
-
-  // Assigned collector workers can only access their assigned unit
-  if (isCollector || assignedWorkspaceId) {
-    return <Navigate to="/durga-puja-unit" replace />;
-  }
-
-  return <>{children}</>;
-}
 
 // Protected route wrapper for Admin & Manager (Master OS)
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -124,7 +94,7 @@ function CitizenRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Non-citizens go to assigned unit or election workspace or master
+  // Non-citizens go to their assigned unit, else Master OS.
   if (role && role !== 'citizen') {
     if (isCollector || assignedWorkspaceId) {
       return <Navigate to="/durga-puja-unit" replace />;
@@ -132,7 +102,9 @@ function CitizenRoute({ children }: { children: React.ReactNode }) {
     if (role === 'admin') {
       return <Navigate to="/master" replace />;
     }
-    return <Navigate to="/election" replace />;
+    // Non-admin team members (workers) have no console of their own now that
+    // the election unit is gone — send them to the chanda unit.
+    return <Navigate to="/durga-puja-unit" replace />;
   }
 
   return <>{children}</>;
@@ -163,7 +135,8 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     if (role === 'admin') {
       return <Navigate to="/master" replace />;
     }
-    return <Navigate to="/election" replace />;
+    // Workers land on the chanda unit.
+    return <Navigate to="/durga-puja-unit" replace />;
   }
 
   return <>{children}</>;
@@ -202,17 +175,13 @@ const AppRoutes = () => (
         </CitizenRoute>
       } />
 
-      {/* Primary Election Command / Victory OS Console */}
-      <Route path="/election" element={
-        <TeamRoute>
-          <Index />
-        </TeamRoute>
-      } />
-
-      {/* Legacy and convenience route redirects */}
-      <Route path="/dashboard" element={<Navigate to="/election" replace />} />
-      <Route path="/victory" element={<Navigate to="/election" replace />} />
-      <Route path="/victory-os" element={<Navigate to="/election" replace />} />
+      {/* The Election / Victory OS console has been removed — it will be
+          rebuilt from scratch. Its old routes now point at Master OS so any
+          bookmark or cached PWA link still lands somewhere valid. */}
+      <Route path="/election" element={<Navigate to="/master" replace />} />
+      <Route path="/dashboard" element={<Navigate to="/master" replace />} />
+      <Route path="/victory" element={<Navigate to="/master" replace />} />
+      <Route path="/victory-os" element={<Navigate to="/master" replace />} />
 
       {/* Master OS Hub & Workspace Control Plane */}
       <Route path="/master" element={

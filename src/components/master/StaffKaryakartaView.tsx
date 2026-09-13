@@ -74,11 +74,6 @@ const ROLE_CONFIG: Record<
     color: 'bg-amber-600',
     badgeBg: 'bg-amber-50 text-amber-800 border-amber-300',
   },
-  tablet: {
-    label: 'साझा टैबलेट (Shared Tablet)',
-    color: 'bg-indigo-600',
-    badgeBg: 'bg-indigo-50 text-indigo-800 border-indigo-300',
-  },
 };
 
 const ACCESS_LEVEL_LABELS: Record<
@@ -100,10 +95,6 @@ const ACCESS_LEVEL_LABELS: Record<
   collector: {
     label: 'Donation Only (चंदा संग्रह)',
     badgeColor: 'bg-amber-50 text-amber-800 border-amber-300',
-  },
-  tablet: {
-    label: 'Shared Tablet (साझा टैबलेट)',
-    badgeColor: 'bg-indigo-50 text-indigo-800 border-indigo-300',
   },
   no_access: {
     label: 'No Access',
@@ -146,6 +137,9 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
   const [newRole, setNewRole] = useState<MasterRole>('collector');
   const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>(['ent-durga-narayanpur']);
   const [defaultAccessLevel, setDefaultAccessLevel] = useState<WorkspaceAccessLevel>('collector');
+  // Shared device: the संग्रहकर्ता is picked per receipt instead of being
+  // locked to this account's own name.
+  const [newChooseCollectorName, setNewChooseCollectorName] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -208,11 +202,20 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       return;
     }
 
-    const roleSuffix =
-      newRole === 'collector' ? 'collector' :
-      newRole === 'tablet' ? 'tablet' :
-      String(Math.floor(Math.random() * 100));
-    const autoUsername = `${newName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${roleSuffix}`;
+    // Auto-generated usernames must be unique: `master_staff.username` is
+    // UNIQUE, and a collision there aborts account creation.
+    //
+    // Two traps this avoids. Names here are usually Devanagari, which
+    // [^a-z0-9] strips to an empty string — so every collector used to generate
+    // the identical `_collector`. And the fixed `collector` suffix collided with
+    // the seeded `sunil_collector` row for anyone named Sunil. The base falls
+    // back to `member` when nothing ASCII survives, and a short random suffix is
+    // always appended so two members never generate the same name.
+    const asciiBase = newName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const usernameBase = asciiBase || 'member';
+    const roleSuffix = newRole === 'collector' ? 'collector' : 'member';
+    const uniqueSuffix = Math.random().toString(36).slice(2, 6);
+    const autoUsername = `${usernameBase}_${roleSuffix}_${uniqueSuffix}`;
     const finalUsername = newUsername.trim() || autoUsername;
     const finalPassword = newPassword.trim() || generateRandomPassword();
 
@@ -222,7 +225,10 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       workspacePermissions[wsId] = {
         workspaceId: wsId,
         accessLevel: defaultAccessLevel,
-        modules: { ...DEFAULT_MODULE_ACCESS_MAP[defaultAccessLevel] },
+        modules: {
+          ...DEFAULT_MODULE_ACCESS_MAP[defaultAccessLevel],
+          chooseCollectorName: newChooseCollectorName,
+        },
       };
     });
 
@@ -275,6 +281,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
     setNewUsername('');
     setNewPassword('');
     setNewDesignation('');
+    setNewChooseCollectorName(false);
     setSelectedWorkspaceIds(['ent-durga-narayanpur']);
     setIsCreateModalOpen(false);
   };
@@ -294,6 +301,21 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
 
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [resettingStaffId, setResettingStaffId] = useState<string | null>(null);
+  const [deletingStaffId, setDeletingStaffId] = useState<string | null>(null);
+
+  // Removing a member revokes their login as well, so the button stays disabled
+  // until the server confirms. deleteStaff surfaces its own error toast and
+  // rethrows; the member is only dropped from the roster if it actually worked.
+  const handleDeleteStaff = async (staff: MasterStaff) => {
+    setDeletingStaffId(staff.id);
+    try {
+      await deleteStaff(staff.id);
+    } catch {
+      // Already reported to the user by deleteStaff.
+    } finally {
+      setDeletingStaffId(null);
+    }
+  };
 
   // Generates a brand-new password and sets it as the staff member's real
   // Supabase Auth password. There is no way to "view" an existing password —
@@ -346,6 +368,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
 
     const trimmedUsername = editUsername.trim();
     const usernameChanged = trimmedUsername && trimmedUsername !== editingStaff.username;
+    const trimmedName = editName.trim();
+    const nameChanged = trimmedName !== editingStaff.name;
 
     setIsSavingEdit(true);
     try {
@@ -363,6 +387,26 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
         if (error || data?.error) {
           const message = error ? await extractFunctionErrorMessage(error) : data?.error;
           toast.error(`Username बदलने में त्रुटि: ${message}`);
+          setIsSavingEdit(false);
+          return;
+        }
+      }
+
+      // The member's own screens read their name from `profiles.full_name`, not
+      // from the roster row, so renaming has to reach the profile too — updating
+      // `master_staff.name` alone leaves the member still seeing the old name.
+      if (nameChanged) {
+        if (!editingStaff.userId) {
+          toast.error('इस सदस्य का कोई लिंक्ड लॉगिन खाता नहीं मिला। कृपया प्रशासक से संपर्क करें।');
+          setIsSavingEdit(false);
+          return;
+        }
+        const { data, error } = await supabase.functions.invoke('change-member-name', {
+          body: { target_user_id: editingStaff.userId, new_name: trimmedName },
+        });
+        if (error || data?.error) {
+          const message = error ? await extractFunctionErrorMessage(error) : data?.error;
+          toast.error(`नाम बदलने में त्रुटि: ${message}`);
           setIsSavingEdit(false);
           return;
         }
@@ -388,7 +432,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       }
 
       updateStaff(editingStaff.id, {
-        name: editName.trim(),
+        name: trimmedName,
         phone: editPhone.trim(),
         // Cleared field removes the personal UPI id, putting this member back
         // on the unit's own UPI id.
@@ -502,7 +546,6 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
             { id: 'manager', label: '⭐ Incharges' },
             { id: 'admin', label: '🛡️ Admins' },
             { id: 'collector', label: '🎟️ चंदा संग्रहकर्ता' },
-            { id: 'tablet', label: '📱 साझा टैबलेट' },
             { id: 'karyakarta', label: '👥 Field Workers' },
             { id: 'accountant', label: '💰 Treasurers' },
           ].map(tab => {
@@ -723,9 +766,14 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={deletingStaffId === staff.id}
                     onClick={() => {
-                      if (confirm(`Are you sure you want to remove ${staff.name}?`)) {
-                        deleteStaff(staff.id);
+                      if (
+                        confirm(
+                          `${staff.name} को हटाएं?\n\nउनका खाता (${staff.username}) पूरी तरह बंद हो जाएगा — वे किसी भी डिवाइस या ऐप में लॉगिन नहीं कर पाएंगे। यह वापस नहीं हो सकता।`
+                        )
+                      ) {
+                        handleDeleteStaff(staff);
                       }
                     }}
                     className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded-lg"
@@ -853,10 +901,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   onValueChange={(v: any) => {
                     setNewRole(v);
                     // Keep the workspace access level in step with the role, so
-                    // a tablet account is never created with a name-locking
-                    // 'collector' grant (or vice versa) by omission.
-                    if (v === 'tablet') setDefaultAccessLevel('tablet');
-                    else if (v === 'collector') setDefaultAccessLevel('collector');
+                    // a collector is never created without its matching grant.
+                    if (v === 'collector') setDefaultAccessLevel('collector');
                   }}
                 >
                   <SelectTrigger className="mt-1 text-xs rounded-xl">
@@ -864,7 +910,6 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="collector">🎟️ चंदा संग्रहकर्ता (Collector)</SelectItem>
-                    <SelectItem value="tablet">📱 साझा टैबलेट (Shared Tablet)</SelectItem>
                     {canAssignElevatedRoles && <SelectItem value="manager">⭐ Incharge</SelectItem>}
                     <SelectItem value="karyakarta">👥 Field Worker</SelectItem>
                     <SelectItem value="accountant">💰 Treasurer</SelectItem>
@@ -896,13 +941,34 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="collector">🎟️ Donation Only (चंदा संग्रह)</SelectItem>
-                  <SelectItem value="tablet">📱 Shared Tablet (नाम हर रसीद पर चुनें)</SelectItem>
                   <SelectItem value="editor">Editor (Data Entry)</SelectItem>
                   <SelectItem value="viewer">Viewer (Read Only)</SelectItem>
                   <SelectItem value="full_control">Full Access (Admin)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Shared-device option. Only meaningful for Donation Only, where
+                the संग्रहकर्ता would otherwise be locked to this one account. */}
+            {defaultAccessLevel === 'collector' && (
+              <label className="flex items-start gap-2.5 p-3 rounded-xl border border-indigo-200 bg-indigo-50/60 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newChooseCollectorName}
+                  onChange={e => setNewChooseCollectorName(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-indigo-600 shrink-0 cursor-pointer"
+                />
+                <span className="min-w-0">
+                  <span className="block text-xs font-bold text-indigo-900">
+                    📱 साझा उपकरण — संग्रहकर्ता का नाम हर रसीद पर चुनें
+                  </span>
+                  <span className="block text-[12px] text-indigo-800/90 mt-0.5 leading-relaxed">
+                    एक ही उपकरण कई सदस्य इस्तेमाल करें तो चुनें। हर रसीद पर संग्रहकर्ता
+                    सूची में से चुना जाएगा। बंद रखने पर हर रसीद इसी सदस्य के नाम दर्ज होगी।
+                  </span>
+                </span>
+              </label>
+            )}
 
             {/* Select Workspaces */}
             <div>
@@ -1013,7 +1079,6 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="collector">🎟️ चंदा संग्रहकर्ता (Collector)</SelectItem>
-                    <SelectItem value="tablet">📱 साझा टैबलेट (Shared Tablet)</SelectItem>
                     {canAssignElevatedRoles && <SelectItem value="manager">⭐ Incharge</SelectItem>}
                     <SelectItem value="karyakarta">👥 Field Worker</SelectItem>
                     <SelectItem value="accountant">💰 Treasurer</SelectItem>

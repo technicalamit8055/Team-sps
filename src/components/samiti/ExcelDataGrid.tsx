@@ -109,11 +109,21 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   collectorName: propCollectorName,
   onAddDonation,
 }) => {
-  const { currentEntity, currentEvent, donations, updateDonation, deleteDonation, isCollectorMode: contextCollectorMode, isTabletMode, currentStaffMember } = useSamiti();
+  const { currentEntity, currentEvent, donations, updateDonation, deleteDonation, isCollectorMode: contextCollectorMode, canChooseCollectorName, currentStaffMember } = useSamiti();
   const { profile } = useAuth();
 
   const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
   const workerName = propCollectorName || profile?.full_name || currentStaffMember?.name || 'सुनील वर्मा';
+
+  /**
+   * May this account delete a chanda entry?
+   *
+   * Never for a collector — a receipted figure is theirs to add to, not to
+   * remove. Read from the context as well as the `isCollector` prop, so a
+   * caller passing its own mode cannot hand a collector the delete button;
+   * corrections go through an admin.
+   */
+  const canDelete = !isCollector && !contextCollectorMode;
 
   // Toggle between worker's own entries vs all unit entries.
   // Defaults to ALL so a collector immediately sees the existing unit-wide
@@ -419,10 +429,10 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
         </div>
 
         {/* Collector Scope Toggle (Mine vs All).
-            Hidden on a shared tablet: the account is a device, not a person,
-            so "मेरी प्रविष्टियाँ" has no one to mean. Every member using the
-            tablet sees the whole unit's register. */}
-        {isCollector && !isTabletMode && (
+            Hidden when the संग्रहकर्ता is picked per receipt: the account is
+            then shared between members, so "मेरी प्रविष्टियाँ" has no one
+            person to mean and everyone sees the whole unit's register. */}
+        {isCollector && !canChooseCollectorName && (
           <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-amber-500/10 border border-amber-300/70 rounded-xl">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-amber-950 flex items-center gap-1">
@@ -885,7 +895,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                           }
                         />
 
-                        {!isCollector && (
+                        {canDelete && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -1324,7 +1334,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                                   }
                                 />
 
-                                {!isCollector && (
+                                {canDelete && (
                                   <DropdownMenuItem
                                     onClick={() => setDeletingId(row.id)}
                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-rose-600 cursor-pointer hover:bg-rose-50 focus:text-rose-600"
@@ -1387,7 +1397,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
       />
 
       {/* Delete Confirmation Dialog */}
-      {!isCollector && (
+      {canDelete && (
         <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
           <AlertDialogContent className="max-w-[92vw] sm:max-w-lg rounded-2xl">
             <AlertDialogHeader>

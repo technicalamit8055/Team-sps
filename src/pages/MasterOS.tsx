@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useSamiti } from '@/contexts/SamitiContext';
 import { useAuth } from '@/hooks/useAuth';
 import { MasterNavSection } from '@/types/master';
@@ -11,39 +11,18 @@ import { AccessControlMatrixView } from '@/components/master/AccessControlMatrix
 import { MasterAnalyticsView } from '@/components/master/MasterAnalyticsView';
 import { IntegrationsView } from '@/components/master/IntegrationsView';
 import { DurgaPujaUnitView } from '@/components/samiti/DurgaPujaUnitView';
-import VictoryApp from '@/pages/Index';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  FileSpreadsheet,
-  Receipt,
-  BarChart3,
-  DownloadCloud,
-  ArrowLeft,
-  Star,
-  Wallet,
-  TrendingUp,
-  Vote,
-  Radio,
-} from 'lucide-react';
+import { toast } from 'sonner';
 
 export const MasterOS: React.FC = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const {
     entities,
     currentEntity,
     setCurrentEntityId,
-    summary,
     mainWorkspaceId,
-    setMainWorkspaceId,
-    isMainWorkspace,
-    mainWorkspace,
   } = useSamiti();
 
-  const { profile, role, isCollector, assignedWorkspaceId, signOut } = useAuth();
+  const { isCollector, assignedWorkspaceId } = useAuth();
 
   // null = Master Hub overview; string = active dedicated workspace view (for in-memory custom units)
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
@@ -55,7 +34,6 @@ export const MasterOS: React.FC = () => {
     }
   }, [isCollector, assignedWorkspaceId, navigate]);
 
-  const [activeTab, setActiveTab] = useState<'chanda' | 'kharcha' | 'analytics' | 'import_export'>('chanda');
 
   // Master OS Navigation & Modal States
   const [activeSection, setActiveSection] = useState<MasterNavSection>('workspaces');
@@ -68,7 +46,9 @@ export const MasterOS: React.FC = () => {
     setCurrentEntityId(entityId);
     const target = entities.find(e => e.id === entityId);
     if (target?.type === 'election' || entityId === 'ent-election-2026') {
-      navigate('/election');
+      // The election console was removed and will be rebuilt. Until then an
+      // election workspace has nothing to open, so stay on Master OS.
+      toast.info('चुनाव यूनिट अभी उपलब्ध नहीं है — यह दोबारा बनाई जा रही है।');
     } else if (entityId === 'ent-durga-narayanpur' || target?.type === 'festival_samiti') {
       navigate('/durga-puja-unit');
     } else {
@@ -79,90 +59,6 @@ export const MasterOS: React.FC = () => {
   const launchMainWorkspace = () => {
     openWorkspace(mainWorkspaceId);
   };
-
-  // -------------------------------------------------------------
-  // VIEW 1: DEDICATED FULL-SCREEN ELECTION MANAGEMENT WORKSPACE
-  // -------------------------------------------------------------
-  if (activeWorkspaceId && currentEntity.type === 'election') {
-    const isMain = isMainWorkspace(currentEntity.id);
-
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        {/* Sleek Victory OS Command Top Bar */}
-        <div className="sticky top-0 z-50 bg-gradient-to-r from-[hsl(var(--navy))] via-[hsl(var(--navy-dark))] to-[#050B14] text-white px-3 sm:px-6 lg:px-8 py-2.5 border-b border-white/10 flex items-center justify-between gap-2 sm:gap-3 shadow-lg">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <button
-              onClick={() => setActiveWorkspaceId(null)}
-              className="flex items-center gap-1.5 text-xs font-bold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition-all border border-white/15 shrink-0 shadow-sm"
-              title="Return to Master OS"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Master OS</span>
-            </button>
-            <span className="text-white/20 hidden sm:inline">|</span>
-            <div className="flex items-center gap-2 truncate">
-              <div className="flex items-center gap-1.5">
-                <Vote className="w-4 h-4 text-saffron shrink-0" />
-                <span className="text-xs sm:text-sm font-extrabold text-white truncate">
-                  {currentEntity.name}
-                </span>
-              </div>
-
-              {isMain ? (
-                <Badge className="bg-saffron text-white text-[12px] font-bold shrink-0 inline-flex items-center gap-1 py-0 px-2 rounded-full border-none shadow-xs">
-                  <Star className="w-2.5 h-2.5 fill-white" />
-                  Main Unit
-                </Badge>
-              ) : (
-                <button
-                  onClick={() => setMainWorkspaceId(currentEntity.id)}
-                  className="text-[12px] font-bold bg-white/10 hover:bg-white/20 text-white/80 px-2 py-0.5 rounded-lg border border-white/15 hidden sm:inline-flex items-center gap-1 transition-colors"
-                  title="Set as Main War Room"
-                >
-                  <Star className="w-2.5 h-2.5" />
-                  Set Main
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Workspace Switcher Dropdown */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="hidden lg:flex items-center gap-1 text-[13px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mr-1">
-              <Radio className="w-2.5 h-2.5 text-emerald-400 animate-pulse" />
-              War Room Active
-            </div>
-
-            <span className="text-[13px] text-white/60 hidden md:inline">Switch:</span>
-            <Select
-              value={currentEntity.id}
-              onValueChange={id => {
-                setCurrentEntityId(id);
-                setActiveWorkspaceId(id);
-              }}
-            >
-              <SelectTrigger className="h-8 w-[160px] xs:w-[200px] sm:w-[230px] bg-white/10 hover:bg-white/15 border-white/15 text-white text-xs font-semibold rounded-xl shadow-none truncate">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-gradient-to-b from-[hsl(var(--navy))] to-[hsl(var(--navy-dark))] text-white border-white/10">
-                {entities.map(ent => (
-                  <SelectItem key={ent.id} value={ent.id} className="text-xs hover:bg-white/10 cursor-pointer">
-                    {ent.id === mainWorkspaceId ? '⭐ ' : ''}{ent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Election Management Console */}
-        <div className="flex-1">
-          <VictoryApp />
-        </div>
-      </div>
-    );
-  }
-
   // -------------------------------------------------------------
   // VIEW 2: DEDICATED FESTIVAL / BUSINESS / SAMITI WORKSPACE
   // -------------------------------------------------------------

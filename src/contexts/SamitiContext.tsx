@@ -510,7 +510,14 @@ interface SamitiContextType {
     staffData: Omit<MasterStaff, 'id' | 'joinedDate' | 'userId'> & { password: string }
   ) => Promise<MasterStaff>;
   updateStaff: (id: string, updates: Partial<MasterStaff>) => void;
-  deleteStaff: (id: string) => void;
+  /**
+   * Removes the member and revokes their login everywhere: the auth user,
+   * profile and role row go with the roster entry, so the credentials stop
+   * working on every device and any open session dies at its next refresh.
+   * Rejects if the account could not be revoked, so the caller never reports a
+   * deletion that did not happen.
+   */
+  deleteStaff: (id: string) => Promise<void>;
   updateStaffPermission: (staffId: string, workspaceId: string, accessLevel: WorkspaceAccessLevel, modules?: Partial<ModuleAccess>) => void;
   grantAllWorkspaces: (staffId: string, accessLevel: WorkspaceAccessLevel) => void;
   resetToSampleData: () => void;
@@ -518,11 +525,13 @@ interface SamitiContextType {
   resetDurgaPujaUnitData: (mode?: 'wipe_clean' | 'restore_defaults') => Promise<void>;
   isCollectorMode: boolean;
   /**
-   * Shared-tablet account: collector-level restrictions, but the संग्रहकर्ता
-   * on each receipt is picked from the registered name list instead of being
-   * locked to the account holder. Implies isCollectorMode.
+   * May the संग्रहकर्ता on each receipt be picked from the registered name
+   * list instead of being locked to the account holder? Granted per workspace
+   * by the `chooseCollectorName` module permission.
    */
-  isTabletMode: boolean;
+  canChooseCollectorName: boolean;
+  /** May this account open Master OS? False for collector accounts. */
+  canAccessMasterOS: boolean;
   currentStaffMember: MasterStaff | null;
   /** Effective module permissions of the logged-in user for the current workspace. */
   currentModuleAccess: ModuleAccess;
@@ -553,6 +562,44 @@ const STORAGE_KEYS = {
   STAFF: 'victory_master_staff_v1',
 };
 
+/**
+ * Converts a staff record saved under the retired `tablet` role.
+ *
+ * A shared tablet is now an ordinary collector carrying the
+ * `chooseCollectorName` permission. Cached records from before that change
+ * still say `tablet`, an access level nothing recognises any more — left as
+ * is, it falls through to `no_access` and the member loses the donation screen
+ * they use every day. The same conversion runs server-side as a migration;
+ * this covers rosters already cached on a device.
+ */
+const migrateTabletStaff = (staff: MasterStaff): MasterStaff => {
+  if (!staff) return staff;
+
+  const perms = staff.workspacePermissions || {};
+  const hasTabletPerm = Object.values(perms).some(p => (p?.accessLevel as string) === 'tablet');
+  const hasTabletRole = (staff.primaryRole as string) === 'tablet';
+  if (!hasTabletPerm && !hasTabletRole) return staff;
+
+  const nextPerms: MasterStaff['workspacePermissions'] = {};
+  Object.entries(perms).forEach(([wsId, perm]) => {
+    if ((perm?.accessLevel as string) === 'tablet') {
+      nextPerms[wsId] = {
+        ...perm,
+        accessLevel: 'collector',
+        modules: { ...(perm.modules || {}), chooseCollectorName: true },
+      };
+    } else {
+      nextPerms[wsId] = perm;
+    }
+  });
+
+  return {
+    ...staff,
+    primaryRole: hasTabletRole ? 'collector' : staff.primaryRole,
+    workspacePermissions: nextPerms,
+  };
+};
+
 export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuth();
   const db = useSamitiDatabase();
@@ -572,7 +619,8 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     deleteExpenseFromCloud,
     fetchStaffFromCloud,
     saveStaffToCloud,
-    deleteStaffFromCloud,
+    // deleteStaffFromCloud is deliberately not used: deleting staff goes
+    // through the `delete-user` edge function so the login is revoked too.
     purgeDemoEntitiesFromCloud,
     resetDurgaPujaDataInCloud,
     subscribeToSamitiRealtime,
@@ -707,7 +755,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const saved = localStorage.getItem(STORAGE_KEYS.STAFF);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed.map(migrateTabletStaff);
       }
     } catch (e) {
       console.warn('Failed to load staffList from localStorage:', e);
@@ -722,24 +770,8 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return staffList.find(s => s?.username?.toLowerCase() === cleanUser) || null;
   }, [auth?.profile?.username, staffList]);
 
-  /**
-   * Is this a shared-tablet account? The device is handed around at the
-   * pandal, so it carries a collector's restrictions but must NOT lock the
-   * संग्रहकर्ता field to the account's own name — whoever is holding it picks
-   * their name from the registered list on each receipt.
-   */
-  const isTabletMode = useMemo(() => {
-    if (!currentStaffMember) return false;
-    if (currentStaffMember.primaryRole === 'tablet') return true;
-    const perm = currentStaffMember.workspacePermissions?.[currentEntityId];
-    return perm?.accessLevel === 'tablet';
-  }, [currentStaffMember, currentEntityId]);
-
   // Is current logged in user restricted to collector mode?
-  // Tablet accounts count here too: they get the same hidden expenses,
-  // analytics and export. Only the name lock differs.
   const isCollectorMode = useMemo(() => {
-    if (isTabletMode) return true;
     if (auth?.isCollector) return true;
     if (currentStaffMember) {
       if (currentStaffMember.primaryRole === 'collector') return true;
@@ -747,7 +779,14 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (perm?.accessLevel === 'collector') return true;
     }
     return false;
-  }, [isTabletMode, auth?.isCollector, currentStaffMember, currentEntityId]);
+  }, [auth?.isCollector, currentStaffMember, currentEntityId]);
+
+  /**
+   * Master OS is central command: a collector is scoped to their own unit and
+   * must never reach it. Exposed so the unit view can hide the entry point the
+   * same way the route guard blocks it.
+   */
+  const canAccessMasterOS = useMemo(() => !isCollectorMode, [isCollectorMode]);
 
   // Effective per-module access of the logged-in staff member for the current
   // workspace. Falls back to the defaults of their access level for modules the
@@ -755,8 +794,17 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // reads as `undefined`. Users with no staff record (e.g. the master admin
   // account) keep full access.
   const currentModuleAccess = useMemo<ModuleAccess>(() => {
+    // No staff record yet (master admin, or a roster that has not synced).
+    // A collector resolved at sign-in still gets the restricted map, so an
+    // unsynced device never briefly renders full access.
     if (!currentStaffMember) {
-      return { ...DEFAULT_MODULE_ACCESS_MAP[isCollectorMode ? 'collector' : 'full_control'] };
+      const merged: ModuleAccess = {
+        ...DEFAULT_MODULE_ACCESS_MAP[isCollectorMode ? 'collector' : 'full_control'],
+      };
+      // The name unlock is resolved from Supabase at sign in, so it survives an
+      // unsynced roster the same way the restrictions above do.
+      if (auth?.canChooseCollectorName) merged.chooseCollectorName = true;
+      return merged;
     }
     const perm = currentStaffMember.workspacePermissions?.[currentEntityId];
     const level = perm?.accessLevel || 'no_access';
@@ -767,7 +815,14 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (typeof value === 'boolean') (merged as any)[key] = value;
     });
     return merged;
-  }, [currentStaffMember, currentEntityId, isCollectorMode]);
+  }, [currentStaffMember, currentEntityId, isCollectorMode, auth?.canChooseCollectorName]);
+
+  /**
+   * May the संग्रहकर्ता be picked per receipt instead of being locked to the
+   * account holder? Granted by the `chooseCollectorName` module permission —
+   * for a device shared between members at the pandal.
+   */
+  const canChooseCollectorName = currentModuleAccess.chooseCollectorName === true;
 
   /**
    * May the logged-in member revise an amount that is already on the books?
@@ -879,7 +934,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setExpenses(cloudExpenses);
       }
       if (cloudStaff && cloudStaff.length > 0) {
-        setStaffList(cloudStaff);
+        setStaffList(cloudStaff.map(migrateTabletStaff));
       }
     } catch (e) {
       console.warn('Sync with cloud failed:', e);
@@ -1882,6 +1937,46 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   ): Promise<MasterStaff> => {
     const appRole = MASTER_ROLE_TO_APP_ROLE[staffData.primaryRole] || 'worker';
 
+    // Check the roster for the username *before* creating the login.
+    //
+    // `master_staff.username` is UNIQUE and the table ships with seeded rows
+    // (amit_admin, sunil_collector, ...), but create-user only looks for
+    // duplicates in `profiles`. A username free there can therefore still
+    // collide here — and the auto-generated `{name}_collector` lands on the
+    // seeded `sunil_collector` for anyone named Sunil. Caught after the login
+    // exists, that leaves an account to roll back; caught here, nothing is
+    // created at all.
+    const wantedUsername = (staffData.username || '').trim();
+    if (wantedUsername) {
+      const [{ data: rosterClash }, { data: profileClash }] = await Promise.all([
+        supabase
+          .from('master_staff')
+          .select('username')
+          .ilike('username', wantedUsername)
+          .maybeSingle(),
+        // `profiles` is checked too, because the two can disagree. A member
+        // whose creation failed after the login was made — or whose rollback
+        // did not go through — leaves a profile with no roster row. Checking
+        // only the roster would clear the name here and then hit create-user's
+        // own duplicate check, which reports "already exists" for someone the
+        // staff list has never shown. Naming the orphan is what makes that
+        // state actionable.
+        supabase
+          .from('profiles')
+          .select('username')
+          .ilike('username', wantedUsername)
+          .maybeSingle(),
+      ]);
+
+      if (rosterClash || profileClash) {
+        const message = rosterClash
+          ? `यूज़रनेम "${wantedUsername}" पहले से मौजूद है। कृपया दूसरा यूज़रनेम चुनें।`
+          : `यूज़रनेम "${wantedUsername}" का लॉगिन पहले से बना है, पर वह स्टाफ सूची में नहीं है (अधूरा खाता)। Supabase Authentication में उसे हटाएँ, या दूसरा यूज़रनेम चुनें।`;
+        toast.error(message, { duration: rosterClash ? 5000 : 15000 });
+        throw new Error(message);
+      }
+    }
+
     const { data, error } = await supabase.functions.invoke('create-user', {
       body: {
         username: staffData.username,
@@ -1918,8 +2013,77 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       avatarColor: staffData.avatarColor || 'bg-slate-700',
     };
 
+    // The roster row is not bookkeeping — it *is* the member's access. Every
+    // worker RLS policy resolves permissions through
+    // `get_staff_workspace_ids(auth.uid())`, which finds the caller in
+    // `master_staff` by `user_id`. Without this row the account signs in but
+    // sees an empty chanda register, and disappears from the staff list on the
+    // next sync. So it is awaited, and a failure is surfaced rather than logged.
+    try {
+      await saveStaffToCloud(newStaff, true);
+    } catch (err: any) {
+      // The login already exists at this point. Leaving it would strand an
+      // account that can sign in but reach nothing, and would hold the username
+      // hostage against a retry — so it is rolled back before reporting.
+      //
+      // Whether the rollback *worked* decides what the operator must do next,
+      // so it is no longer swallowed. A failed rollback leaves an orphaned auth
+      // user: the next attempt with the same username then collides inside
+      // create-user (which checks `profiles`) and reports "username already
+      // exists" — for a member who is nowhere in the staff list. Reporting the
+      // rollback failure is what makes that state explainable instead of
+      // looking like a phantom duplicate.
+      let rolledBack = true;
+      try {
+        const { data: delData, error: delError } = await supabase.functions.invoke(
+          'delete-user',
+          {
+            // No roster row was written, so the auth user is resolved by username.
+            body: { staff_id: newStaff.id, fallback_username: newStaff.username },
+          }
+        );
+        if (delError || delData?.error) rolledBack = false;
+      } catch {
+        rolledBack = false;
+      }
+
+      const raw = err?.message || 'Unknown error';
+
+      // PostgREST serves a cached schema, so a column that exists in the
+      // migrations but was never applied to this database surfaces as "could
+      // not find the '<col>' column ... in the schema cache" rather than as
+      // anything about the member. The raw text sends operators hunting through
+      // the form, so it is named for what it is: pending migrations.
+      const isMissingColumn =
+        err?.code === 'PGRST204' ||
+        /schema cache|could not find the .* column/i.test(raw);
+
+      // master_staff.username is UNIQUE and the table ships with seeded rows
+      // (amit_admin, sunil_collector, ...). create-user only checks `profiles`
+      // for a duplicate, so a username free there can still collide here — the
+      // auto-generated `{name}_collector` hits `sunil_collector` for any Sunil.
+      // Postgres' raw message means nothing to an operator, so it is translated.
+      const isDuplicateUsername =
+        err?.code === '23505' || /duplicate key|unique constraint/i.test(raw);
+
+      const message = isMissingColumn
+        ? `डेटाबेस अपडेट नहीं है (${raw})। supabase/manual/APPLY_PENDING_MIGRATIONS.sql चलाएँ।`
+        : isDuplicateUsername
+          ? `यूज़रनेम "${newStaff.username}" पहले से मौजूद है। कृपया दूसरा यूज़रनेम चुनें।`
+          : raw;
+
+      // The tail is the operator's next action, and it differs entirely by
+      // whether the half-made login survived.
+      toast.error(
+        rolledBack
+          ? `स्टाफ खाता सहेजा नहीं जा सका: ${message} (खाता बनाया नहीं गया)`
+          : `स्टाफ खाता सहेजा नहीं जा सका: ${message} — चेतावनी: लॉगिन "${newStaff.username}" हट नहीं पाया। दोबारा जोड़ने से पहले उसे Supabase Authentication में हटाएँ।`,
+        { duration: rolledBack ? 5000 : 15000 }
+      );
+      throw new Error(message);
+    }
+
     setStaffList(prev => [...prev, newStaff]);
-    saveStaffToCloud(newStaff);
     toast.success(`कार्यकर्ता/स्टाफ "${newStaff.name}" सफलतापूर्वक जोड़ा गया!`);
     return newStaff;
   }, [saveStaffToCloud]);
@@ -1940,12 +2104,34 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     toast.success('कार्यकर्ता विवरण अपडेट किया गया!');
   }, [saveStaffToCloud]);
 
-  // Delete staff
-  const deleteStaff = useCallback((id: string) => {
+  // Delete staff.
+  //
+  // Deleting the roster row alone is not enough: the login lives in Supabase
+  // Auth, so an account removed from the roster could still sign in — and since
+  // a missing roster row reads as "genuine admin" in fetchStaffCollectorInfo, it
+  // would come back with *more* access than it had. The edge function tears down
+  // the auth user, profile and role together, which also revokes the refresh
+  // tokens of any device still signed in.
+  const deleteStaff = useCallback(async (id: string) => {
+    const { data, error } = await supabase.functions.invoke('delete-user', {
+      body: { staff_id: id },
+    });
+
+    if (error) {
+      const message = await extractFunctionErrorMessage(error);
+      toast.error(`खाता हटाने में त्रुटि: ${message}`);
+      throw new Error(message);
+    }
+    if (data?.error) {
+      toast.error(`खाता हटाने में त्रुटि: ${data.error}`);
+      throw new Error(data.error);
+    }
+
+    // Only drop the member from the visible roster once the login is actually
+    // gone, so a failed revoke never looks like a successful removal.
     setStaffList(prev => prev.filter(s => s.id !== id));
-    deleteStaffFromCloud(id);
-    toast.info('कार्यकर्ता को सिस्टम से हटा दिया गया!');
-  }, [deleteStaffFromCloud]);
+    toast.success('कार्यकर्ता को सिस्टम से हटा दिया गया और उनका लॉगिन बंद कर दिया गया!');
+  }, []);
 
   // Update staff permission for specific workspace
   const updateStaffPermission = useCallback(
@@ -2179,7 +2365,8 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         resetMasterDemoData,
         resetDurgaPujaUnitData,
         isCollectorMode,
-        isTabletMode,
+        canChooseCollectorName,
+        canAccessMasterOS,
         canEditFinalizedAmounts,
         currentStaffMember,
         currentModuleAccess,

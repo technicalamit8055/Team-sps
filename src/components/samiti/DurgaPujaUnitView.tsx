@@ -62,7 +62,8 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
     isMainWorkspace,
     donations,
     isCollectorMode: contextCollectorMode,
-    isTabletMode,
+    canChooseCollectorName,
+    canAccessMasterOS,
     currentStaffMember,
     currentModuleAccess,
   } = useSamiti();
@@ -157,8 +158,10 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
         <div className="w-full px-2.5 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between gap-1.5 sm:gap-4">
           {/* Left: Sacred Emblem, Title & Location */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            {/* Back to Master OS if available */}
-            {!isCollector && onBackToMaster && (
+            {/* Back to Master OS if available. Gated on the context flag, not
+                the `isCollector` prop — a collector must never see the
+                entry point even if a caller passes its own collector mode. */}
+            {canAccessMasterOS && !isCollector && onBackToMaster && (
               <Button
                 variant="outline"
                 size="sm"
@@ -711,8 +714,8 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               लॉगआउट की पुष्टि
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs sm:text-sm text-slate-700 font-sans leading-relaxed">
-              {isTabletMode
-                ? 'क्या आप निश्चित रूप से इस साझा टैबलेट खाते से लॉगआउट करना चाहते हैं? सभी प्रविष्टियाँ सुरक्षित हैं।'
+              {canChooseCollectorName
+                ? 'क्या आप निश्चित रूप से इस साझा खाते से लॉगआउट करना चाहते हैं? सभी प्रविष्टियाँ सुरक्षित हैं।'
                 : `क्या आप निश्चित रूप से अपने संग्रहकर्ता खाते ${workerName ? `(${workerName})` : ''} से लॉगआउट करना चाहते हैं? आपकी सभी प्रविष्टियाँ सुरक्षित हैं।`}
             </AlertDialogDescription>
           </AlertDialogHeader>

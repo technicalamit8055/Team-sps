@@ -39,7 +39,10 @@ export default function Login() {
       } else if (role === 'citizen') {
         navigate('/janta', { replace: true });
       } else {
-        navigate('/election', { replace: true });
+        // Workers go to the chanda unit. This used to fall through to the
+        // election console, which is why such a login previously landed on the
+        // Victory OS dashboard.
+        navigate('/durga-puja-unit', { replace: true });
       }
     }
   };

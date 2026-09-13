@@ -381,7 +381,19 @@ export function useSamitiDatabase() {
     }
   }, []);
 
-  const saveStaffToCloud = useCallback(async (staff: MasterStaff) => {
+  /**
+   * Upserts a staff roster row.
+   *
+   * `throwOnError` matters for account creation. Every worker-facing RLS policy
+   * resolves the member's access through `get_staff_workspace_ids(auth.uid())`,
+   * which looks the caller up in `master_staff` by `user_id`. A member whose
+   * roster row was not written therefore has no readable workspace at all: the
+   * chanda register, entities and events all come back empty, and the roster
+   * itself loses them on the next sync. Swallowing the error there produces a
+   * login that exists but can see nothing, with no sign anything went wrong —
+   * so callers that are creating an account must opt into the throw.
+   */
+  const saveStaffToCloud = useCallback(async (staff: MasterStaff, throwOnError = false) => {
     try {
       // Note: real login credentials live in Supabase Auth (created via the
       // create-user edge function), not in this table — no plaintext password
@@ -404,9 +416,17 @@ export function useSamitiDatabase() {
       if (error) throw error;
     } catch (err: any) {
       console.warn('Failed to upsert staff to Supabase:', err.message);
+      if (throwOnError) throw err;
     }
   }, []);
 
+  /**
+   * @deprecated Removes only the roster row. The Supabase Auth user, profile and
+   * role survive, so the account can still sign in — and an account with no
+   * roster row resolves as an unscoped admin in `fetchStaffCollectorInfo`. To
+   * remove a member, call the `delete-user` edge function (see
+   * `SamitiContext.deleteStaff`), which revokes the login as well.
+   */
   const deleteStaffFromCloud = useCallback(async (id: string) => {
     try {
       const { error } = await supabase.from('master_staff').delete().eq('id', id);
