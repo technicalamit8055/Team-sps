@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { useSamiti } from '@/contexts/SamitiContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Sparkles,
   Copy,
   Check,
   Printer,
@@ -30,7 +29,7 @@ export const ChandaQRCodeModal: React.FC<ChandaQRCodeModalProps> = ({
   onClose,
   defaultAmount,
 }) => {
-  const { currentEntity, currentEvent, currentStaffMember } = useSamiti();
+  const { currentEntity, currentStaffMember } = useSamiti();
   const [selectedAmount, setSelectedAmount] = useState<string>(
     defaultAmount && defaultAmount > 0 ? String(defaultAmount) : '1100'
   );
@@ -198,32 +197,18 @@ export const ChandaQRCodeModal: React.FC<ChandaQRCodeModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md sm:max-w-lg w-[96vw] max-h-[94vh] flex flex-col p-0 overflow-hidden bg-gradient-to-b from-[#3a060d] via-[#240307] to-[#1a0205] text-white border border-amber-500/50 shadow-2xl rounded-3xl print:bg-white print:border-none print:shadow-none print:max-h-none print:overflow-visible print:w-full print:max-w-none [&>button]:text-white/80 [&>button]:hover:text-white [&>button]:z-20 [&>button]:bg-white/10 [&>button]:hover:bg-white/20 [&>button]:p-1.5 [&>button]:rounded-full [&>button]:top-3.5 [&>button]:right-3.5 print:[&>button]:hidden">
-        {/* ------------------------------------------------------------- */}
-        {/* SACRED FESTIVE MODAL HEADER                                  */}
-        {/* ------------------------------------------------------------- */}
-        <DialogHeader className="relative p-3.5 sm:p-4 bg-gradient-to-r from-[#991b1b] via-[#851111] to-[#6b0909] text-white border-b border-amber-500/40 shrink-0 print:hidden">
-          <div className="flex items-center justify-between pr-8">
-            <div className="space-y-0.5 text-left">
-              <DialogTitle className="text-sm sm:text-base font-black flex items-center gap-2 text-white font-serif tracking-wide">
-                <Sparkles className="w-4 h-4 text-amber-300 shrink-0 animate-pulse" />
-                <span>डिजिटल चंदा QR कोड (Instant UPI)</span>
-              </DialogTitle>
-              <p className="text-[13px] text-amber-200/90 font-medium">
-                {currentEntity?.name || 'श्री दुर्गा पूजा समिति'} • {currentEvent?.title || 'दुर्गा पूजा महोत्सव'}
-              </p>
-            </div>
-          </div>
-        </DialogHeader>
+        {/* Accessible name only - visible header bar intentionally removed */}
+        <DialogTitle className="sr-only">डिजिटल चंदा QR कोड</DialogTitle>
 
         {/* ------------------------------------------------------------- */}
         {/* SCROLLABLE MODAL CONTENT (Fluid Responsive Poster + Controls) */}
         {/* ------------------------------------------------------------- */}
-        <div className="p-3 sm:p-4 overflow-y-auto max-h-[calc(94vh-125px)] space-y-4 print:p-0 print:max-h-none print:overflow-visible">
+        <div className="p-3 sm:p-4 overflow-y-auto max-h-[94vh] space-y-4 print:p-0 print:max-h-none print:overflow-visible">
           {/* Printable Devotional Poster Card (Container Query Enabled for 100% Fluid Scaling) */}
           <div
             ref={cardRef}
-            className="@container relative w-full max-w-[400px] sm:max-w-[430px] mx-auto rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-400/80 select-none bg-[#faefe0] print:border-none print:shadow-none print:max-w-none print:w-[680px]"
-            style={{ aspectRatio: '819 / 966' }}
+            className="relative w-full max-w-[400px] sm:max-w-[430px] mx-auto rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-400/80 select-none bg-[#faefe0] print:border-none print:shadow-none print:max-w-none print:w-[680px]"
+            style={{ aspectRatio: '819 / 966', containerType: 'inline-size' }}
           >
             {/* Clean Devotional Poster Art: 100% free of baked-in static text/QR */}
             <img
@@ -268,13 +253,13 @@ export const ChandaQRCodeModal: React.FC<ChandaQRCodeModalProps> = ({
             >
               <div
                 className="font-black font-mono text-[#4a0d0d] tracking-tight leading-none"
-                style={{ fontSize: 'clamp(14px, 5.0cqw, 24px)' }}
+                style={{ fontSize: '5.0cqw' }}
               >
                 ₹{parsedAmount.toLocaleString('hi-IN')}
               </div>
               <div
                 className="font-bold text-[#823e14] tracking-wide leading-tight mt-0.5"
-                style={{ fontSize: 'clamp(7.5px, 2.6cqw, 11.5px)' }}
+                style={{ fontSize: '2.6cqw' }}
               >
                 स्कैन कर दान करें
               </div>
@@ -282,7 +267,7 @@ export const ChandaQRCodeModal: React.FC<ChandaQRCodeModalProps> = ({
 
             {/* 3. Official UPI ID Container Overlay: Button on LEFT, UPI ID on RIGHT */}
             <div
-              className="absolute flex items-center gap-[2.5cqw]"
+              className="absolute flex items-center gap-[2.5cqw] overflow-hidden"
               style={{
                 left: '12.70%',
                 top: '69.56%',
@@ -296,33 +281,33 @@ export const ChandaQRCodeModal: React.FC<ChandaQRCodeModalProps> = ({
               <button
                 type="button"
                 onClick={handleCopyUpi}
-                className="bg-gradient-to-r from-[#9e1818] to-[#b71c1c] hover:from-[#b01c1c] hover:to-[#c82222] text-white border border-amber-300/90 rounded-md sm:rounded-lg flex items-center justify-center gap-1 font-bold shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+                className="bg-gradient-to-r from-[#9e1818] to-[#b71c1c] hover:from-[#b01c1c] hover:to-[#c82222] text-white border border-amber-300/90 rounded-[1.2cqw] flex items-center justify-center gap-[0.8cqw] font-bold shadow-xs active:scale-95 transition-all shrink cursor-pointer whitespace-nowrap min-w-0"
                 style={{
                   height: '46%',
                   padding: '0 2.2cqw',
-                  fontSize: 'clamp(7.5px, 2.0cqw, 10.5px)',
+                  fontSize: '2.0cqw',
                 }}
                 title="UPI ID कॉपी करें"
               >
                 {copied ? (
-                  <Check className="shrink-0 text-emerald-300" style={{ width: 'clamp(8px, 2.0cqw, 11px)', height: 'clamp(8px, 2.0cqw, 11px)' }} />
+                  <Check className="shrink-0 text-emerald-300" style={{ width: '2.2cqw', height: '2.2cqw' }} />
                 ) : (
-                  <Copy className="shrink-0 text-amber-200" style={{ width: 'clamp(8px, 2.0cqw, 11px)', height: 'clamp(8px, 2.0cqw, 11px)' }} />
+                  <Copy className="shrink-0 text-amber-200" style={{ width: '2.2cqw', height: '2.2cqw' }} />
                 )}
                 <span>{copied ? 'कॉपी हुआ' : 'कॉपी करें'}</span>
               </button>
 
               {/* UPI ID Details on RIGHT of the button */}
-              <div className="flex flex-col justify-center min-w-0">
+              <div className="flex flex-col justify-center min-w-0 flex-1">
                 <div
-                  className="font-bold text-[#803810] leading-none whitespace-nowrap"
-                  style={{ fontSize: 'clamp(7px, 2.0cqw, 10px)' }}
+                  className="font-bold text-[#803810] leading-none whitespace-nowrap overflow-hidden text-ellipsis"
+                  style={{ fontSize: '2.0cqw' }}
                 >
                   {upiLabel}
                 </div>
                 <div
-                  className="font-black font-mono text-[#381106] leading-tight whitespace-nowrap mt-0.5 tracking-tight select-all"
-                  style={{ fontSize: 'clamp(8.5px, 2.7cqw, 13px)' }}
+                  className="font-black font-mono text-[#381106] leading-tight whitespace-nowrap mt-[0.4cqw] tracking-tight select-all overflow-hidden text-ellipsis"
+                  style={{ fontSize: '2.7cqw' }}
                 >
                   {upiId}
                 </div>

@@ -67,6 +67,36 @@ const formatEntryDayLong = (iso?: string) => {
   return d.toLocaleDateString('hi-IN', { day: '2-digit', month: 'long', year: 'numeric' });
 };
 
+/**
+ * Best-effort registration instant for a row, in epoch ms.
+ *
+ * `createdAt` is the real "when was this registered" stamp, but Excel-imported
+ * and legacy rows can carry only the entry day, so fall back to `date` and
+ * finally to 0 — an unstamped row sorts to the bottom of a newest-first list
+ * rather than jumping to the top on a NaN comparison.
+ */
+const registeredAt = (d: SamitiDonation): number => {
+  const stamp = d.createdAt || d.date;
+  if (!stamp) return 0;
+  const t = new Date(stamp).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
+/** "अभी-अभी" / "5 मिनट पहले" / "3 दिन पहले" — relative age of an entry. */
+const formatRelativeAge = (iso?: string) => {
+  if (!iso) return '';
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return '';
+  const mins = Math.floor((Date.now() - t) / 60000);
+  if (mins < 1) return 'अभी-अभी';
+  if (mins < 60) return `${mins} मिनट पहले`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} घंटे पहले`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days} दिन पहले`;
+  return formatEntryDayLong(iso);
+};
+
 interface ExcelDataGridProps {
   isCollectorMode?: boolean;
   collectorName?: string;
@@ -95,8 +125,11 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [balanceFilter, setBalanceFilter] = useState<'ALL' | 'DUE' | 'PAID'>('ALL');
   const [modeFilter, setModeFilter] = useState<'ALL' | 'CASH' | 'ONL'>('ALL');
-  const [sortField, setSortField] = useState<'serialNumber' | 'name' | 'acceptedAmount' | 'balanceAmount' | 'date'>('serialNumber');
+  const [sortField, setSortField] = useState<'serialNumber' | 'name' | 'acceptedAmount' | 'balanceAmount' | 'date' | 'recent'>('serialNumber');
   const [sortAsc, setSortAsc] = useState(true);
+  // Recency window over the registration timestamp, so an admin can narrow the
+  // register down to what actually came in today or over the last seven days.
+  const [recencyFilter, setRecencyFilter] = useState<'ALL' | 'TODAY' | 'WEEK'>('ALL');
 
   // View Mode: cards vs grid
   const [viewMode, setViewMode] = useState<'cards' | 'grid'>(() => {
@@ -121,6 +154,27 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [sendingReceiptId, setSendingReceiptId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  /**
+   * Local midnight, used both by the "आज" chip and by the "नया" row badge so
+   * the two always agree on what counts as today.
+   */
+  const startOfTodayMs = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }, []);
+
+  /**
+   * Start of the selected recency window, in epoch ms. "आज" is midnight local
+   * time (not a rolling 24h) so it lines up with the day's cashier sheet;
+   * "7 दिन" is a rolling week back from now.
+   */
+  const recencyCutoff = useMemo(() => {
+    if (recencyFilter === 'ALL') return 0;
+    if (recencyFilter === 'TODAY') return startOfTodayMs;
+    return startOfTodayMs - 6 * 24 * 60 * 60 * 1000;
+  }, [recencyFilter, startOfTodayMs]);
 
   // Filtered and sorted records
   const filteredDonations = useMemo(() => {
@@ -157,9 +211,27 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
         if (balanceFilter === 'PAID' && d.balanceAmount > 0) return false;
         if (modeFilter !== 'ALL' && d.paymentMode !== modeFilter) return false;
 
+        if (recencyFilter !== 'ALL') {
+          const at = registeredAt(d);
+          // A row with no usable stamp can't be proven recent, so it stays out
+          // of the window rather than being shown as a fresh entry.
+          if (!at || at < recencyCutoff) return false;
+        }
+
         return true;
       })
       .sort((a, b) => {
+        // Newest-registered first; the chip flips it to oldest-first. Note the
+        // inverted sense of sortAsc here: this field's "default" direction is
+        // descending, so sortAsc === true is what puts the latest chanda on top.
+        // Ties (bulk imports share one stamp) fall back to serial number so the
+        // order stays stable between renders.
+        if (sortField === 'recent') {
+          const diff = registeredAt(b) - registeredAt(a);
+          const ordered = diff !== 0 ? diff : b.serialNumber - a.serialNumber;
+          return sortAsc ? ordered : -ordered;
+        }
+
         // ISO YYYY-MM-DD sorts correctly as a plain string; the ?? keeps rows
         // with no date (legacy/Excel-imported) from throwing in localeCompare.
         const valA = sortField === 'date' ? a.date ?? '' : a[sortField];
@@ -180,9 +252,42 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
     categoryFilter,
     balanceFilter,
     modeFilter,
+    recencyFilter,
+    recencyCutoff,
     sortField,
     sortAsc,
   ]);
+
+  /**
+   * Counts for the recency chips and the newest row for the "अंतिम प्रविष्टि"
+   * strip. These deliberately follow the collector scope (so a collector sees
+   * their own numbers when scoped to MINE) but ignore the search/category
+   * filters, so the chip labels stay stable while the admin narrows the list.
+   */
+  const scopedDonations = useMemo(() => {
+    if (!isCollector || collectorScope !== 'MINE') return donations;
+    const wName = workerName.trim().toLowerCase();
+    return donations.filter(d => (d.collectorName || '').trim().toLowerCase() === wName);
+  }, [donations, isCollector, collectorScope, workerName]);
+
+  const { todayCount, weekCount, latestDonation } = useMemo(() => {
+    const todayMs = startOfTodayMs;
+    const weekMs = todayMs - 6 * 24 * 60 * 60 * 1000;
+
+    let today = 0;
+    let week = 0;
+    let latest: SamitiDonation | null = null;
+
+    scopedDonations.forEach(d => {
+      const at = registeredAt(d);
+      if (!at) return;
+      if (at >= todayMs) today += 1;
+      if (at >= weekMs) week += 1;
+      if (!latest || at > registeredAt(latest)) latest = d;
+    });
+
+    return { todayCount: today, weekCount: week, latestDonation: latest };
+  }, [scopedDonations, startOfTodayMs]);
 
   // Column totals for visible records
   const visibleTotals = useMemo(() => {
@@ -354,6 +459,100 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
           </div>
         )}
 
+        {/* ---------------------------------------------------------------- */}
+        {/* Recency Controls: newest-first toggle + today / last-7-days window */}
+        {/* ---------------------------------------------------------------- */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100 text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
+            <span className="text-slate-500 font-bold text-[13px] shrink-0 font-serif">क्रम:</span>
+
+            {/* Newest-first: one tap to see the chanda just registered. */}
+            <button
+              type="button"
+              onClick={() => {
+                if (sortField === 'recent') {
+                  // Already on newest-first — a second tap flips to oldest-first,
+                  // a third returns the register to its serial-number order.
+                  if (sortAsc) setSortAsc(false);
+                  else {
+                    setSortField('serialNumber');
+                    setSortAsc(true);
+                  }
+                } else {
+                  setSortField('recent');
+                  setSortAsc(true);
+                }
+              }}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 transition-all border flex items-center gap-1 ${
+                sortField === 'recent'
+                  ? 'bg-[#990e1f] text-white border-[#990e1f] shadow-xs'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50'
+              }`}
+              title={
+                sortField === 'recent' && sortAsc
+                  ? 'नवीनतम चंदा सबसे ऊपर — दोबारा दबाने पर सबसे पुराना पहले'
+                  : 'हाल ही में दर्ज हुआ चंदा सबसे ऊपर दिखाएँ'
+              }
+            >
+              <Sparkles className="w-3 h-3 shrink-0" />
+              <span>{sortField === 'recent' && !sortAsc ? 'सबसे पुराना पहले' : 'नवीनतम चंदा'}</span>
+            </button>
+
+            <span className="text-slate-300 shrink-0">|</span>
+            <span className="text-slate-500 font-bold text-[13px] shrink-0 font-serif">अवधि:</span>
+
+            <button
+              type="button"
+              onClick={() => setRecencyFilter('ALL')}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 transition-all ${
+                recencyFilter === 'ALL'
+                  ? 'bg-[#990e1f] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+              }`}
+            >
+              सभी
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecencyFilter(recencyFilter === 'TODAY' ? 'ALL' : 'TODAY')}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 transition-all border flex items-center gap-1 ${
+                recencyFilter === 'TODAY'
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                  : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50'
+              }`}
+            >
+              <Clock className="w-3 h-3 shrink-0" />
+              <span>आज ({todayCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecencyFilter(recencyFilter === 'WEEK' ? 'ALL' : 'WEEK')}
+              className={`px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 transition-all border ${
+                recencyFilter === 'WEEK'
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                  : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50'
+              }`}
+            >
+              पिछले 7 दिन ({weekCount})
+            </button>
+          </div>
+
+          {/* Last registered entry — the "what just came in" glance. */}
+          {latestDonation && (
+            <div className="flex items-center gap-1.5 text-[12px] text-slate-600 shrink-0 min-w-0">
+              <span className="font-serif font-bold text-slate-500 shrink-0">अंतिम प्रविष्टि:</span>
+              <span className="font-bold text-slate-900 truncate">{latestDonation.name}</span>
+              <span className="font-mono font-black text-amber-900 shrink-0">
+                ₹{(latestDonation.acceptedAmount || 0).toLocaleString('hi-IN')}
+              </span>
+              <span className="text-slate-400 shrink-0">·</span>
+              <span className="text-emerald-700 font-bold shrink-0">
+                {formatRelativeAge(latestDonation.createdAt || latestDonation.date)}
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Segmented Filter Controls matching Reference Design */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100 text-xs">
           {/* Category Chips: श्रेणी: सभी (N) | VIL (N) | EMP (N) | SHO (N) | OTH (N) */}
@@ -478,6 +677,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                 const cat = DONATION_CATEGORIES[row.category] || DONATION_CATEGORIES.OTH;
                 const isDue = row.balanceAmount > 0;
                 const isVip = row.acceptedAmount >= 10000;
+                const isFresh = registeredAt(row) >= startOfTodayMs;
 
                 return (
                   <div
@@ -498,6 +698,14 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                           >
                             {formatEntryDay(row.date)}
                           </span>
+                        )}
+                        {isFresh && (
+                          <Badge
+                            className="bg-emerald-600 text-white text-[12px] font-bold border-none py-0 px-2 shadow-2xs shrink-0"
+                            title={formatRelativeAge(row.createdAt || row.date)}
+                          >
+                            नया
+                          </Badge>
                         )}
                         <Badge variant="outline" className={`text-[12px] font-mono font-bold ${cat.badgeColor}`}>
                           {cat.code} • {cat.labelHi.split('/')[0]}
@@ -883,17 +1091,34 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     const cat = DONATION_CATEGORIES[row.category] || DONATION_CATEGORIES.OTH;
                     const isDue = row.balanceAmount > 0;
                     const isVip = row.acceptedAmount >= 10000;
+                    const isFresh = registeredAt(row) >= startOfTodayMs;
 
                     return (
                       <tr
                         key={row.id}
                         className={`hover:bg-amber-50/50 transition-colors ${
-                          isVip ? 'bg-amber-50/20' : index % 2 === 0 ? 'bg-white' : 'bg-[#fdfbf7]'
+                          isFresh
+                            ? 'bg-emerald-50/50'
+                            : isVip
+                            ? 'bg-amber-50/20'
+                            : index % 2 === 0
+                            ? 'bg-white'
+                            : 'bg-[#fdfbf7]'
                         }`}
                       >
                         {/* S.NUM */}
                         <td className="p-3 border-r border-slate-100 text-center font-mono font-bold text-amber-950 text-xs">
-                          #{row.serialNumber}
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span>#{row.serialNumber}</span>
+                            {isFresh && (
+                              <span
+                                className="text-[10px] font-sans font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 rounded-full leading-4"
+                                title={formatRelativeAge(row.createdAt || row.date)}
+                              >
+                                नया
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* DATE — दिनांक (Click to edit directly on register) */}
