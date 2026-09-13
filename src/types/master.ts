@@ -1,6 +1,13 @@
-export type MasterRole = 'admin' | 'manager' | 'accountant' | 'karyakarta' | 'collector' | 'observer';
+export type MasterRole = 'admin' | 'manager' | 'accountant' | 'karyakarta' | 'collector' | 'tablet' | 'observer';
 
-export type WorkspaceAccessLevel = 'full_control' | 'editor' | 'viewer' | 'collector' | 'no_access';
+/**
+ * `tablet` is a shared-device account, not a person. The tablet sits at the
+ * pandal and whichever member picks it up enters chanda on it, so unlike a
+ * `collector` account — which is locked to the one person it belongs to — a
+ * tablet account must let the operator pick the संग्रहकर्ता by name from the
+ * registered list on every receipt.
+ */
+export type WorkspaceAccessLevel = 'full_control' | 'editor' | 'viewer' | 'collector' | 'tablet' | 'no_access';
 
 export interface ModuleAccess {
   votersCRM: boolean;       // Election CRM, voter lists, surveys
@@ -61,6 +68,18 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     pandalPujaKharcha: false, // Hidden unless explicitly granted in the matrix
     analytics: false,        // Strictly hidden
     karyakartaMgmt: false,   // Strictly hidden
+    exportData: false,       // Strictly hidden
+    editFinalizedAmounts: false, // Corrections must be made by an admin
+  },
+  // Same restrictions as a collector — the difference is only that the
+  // संग्रहकर्ता name is chosen per receipt rather than locked to the account.
+  tablet: {
+    votersCRM: false,
+    donationsLedger: true,   // The whole point of the device
+    expenses: false,         // Strictly hidden
+    pandalPujaKharcha: false,
+    analytics: false,        // Strictly hidden — a shared device shows no totals
+    karyakartaMgmt: false,
     exportData: false,       // Strictly hidden
     editFinalizedAmounts: false, // Corrections must be made by an admin
   },

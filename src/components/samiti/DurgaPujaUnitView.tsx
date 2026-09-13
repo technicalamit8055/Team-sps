@@ -62,6 +62,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
     isMainWorkspace,
     donations,
     isCollectorMode: contextCollectorMode,
+    isTabletMode,
     currentStaffMember,
     currentModuleAccess,
   } = useSamiti();
@@ -710,7 +711,9 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               लॉगआउट की पुष्टि
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs sm:text-sm text-slate-700 font-sans leading-relaxed">
-              क्या आप निश्चित रूप से अपने संग्रहकर्ता खाते {workerName ? `(${workerName})` : ''} से लॉगआउट करना चाहते हैं? आपकी सभी प्रविष्टियाँ सुरक्षित हैं।
+              {isTabletMode
+                ? 'क्या आप निश्चित रूप से इस साझा टैबलेट खाते से लॉगआउट करना चाहते हैं? सभी प्रविष्टियाँ सुरक्षित हैं।'
+                : `क्या आप निश्चित रूप से अपने संग्रहकर्ता खाते ${workerName ? `(${workerName})` : ''} से लॉगआउट करना चाहते हैं? आपकी सभी प्रविष्टियाँ सुरक्षित हैं।`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row items-center justify-end gap-2 pt-3 border-t border-amber-100">

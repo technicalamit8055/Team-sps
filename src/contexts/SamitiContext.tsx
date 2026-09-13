@@ -517,6 +517,12 @@ interface SamitiContextType {
   resetMasterDemoData: () => Promise<void>;
   resetDurgaPujaUnitData: (mode?: 'wipe_clean' | 'restore_defaults') => Promise<void>;
   isCollectorMode: boolean;
+  /**
+   * Shared-tablet account: collector-level restrictions, but the संग्रहकर्ता
+   * on each receipt is picked from the registered name list instead of being
+   * locked to the account holder. Implies isCollectorMode.
+   */
+  isTabletMode: boolean;
   currentStaffMember: MasterStaff | null;
   /** Effective module permissions of the logged-in user for the current workspace. */
   currentModuleAccess: ModuleAccess;
@@ -716,8 +722,24 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return staffList.find(s => s?.username?.toLowerCase() === cleanUser) || null;
   }, [auth?.profile?.username, staffList]);
 
+  /**
+   * Is this a shared-tablet account? The device is handed around at the
+   * pandal, so it carries a collector's restrictions but must NOT lock the
+   * संग्रहकर्ता field to the account's own name — whoever is holding it picks
+   * their name from the registered list on each receipt.
+   */
+  const isTabletMode = useMemo(() => {
+    if (!currentStaffMember) return false;
+    if (currentStaffMember.primaryRole === 'tablet') return true;
+    const perm = currentStaffMember.workspacePermissions?.[currentEntityId];
+    return perm?.accessLevel === 'tablet';
+  }, [currentStaffMember, currentEntityId]);
+
   // Is current logged in user restricted to collector mode?
+  // Tablet accounts count here too: they get the same hidden expenses,
+  // analytics and export. Only the name lock differs.
   const isCollectorMode = useMemo(() => {
+    if (isTabletMode) return true;
     if (auth?.isCollector) return true;
     if (currentStaffMember) {
       if (currentStaffMember.primaryRole === 'collector') return true;
@@ -725,7 +747,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (perm?.accessLevel === 'collector') return true;
     }
     return false;
-  }, [auth?.isCollector, currentStaffMember, currentEntityId]);
+  }, [isTabletMode, auth?.isCollector, currentStaffMember, currentEntityId]);
 
   // Effective per-module access of the logged-in staff member for the current
   // workspace. Falls back to the defaults of their access level for modules the
@@ -2157,6 +2179,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         resetMasterDemoData,
         resetDurgaPujaUnitData,
         isCollectorMode,
+        isTabletMode,
         canEditFinalizedAmounts,
         currentStaffMember,
         currentModuleAccess,

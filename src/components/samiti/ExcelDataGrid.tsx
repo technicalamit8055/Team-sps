@@ -109,7 +109,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   collectorName: propCollectorName,
   onAddDonation,
 }) => {
-  const { currentEntity, currentEvent, donations, updateDonation, deleteDonation, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
+  const { currentEntity, currentEvent, donations, updateDonation, deleteDonation, isCollectorMode: contextCollectorMode, isTabletMode, currentStaffMember } = useSamiti();
   const { profile } = useAuth();
 
   const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
@@ -418,8 +418,11 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
           </div>
         </div>
 
-        {/* Collector Scope Toggle (Mine vs All) */}
-        {isCollector && (
+        {/* Collector Scope Toggle (Mine vs All).
+            Hidden on a shared tablet: the account is a device, not a person,
+            so "मेरी प्रविष्टियाँ" has no one to mean. Every member using the
+            tablet sees the whole unit's register. */}
+        {isCollector && !isTabletMode && (
           <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-amber-500/10 border border-amber-300/70 rounded-xl">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-amber-950 flex items-center gap-1">

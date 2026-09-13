@@ -27,6 +27,7 @@ import {
   Vote,
   Flame,
   Tent,
+  Tablet,
 } from 'lucide-react';
 
 interface AccessControlMatrixViewProps {
@@ -61,6 +62,12 @@ const ACCESS_CONFIG: Record<
     color: 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100',
     icon: <Receipt className="w-3.5 h-3.5 text-amber-600" />,
     desc: 'Add & view donations by default; extra sections can be ticked under Modules',
+  },
+  tablet: {
+    label: 'Shared Tablet',
+    color: 'bg-indigo-50 text-indigo-900 border-indigo-300 hover:bg-indigo-100',
+    icon: <Tablet className="w-3.5 h-3.5 text-indigo-600" />,
+    desc: 'Shared device: same access as Donation Only, but the संग्रहकर्ता is picked per receipt',
   },
   no_access: {
     label: 'No Access',
@@ -337,6 +344,9 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                               </SelectItem>
                               <SelectItem value="collector" className="text-xs font-bold text-amber-800">
                                 🎟️ Donation Only (चंदा संग्रह)
+                              </SelectItem>
+                              <SelectItem value="tablet" className="text-xs font-bold text-indigo-700">
+                                📱 Shared Tablet (साझा टैबलेट)
                               </SelectItem>
                               <SelectItem value="viewer" className="text-xs font-bold text-blue-700">
                                 👁️ Viewer

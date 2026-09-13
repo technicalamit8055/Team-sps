@@ -74,6 +74,11 @@ const ROLE_CONFIG: Record<
     color: 'bg-amber-600',
     badgeBg: 'bg-amber-50 text-amber-800 border-amber-300',
   },
+  tablet: {
+    label: 'साझा टैबलेट (Shared Tablet)',
+    color: 'bg-indigo-600',
+    badgeBg: 'bg-indigo-50 text-indigo-800 border-indigo-300',
+  },
 };
 
 const ACCESS_LEVEL_LABELS: Record<
@@ -95,6 +100,10 @@ const ACCESS_LEVEL_LABELS: Record<
   collector: {
     label: 'Donation Only (चंदा संग्रह)',
     badgeColor: 'bg-amber-50 text-amber-800 border-amber-300',
+  },
+  tablet: {
+    label: 'Shared Tablet (साझा टैबलेट)',
+    badgeColor: 'bg-indigo-50 text-indigo-800 border-indigo-300',
   },
   no_access: {
     label: 'No Access',
@@ -199,7 +208,11 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       return;
     }
 
-    const autoUsername = `${newName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${newRole === 'collector' ? 'collector' : Math.floor(Math.random() * 100)}`;
+    const roleSuffix =
+      newRole === 'collector' ? 'collector' :
+      newRole === 'tablet' ? 'tablet' :
+      String(Math.floor(Math.random() * 100));
+    const autoUsername = `${newName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${roleSuffix}`;
     const finalUsername = newUsername.trim() || autoUsername;
     const finalPassword = newPassword.trim() || generateRandomPassword();
 
@@ -489,6 +502,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
             { id: 'manager', label: '⭐ Incharges' },
             { id: 'admin', label: '🛡️ Admins' },
             { id: 'collector', label: '🎟️ चंदा संग्रहकर्ता' },
+            { id: 'tablet', label: '📱 साझा टैबलेट' },
             { id: 'karyakarta', label: '👥 Field Workers' },
             { id: 'accountant', label: '💰 Treasurers' },
           ].map(tab => {
@@ -834,12 +848,23 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs font-semibold text-slate-700">Role</Label>
-                <Select value={newRole} onValueChange={(v: any) => setNewRole(v)}>
+                <Select
+                  value={newRole}
+                  onValueChange={(v: any) => {
+                    setNewRole(v);
+                    // Keep the workspace access level in step with the role, so
+                    // a tablet account is never created with a name-locking
+                    // 'collector' grant (or vice versa) by omission.
+                    if (v === 'tablet') setDefaultAccessLevel('tablet');
+                    else if (v === 'collector') setDefaultAccessLevel('collector');
+                  }}
+                >
                   <SelectTrigger className="mt-1 text-xs rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="collector">🎟️ चंदा संग्रहकर्ता (Collector)</SelectItem>
+                    <SelectItem value="tablet">📱 साझा टैबलेट (Shared Tablet)</SelectItem>
                     {canAssignElevatedRoles && <SelectItem value="manager">⭐ Incharge</SelectItem>}
                     <SelectItem value="karyakarta">👥 Field Worker</SelectItem>
                     <SelectItem value="accountant">💰 Treasurer</SelectItem>
@@ -871,6 +896,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="collector">🎟️ Donation Only (चंदा संग्रह)</SelectItem>
+                  <SelectItem value="tablet">📱 Shared Tablet (नाम हर रसीद पर चुनें)</SelectItem>
                   <SelectItem value="editor">Editor (Data Entry)</SelectItem>
                   <SelectItem value="viewer">Viewer (Read Only)</SelectItem>
                   <SelectItem value="full_control">Full Access (Admin)</SelectItem>
@@ -987,6 +1013,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="collector">🎟️ चंदा संग्रहकर्ता (Collector)</SelectItem>
+                    <SelectItem value="tablet">📱 साझा टैबलेट (Shared Tablet)</SelectItem>
                     {canAssignElevatedRoles && <SelectItem value="manager">⭐ Incharge</SelectItem>}
                     <SelectItem value="karyakarta">👥 Field Worker</SelectItem>
                     <SelectItem value="accountant">💰 Treasurer</SelectItem>

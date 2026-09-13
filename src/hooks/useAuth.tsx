@@ -46,15 +46,19 @@ const deriveCollectorInfo = (
 
   const perms = staff.workspacePermissions || {};
 
-  // An explicit 'collector' access level on any workspace is the strongest signal.
-  const collectorWs = Object.entries(perms).find(([, p]) => p?.accessLevel === 'collector');
+  // An explicit 'collector' or 'tablet' access level on any workspace is the
+  // strongest signal. Both are restricted to a single unit; they differ only
+  // in whether the संग्रहकर्ता name is locked (see isTabletMode).
+  const collectorWs = Object.entries(perms).find(
+    ([, p]) => p?.accessLevel === 'collector' || p?.accessLevel === 'tablet'
+  );
   if (collectorWs) {
     return { assignedWorkspaceId: collectorWs[0], isCollector: true, staffName: staff.name };
   }
 
   const wsIds = Object.keys(perms);
 
-  if (staff.primaryRole === 'collector') {
+  if (staff.primaryRole === 'collector' || staff.primaryRole === 'tablet') {
     return {
       assignedWorkspaceId: wsIds[0] || 'ent-durga-narayanpur',
       isCollector: true,

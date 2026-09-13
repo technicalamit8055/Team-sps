@@ -104,10 +104,20 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
 }) => {
-  const { addDonation, updateDonation, currentEvent, currentEntity, donations, isCollectorMode: contextCollectorMode, currentStaffMember, canEditFinalizedAmounts } = useSamiti();
+  const { addDonation, updateDonation, currentEvent, currentEntity, donations, isCollectorMode: contextCollectorMode, isTabletMode, currentStaffMember, canEditFinalizedAmounts } = useSamiti();
 
   const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
   const workerCollectorName = defaultCollectorName || currentStaffMember?.name || 'सुनील वर्मा';
+
+  /**
+   * Lock संग्रहकर्ता to the account holder's own name?
+   *
+   * Only for a personal collector account. A shared tablet is passed between
+   * members at the pandal, so its operator must pick their own name from the
+   * registered list on every receipt — otherwise every entry made on the
+   * device would be credited to the tablet's own account.
+   */
+  const lockCollector = isCollector && !isTabletMode;
 
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -133,7 +143,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
     initialData?.receivedAmount ? String(initialData.receivedAmount) : '2100'
   );
   const [paymentMode, setPaymentMode] = useState<PaymentMode>(initialData?.paymentMode || 'CASH');
-  const [collectorName, setCollectorName] = useState(initialData?.collectorName || (isCollector ? workerCollectorName : 'कार्यकर्ता प्रतिनिधि'));
+  const [collectorName, setCollectorName] = useState(initialData?.collectorName || (lockCollector ? workerCollectorName : ''));
   const [remarks, setRemarks] = useState(initialData?.remarks || '');
   const [autoSendReceipt, setAutoSendReceipt] = useState(true);
 
@@ -154,11 +164,13 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setAcceptedAmount(String(initialData.acceptedAmount || '2100'));
       setReceivedAmount(String(initialData.receivedAmount || '2100'));
       setPaymentMode(initialData.paymentMode || 'CASH');
-      setCollectorName(initialData.collectorName || (isCollector ? workerCollectorName : 'कार्यकर्ता प्रतिनिधि'));
+      setCollectorName(initialData.collectorName || (lockCollector ? workerCollectorName : ''));
       setRemarks(initialData.remarks || '');
     } else if (isOpen) {
-      if (isCollector) {
+      if (lockCollector) {
         setCollectorName(workerCollectorName);
+      }
+      if (isCollector) {
         // Collectors have no toggle for this, so it must never be left off.
         setAutoSendReceipt(true);
       }
@@ -181,11 +193,16 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setReceivedAmount('2100');
       setCategory('SHO');
       setPaymentMode('CASH');
-      if (isCollector) {
+      if (lockCollector) {
         setCollectorName(workerCollectorName);
+      } else if (isTabletMode) {
+        // Clear between donors: the next entry on a shared device is very
+        // often made by a different member, and a name left over from the
+        // previous receipt would silently miscredit the collection.
+        setCollectorName('');
       }
     }
-  }, [initialData, isOpen, isCollector, workerCollectorName]);
+  }, [initialData, isOpen, isCollector, lockCollector, isTabletMode, workerCollectorName]);
 
   // Keyboard shortcut: Ctrl+Enter to save
   useEffect(() => {
@@ -306,6 +323,25 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
         description: 'दानदाता से मिली राशि केवल बढ़ाई जा सकती है — घटाने के लिए एडमिन से संपर्क करें।',
       });
       return;
+    }
+
+    // संग्रहकर्ता must be one of the registered names. Enforced here and not
+    // only in the dropdown, so a receipt can never be saved crediting nobody
+    // — or crediting a name that was never registered.
+    const trimmedCollector = collectorName.trim();
+    if (!lockCollector) {
+      if (!trimmedCollector) {
+        toast.error('कृपया संग्रहकर्ता का नाम चुनें।', {
+          description: 'रसीद बिना संग्रहकर्ता के दर्ज नहीं की जा सकती।',
+        });
+        return;
+      }
+      if (!COLLECTOR_OPTIONS.includes(trimmedCollector)) {
+        toast.error('यह संग्रहकर्ता सूची में पंजीकृत नहीं है।', {
+          description: 'केवल सूची में दिए गए नाम ही चुने जा सकते हैं।',
+        });
+        return;
+      }
     }
 
     if (initialData) {
@@ -803,15 +839,22 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     <div className="flex items-center justify-between mb-1.5">
                       <Label className="text-xs font-bold text-slate-800">
                         संग्रहकर्ता
+                        {isTabletMode && <span className="text-rose-600 ml-0.5">*</span>}
                       </Label>
-                      {isCollector && (
+                      {lockCollector && (
                         <span className="text-[12px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <span>🔒</span>
                           <span>लॉक्ड</span>
                         </span>
                       )}
+                      {isTabletMode && (
+                        <span className="text-[12px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span>📱</span>
+                          <span>साझा टैबलेट</span>
+                        </span>
+                      )}
                     </div>
-                    {isCollector ? (
+                    {lockCollector ? (
                       <>
                         <Input
                           value={collectorName}
@@ -823,18 +866,31 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         </p>
                       </>
                     ) : (
-                      <Select value={collectorName} onValueChange={val => setCollectorName(val)}>
-                        <SelectTrigger className="h-11 text-xs font-semibold text-slate-900 border-slate-200 rounded-xl bg-white focus:ring-amber-500">
-                          <SelectValue placeholder="नाम चुनें" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {COLLECTOR_OPTIONS.map(name => (
-                            <SelectItem key={name} value={name} className="text-xs">
-                              {name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <>
+                        <Select value={collectorName} onValueChange={val => setCollectorName(val)}>
+                          <SelectTrigger
+                            className={`h-11 text-xs font-semibold text-slate-900 rounded-xl bg-white ${
+                              isTabletMode && !collectorName
+                                ? 'border-2 border-indigo-400 ring-2 ring-indigo-200 focus:ring-indigo-500'
+                                : 'border-slate-200 focus:ring-amber-500'
+                            }`}
+                          >
+                            <SelectValue placeholder={isTabletMode ? 'अपना नाम चुनें' : 'नाम चुनें'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COLLECTOR_OPTIONS.map(name => (
+                              <SelectItem key={name} value={name} className="text-xs">
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {isTabletMode && (
+                          <p className="text-[12px] text-indigo-800 mt-1 font-medium">
+                            यह साझा टैबलेट है — रसीद दर्ज करने से पहले सूची में से अपना नाम चुनें।
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
