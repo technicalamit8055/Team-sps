@@ -29,6 +29,7 @@ import {
   ArrowUp,
 } from 'lucide-react';
 import { WhatsAppReceiptModal } from './WhatsAppReceiptModal';
+import { ChandaQRCodeModal } from './ChandaQRCodeModal';
 import { CasteCombobox } from './CasteCombobox';
 import { LocalityCombobox } from './LocalityCombobox';
 import { VillageCombobox } from './VillageCombobox';
@@ -113,6 +114,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   const setIsOpen = controlledOnOpenChange || setInternalOpen;
   const [createdDonation, setCreatedDonation] = useState<SamitiDonation | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   // Form states
   const [name, setName] = useState(initialData?.name || '');
@@ -373,7 +375,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
             <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8 sm:pr-10">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/25 border border-amber-400/40 text-amber-300 text-[10px] font-extrabold tracking-wide uppercase flex items-center gap-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/25 border border-amber-400/40 text-amber-300 text-[12px] font-extrabold tracking-wide uppercase flex items-center gap-1.5">
                     <Flame className="w-3 h-3 text-amber-300 animate-pulse" />
                     {currentEntity?.name || 'श्री दुर्गा पूजा महासमिति'}
                   </span>
@@ -389,7 +391,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
               <div className="flex items-center self-start sm:self-center gap-2 bg-black/40 border border-amber-400/40 px-3 py-1.5 rounded-xl shadow-inner text-right">
                 <Receipt className="w-4 h-4 text-amber-300 shrink-0" />
                 <div className="text-left">
-                  <div className="text-[9px] uppercase tracking-wider text-amber-300/80 font-mono font-bold">
+                  <div className="text-[11px] uppercase tracking-wider text-amber-300/80 font-mono font-bold">
                     रसीद क्रमांक
                   </div>
                   <div className="text-xs font-black font-mono text-amber-200">
@@ -432,7 +434,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                           }`}
                       >
                         {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] shadow-2xs">
+                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-slate-900 text-white flex items-center justify-center text-[12px] shadow-2xs">
                             <Check className="w-2.5 h-2.5" />
                           </div>
                         )}
@@ -444,7 +446,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                           <span className="text-xs font-mono font-black">{cat.code}</span>
                         </div>
                         <div className="min-w-0 w-full">
-                          <div className="text-[11px] sm:text-xs font-bold leading-tight break-words hyphens-none">{cat.labelHi.split('/')[0].trim()}</div>
+                          <div className="text-[13px] sm:text-xs font-bold leading-tight break-words hyphens-none">{cat.labelHi.split('/')[0].trim()}</div>
                         </div>
                       </button>
                     );
@@ -573,7 +575,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <Coins className="w-3.5 h-3.5 text-amber-600" />
                       <span>त्वरित राशि:</span>
                     </span>
-                    <span className="text-[10px] text-amber-800/80 font-medium">
+                    <span className="text-[12px] text-amber-800/80 font-medium">
                       {amountsLocked ? 'दर्ज रसीद — राशि लॉक है' : '1-क्लिक में दोनों राशि स्वतः भरें'}
                     </span>
                   </div>
@@ -581,7 +583,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                   {amountsLocked && (
                     <div className="mb-2 bg-rose-50 border border-rose-200 rounded-xl p-2.5 flex items-start gap-2">
                       <Lock className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
-                      <div className="text-[11px] font-semibold text-rose-900 leading-snug">
+                      <div className="text-[13px] font-semibold text-rose-900 leading-snug">
                         यह रसीद पहले ही दर्ज हो चुकी है — स्वीकृत राशि बदलने का अधिकार केवल एडमिन को है।
                         {savedReceived > 0 && (
                           <>
@@ -623,7 +625,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         स्वीकृत राशि
                       </Label>
                       {amountsLocked && (
-                        <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="text-[12px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
                           <Lock className="w-2.5 h-2.5" />
                           <span>लॉक्ड</span>
                         </span>
@@ -653,7 +655,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         जमा राशि
                       </Label>
                       {amountsLocked && (
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="text-[12px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
                           <ArrowUp className="w-2.5 h-2.5" />
                           <span>केवल बढ़ा सकते हैं</span>
                         </span>
@@ -676,7 +678,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       />
                     </div>
                     {receivedBelowRecorded && (
-                      <p className="text-[10px] font-bold text-rose-600 flex items-start gap-1">
+                      <p className="text-[12px] font-bold text-rose-600 flex items-start gap-1">
                         <AlertCircle className="w-3 h-3 shrink-0 mt-px" />
                         <span>पहले से ₹{savedReceived.toLocaleString('hi-IN')} जमा है — इससे कम नहीं किया जा सकता।</span>
                       </p>
@@ -693,7 +695,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         शेष बकाया
                       </span>
                       {calculatedBalance !== 0 && (
-                        <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded animate-pulse">
+                        <span className="text-[12px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded animate-pulse">
                           वसूली बाकी
                         </span>
                       )}
@@ -706,7 +708,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       </div>
                     </div>
 
-                    <div className="text-[10px] font-medium leading-tight">
+                    <div className="text-[12px] font-medium leading-tight">
                       {calculatedBalance !== 0 && (
                         <span className="text-rose-600 flex items-center gap-1">
                           <AlertCircle className="w-3 h-3 text-rose-500 shrink-0" />
@@ -737,7 +739,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <button
                         type="button"
                         onClick={() => setDate(new Date().toISOString().split('T')[0])}
-                        className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
+                        className="text-[11px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
                       >
                         आज (Today)
                       </button>
@@ -748,7 +750,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                           yest.setDate(yest.getDate() - 1);
                           setDate(yest.toISOString().split('T')[0]);
                         }}
-                        className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
+                        className="text-[11px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
                       >
                         कल (Yesterday)
                       </button>
@@ -784,6 +786,17 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         <span>📲 ऑनलाइन</span>
                       </button>
                     </div>
+
+                    {paymentMode === 'ONL' && (
+                      <button
+                        type="button"
+                        onClick={() => setIsQrModalOpen(true)}
+                        className="mt-1.5 w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs shadow-sm flex items-center justify-center gap-1.5 active:scale-98 transition-all border border-amber-400/80"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                        <span>Instant UPI QR कोड दिखाएं (₹{(parsedReceived > 0 ? parsedReceived : (parsedAccepted > 0 ? parsedAccepted : 1100)).toLocaleString('hi-IN')})</span>
+                      </button>
+                    )}
                   </div>
 
                   <div>
@@ -792,7 +805,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         संग्रहकर्ता
                       </Label>
                       {isCollector && (
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="text-[12px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <span>🔒</span>
                           <span>लॉक्ड</span>
                         </span>
@@ -805,7 +818,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                           disabled
                           className="h-11 text-xs font-semibold border-slate-200 rounded-xl bg-slate-100 cursor-not-allowed opacity-90 text-slate-700"
                         />
-                        <p className="text-[10px] text-amber-800 mt-1 font-medium">
+                        <p className="text-[12px] text-amber-800 mt-1 font-medium">
                           यह रसीद स्वतः आपके नाम ({workerCollectorName}) पर दर्ज होगी।
                         </p>
                       </>
@@ -853,7 +866,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <div className="text-xs font-bold text-emerald-950">
                         प्रविष्टि होते ही WhatsApp रसीद स्वतः भेजें
                       </div>
-                      <div className="text-[10px] text-emerald-700">
+                      <div className="text-[12px] text-emerald-700">
                         {phone.replace(/\D/g, '').length >= 10
                           ? `सुरक्षित करते ही रसीद ${phone.trim()} पर अपने आप चली जाएगी`
                           : 'नंबर दर्ज न होने पर रसीद विंडो खुलेगी, जहाँ से नंबर डालकर भेज सकते हैं'}
@@ -907,6 +920,13 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
         donation={createdDonation}
         isOpen={isReceiptModalOpen}
         onClose={() => setIsReceiptModalOpen(false)}
+      />
+
+      {/* Instant UPI QR Modal */}
+      <ChandaQRCodeModal
+        isOpen={isQrModalOpen}
+        onClose={() => setIsQrModalOpen(false)}
+        defaultAmount={parsedReceived > 0 ? parsedReceived : (parsedAccepted > 0 ? parsedAccepted : 1100)}
       />
     </>
   );

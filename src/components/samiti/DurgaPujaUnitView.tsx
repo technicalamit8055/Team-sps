@@ -258,7 +258,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             {/* Total Collection Pill with Glowing Lotus Badge */}
             <div className="hidden sm:flex items-center gap-2 bg-[#250308] border border-[#6b1420] px-3 py-1 rounded-xl shadow-inner">
               <div className="text-right">
-                <span className="text-[8px] text-amber-200/70 block uppercase font-bold tracking-wider">
+                <span className="text-[10px] text-amber-200/70 block uppercase font-bold tracking-wider">
                   कुल संग्रह
                 </span>
                 <span className="text-xs sm:text-sm font-black font-mono text-amber-300">
@@ -293,7 +293,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             room beside the action buttons on a phone. */}
         <div className="sm:hidden flex items-center justify-between gap-2 px-2.5 pb-2 -mt-0.5">
           <div className="flex-1 flex items-center justify-between gap-2 bg-[#250308] border border-[#6b1420] px-3 py-1.5 rounded-xl shadow-inner">
-            <span className="text-[9px] text-amber-200/70 uppercase font-bold tracking-wider">
+            <span className="text-[11px] text-amber-200/70 uppercase font-bold tracking-wider">
               कुल संग्रह
             </span>
             <span className="text-sm font-black font-mono text-amber-300">
@@ -337,11 +337,11 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   {currentEntity.name || 'श्री दुर्गा पूजा समिति, नारायणपुर'}
                 </h2>
 
-                <p className="text-[11px] sm:text-sm lg:text-base font-extrabold font-serif text-amber-950">
+                <p className="text-[13px] sm:text-sm lg:text-base font-extrabold font-serif text-amber-950">
                   {currentEntity.bannerBadgeText || 'श्री दुर्गा पूजा महोत्सव 2026'}
                 </p>
 
-                <p className="hidden xs:block text-[10px] sm:text-xs lg:text-sm font-serif italic text-slate-800 max-w-md mx-auto leading-snug">
+                <p className="hidden xs:block text-[12px] sm:text-xs lg:text-sm font-serif italic text-slate-800 max-w-md mx-auto leading-snug">
                   "{currentEntity.tagline || 'माँ दुर्गा की असीम कृपा आप और आपके परिवार पर सदा बनी रहे।'}"
                 </p>
               </div>
@@ -359,15 +359,15 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <Coins className="w-4 h-4" />
                 </div>
                 <div className="text-right">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    स्वीकृत चंदा <span className="font-mono text-[8px]">(PLEDGED)</span>
+                  <span className="text-[11px] sm:text-[12px] font-bold text-slate-500 uppercase tracking-wider block">
+                    स्वीकृत चंदा <span className="font-mono text-[10px]">(PLEDGED)</span>
                   </span>
                   <p className="text-[15px] sm:text-xl font-black text-slate-900 mt-0.5 font-mono">
                     ₹{summary.totalAccepted.toLocaleString('hi-IN')}
                   </p>
                 </div>
               </div>
-              <div className="text-[10px] text-slate-500 mt-2 font-serif">
+              <div className="text-[12px] text-slate-500 mt-2 font-serif">
                 कुल दानदाता: <strong className="text-slate-700">{summary.totalDonors}</strong>
               </div>
             </div>
@@ -379,15 +379,15 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <CheckCircle2 className="w-4 h-4" />
                 </div>
                 <div className="text-right">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
-                    प्राप्त चंदा <span className="font-mono text-[8px]">(RECEIVED)</span>
+                  <span className="text-[11px] sm:text-[12px] font-bold text-emerald-700 uppercase tracking-wider block">
+                    प्राप्त चंदा <span className="font-mono text-[10px]">(RECEIVED)</span>
                   </span>
                   <p className="text-[15px] sm:text-xl font-black text-emerald-700 mt-0.5 font-mono">
                     ₹{summary.totalReceived.toLocaleString('hi-IN')}
                   </p>
                 </div>
               </div>
-              <div className="text-[10px] text-slate-600 mt-2 flex justify-between font-mono">
+              <div className="text-[12px] text-slate-600 mt-2 flex justify-between font-mono">
                 <span>नकद: ₹{summary.cashReceived.toLocaleString('hi-IN')}</span>
                 <span className="text-blue-700 font-bold">UPI: ₹{summary.onlineReceived.toLocaleString('hi-IN')}</span>
               </div>
@@ -400,15 +400,15 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <Hourglass className="w-4 h-4" />
                 </div>
                 <div className="text-right">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-rose-600 uppercase tracking-wider block">
-                    बकाया राशि <span className="font-mono text-[8px]">(DUE)</span>
+                  <span className="text-[11px] sm:text-[12px] font-bold text-rose-600 uppercase tracking-wider block">
+                    बकाया राशि <span className="font-mono text-[10px]">(DUE)</span>
                   </span>
                   <p className="text-[15px] sm:text-xl font-black text-rose-600 mt-0.5 font-mono">
                     ₹{summary.totalBalance.toLocaleString('hi-IN')}
                   </p>
                 </div>
               </div>
-              <div className="text-[10px] text-rose-600/90 mt-2 font-serif truncate">
+              <div className="text-[12px] text-rose-600/90 mt-2 font-serif truncate">
                 {summary.pendingDonors + summary.partialDonors} दाताओं से बकाया बाकी
               </div>
             </div>
@@ -421,7 +421,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <Receipt className="w-4 h-4" />
                 </div>
                 <div className="text-right">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                  <span className="text-[11px] sm:text-[12px] font-bold text-slate-600 uppercase tracking-wider block">
                     पंडाल व पूजा व्यय
                   </span>
                   <p className="text-[15px] sm:text-xl font-black text-slate-900 mt-0.5 font-mono">
@@ -429,7 +429,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   </p>
                 </div>
               </div>
-              <div className="text-[10px] text-slate-500 mt-2 flex justify-between font-mono">
+              <div className="text-[12px] text-slate-500 mt-2 flex justify-between font-mono">
                 <span>भुगतान: ₹{summary.expensesPaid.toLocaleString('hi-IN')}</span>
                 <span className="text-rose-500 font-semibold">देनदारी: ₹{summary.expenseBalanceDue.toLocaleString('hi-IN')}</span>
               </div>
@@ -444,7 +444,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <Users className="w-4 h-4" />
                 </div>
                 <div className="text-right">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-amber-900 uppercase tracking-wider block">
+                  <span className="text-[11px] sm:text-[12px] font-bold text-amber-900 uppercase tracking-wider block">
                     सक्रिय चंदा-सहयोग
                   </span>
                   <p className="text-[15px] sm:text-xl font-black text-amber-950 mt-0.5 font-mono">
@@ -452,7 +452,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   </p>
                 </div>
               </div>
-              <div className="text-[10px] text-amber-800/80 mt-2 font-serif truncate">
+              <div className="text-[12px] text-amber-800/80 mt-2 font-serif truncate">
                 सर्व भुगतान बाद लगाना होई
               </div>
             </div>
@@ -628,7 +628,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                         <span className="font-mono font-black text-sm sm:text-base text-amber-950 block">
                           ₹{donor.acceptedAmount.toLocaleString('hi-IN')}
                         </span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 block mt-0.5">
+                        <span className="text-[12px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 block mt-0.5">
                           प्राप्त: ₹{donor.receivedAmount.toLocaleString('hi-IN')}
                         </span>
                       </div>

@@ -62,11 +62,11 @@ export const Navbar: React.FC<NavbarProps> = ({ phone }) => {
               <span className="font-extrabold text-lg lg:text-xl tracking-tight text-foreground group-hover:text-victory-saffron transition-colors">
                 सुरज प्रताप
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-victory-saffron/15 text-victory-saffron border border-victory-saffron/30">
+              <span className="text-[12px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-victory-saffron/15 text-victory-saffron border border-victory-saffron/30">
                 Team SPS
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground font-medium hidden sm:block">
+            <p className="text-[13px] text-muted-foreground font-medium hidden sm:block">
               Building the Future of Politics
             </p>
           </div>

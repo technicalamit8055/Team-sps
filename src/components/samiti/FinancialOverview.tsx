@@ -71,7 +71,7 @@ export const FinancialOverview: React.FC = () => {
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-1 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold backdrop-blur-md">
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/20 text-white text-[13px] font-bold backdrop-blur-md">
               <Target className="w-3.5 h-3.5 text-amber-200" />
               <span>बजट लक्ष्य प्रगति (Budget Milestone Target)</span>
             </div>
@@ -85,13 +85,13 @@ export const FinancialOverview: React.FC = () => {
           </div>
 
           <div className="text-left md:text-right w-full md:w-auto shrink-0 bg-black/20 p-3 sm:p-3.5 rounded-2xl backdrop-blur-md border border-white/20 md:min-w-[170px]">
-            <span className="text-[10px] text-white/70 uppercase tracking-wider font-bold block">
+            <span className="text-[12px] text-white/70 uppercase tracking-wider font-bold block">
               हैंडओवर संदूक शेष
             </span>
             <span className="text-2xl font-black font-mono text-white block mt-0.5">
               ₹{summary.netSurplus.toLocaleString('hi-IN')}
             </span>
-            <span className="text-[11px] text-emerald-200 block mt-0.5 font-medium">
+            <span className="text-[13px] text-emerald-200 block mt-0.5 font-medium">
               बकाया वसूली बाकी: ₹{summary.totalBalance.toLocaleString('hi-IN')}
             </span>
           </div>
@@ -99,7 +99,7 @@ export const FinancialOverview: React.FC = () => {
 
         {/* Visual Progress Bar */}
         <div className="mt-5 space-y-1.5 relative z-10">
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-2 text-[11px] sm:text-xs font-bold text-white/90">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-2 text-[13px] sm:text-xs font-bold text-white/90">
             <span>प्राप्ति: {budgetProgress}% (₹{summary.totalReceived.toLocaleString('hi-IN')})</span>
             <span>स्वीकृत संकल्प: {pledgedProgress}% (₹{summary.totalAccepted.toLocaleString('hi-IN')})</span>
             <span>लक्ष्य: ₹{currentEvent.targetBudget.toLocaleString('hi-IN')}</span>
@@ -117,7 +117,7 @@ export const FinancialOverview: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">कुल स्वीकृत</span>
+            <span className="text-[13px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">कुल स्वीकृत</span>
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 shrink-0">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
@@ -125,7 +125,7 @@ export const FinancialOverview: React.FC = () => {
           <p className="text-lg sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2 font-mono">
             ₹{summary.totalAccepted.toLocaleString('hi-IN')}
           </p>
-          <div className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-muted-foreground flex items-center justify-between truncate">
+          <div className="mt-1 sm:mt-2 text-[12px] sm:text-xs text-muted-foreground flex items-center justify-between truncate">
             <span>कुल दाता: {summary.totalDonors}</span>
             <span className="hidden xs:inline font-mono">औसत: ₹{summary.totalDonors ? Math.round(summary.totalAccepted / summary.totalDonors).toLocaleString('hi-IN') : 0}</span>
           </div>
@@ -133,7 +133,7 @@ export const FinancialOverview: React.FC = () => {
 
         <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-emerald-700 uppercase tracking-wider">प्राप्त चंदा</span>
+            <span className="text-[13px] sm:text-xs font-bold text-emerald-700 uppercase tracking-wider">प्राप्त चंदा</span>
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0">
               <Wallet className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
@@ -141,7 +141,7 @@ export const FinancialOverview: React.FC = () => {
           <p className="text-lg sm:text-2xl font-black text-emerald-700 mt-1 sm:mt-2 font-mono">
             ₹{summary.totalReceived.toLocaleString('hi-IN')}
           </p>
-          <div className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-emerald-800 flex items-center justify-between font-mono font-medium truncate">
+          <div className="mt-1 sm:mt-2 text-[12px] sm:text-xs text-emerald-800 flex items-center justify-between font-mono font-medium truncate">
             <span>नकद: ₹{summary.cashReceived.toLocaleString('hi-IN')}</span>
             <span>UPI: ₹{summary.onlineReceived.toLocaleString('hi-IN')}</span>
           </div>
@@ -149,7 +149,7 @@ export const FinancialOverview: React.FC = () => {
 
         <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-rose-600 uppercase tracking-wider">बकाया चंदा</span>
+            <span className="text-[13px] sm:text-xs font-bold text-rose-600 uppercase tracking-wider">बकाया चंदा</span>
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-50 flex items-center justify-center text-rose-700 shrink-0">
               <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
@@ -157,14 +157,14 @@ export const FinancialOverview: React.FC = () => {
           <p className="text-lg sm:text-2xl font-black text-rose-600 mt-1 sm:mt-2 font-mono">
             ₹{summary.totalBalance.toLocaleString('hi-IN')}
           </p>
-          <div className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-rose-600 flex items-center justify-between truncate">
+          <div className="mt-1 sm:mt-2 text-[12px] sm:text-xs text-rose-600 flex items-center justify-between truncate">
             <span>{summary.partialDonors + summary.pendingDonors} सहयोगियों से वसूली बाकी</span>
           </div>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider">कुल खर्च बिल</span>
+            <span className="text-[13px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider">कुल खर्च बिल</span>
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
               <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
@@ -172,7 +172,7 @@ export const FinancialOverview: React.FC = () => {
           <p className="text-lg sm:text-2xl font-black text-slate-900 mt-1 sm:mt-2 font-mono">
             ₹{summary.totalExpenses.toLocaleString('hi-IN')}
           </p>
-          <div className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-slate-600 flex items-center justify-between font-mono truncate">
+          <div className="mt-1 sm:mt-2 text-[12px] sm:text-xs text-slate-600 flex items-center justify-between font-mono truncate">
             <span>भुगतान: ₹{summary.expensesPaid.toLocaleString('hi-IN')}</span>
             <span className="text-rose-500">देनदारी: ₹{summary.expenseBalanceDue.toLocaleString('hi-IN')}</span>
           </div>
@@ -267,11 +267,11 @@ export const FinancialOverview: React.FC = () => {
           <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex">
             <div
               style={{ width: `${cashPercent}%` }}
-              className="bg-amber-500 h-full transition-all flex items-center justify-center text-[10px] text-white font-bold"
+              className="bg-amber-500 h-full transition-all flex items-center justify-center text-[12px] text-white font-bold"
             />
             <div
               style={{ width: `${onlinePercent}%` }}
-              className="bg-blue-600 h-full transition-all flex items-center justify-center text-[10px] text-white font-bold"
+              className="bg-blue-600 h-full transition-all flex items-center justify-center text-[12px] text-white font-bold"
             />
           </div>
 
@@ -281,7 +281,7 @@ export const FinancialOverview: React.FC = () => {
               <p className="text-sm font-mono font-black text-amber-900 mt-1">
                 ₹{summary.cashReceived.toLocaleString('hi-IN')}
               </p>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <p className="text-[13px] text-slate-500 mt-0.5">
                 {cashPercent}% • संग्रहकर्ताओं के पास / संदूक रोकड़
               </p>
             </div>
@@ -291,7 +291,7 @@ export const FinancialOverview: React.FC = () => {
               <p className="text-sm font-mono font-black text-blue-900 mt-1">
                 ₹{summary.onlineReceived.toLocaleString('hi-IN')}
               </p>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <p className="text-[13px] text-slate-500 mt-0.5">
                 {onlinePercent}% • सीधे समिति बैंक खाते में जमा
               </p>
             </div>

@@ -35,9 +35,9 @@ const ConfigRow: React.FC<{
       {icon}
     </div>
     <div className="min-w-0 flex-1">
-      <p className="text-[11px] text-slate-500">{label}</p>
+      <p className="text-[13px] text-slate-500">{label}</p>
       <p className="text-xs font-semibold text-slate-900 font-mono break-all">{value}</p>
-      {hint && <p className="text-[10px] text-slate-400 mt-0.5">{hint}</p>}
+      {hint && <p className="text-[12px] text-slate-400 mt-0.5">{hint}</p>}
     </div>
   </div>
 );
@@ -88,7 +88,7 @@ export const IntegrationsView: React.FC = () => {
         </div>
         <Badge
           variant="outline"
-          className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 border-emerald-200"
+          className="text-[12px] font-semibold bg-emerald-50 text-emerald-700 border-emerald-200"
         >
           बिना किसी पेड API के
         </Badge>
@@ -105,14 +105,14 @@ export const IntegrationsView: React.FC = () => {
               <Server className="w-4 h-4 text-slate-500" />
               सर्वर कॉन्फ़िगरेशन
             </h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[13px] text-slate-500 mt-0.5">
               यह मान <code className="font-mono">.env</code> से आते हैं — बदलने के बाद सर्वर
               पुनः चालू करें
             </p>
 
             {settingsError ? (
               <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-2.5">
-                <p className="text-[11px] text-rose-800 leading-relaxed">{settingsError}</p>
+                <p className="text-[13px] text-rose-800 leading-relaxed">{settingsError}</p>
               </div>
             ) : !settings ? (
               <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
@@ -176,7 +176,7 @@ export const IntegrationsView: React.FC = () => {
               <Send className="w-4 h-4 text-emerald-600" />
               परीक्षण संदेश भेजें
             </h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[13px] text-slate-500 mt-0.5">
               कनेक्शन जाँचने के लिए अपने ही नंबर पर एक संदेश भेजें
             </p>
 
@@ -207,7 +207,7 @@ export const IntegrationsView: React.FC = () => {
                 {testing ? 'भेजा जा रहा है…' : 'परीक्षण भेजें'}
               </Button>
             </div>
-            <p className="text-[10px] text-slate-400 mt-2">
+            <p className="text-[12px] text-slate-400 mt-2">
               खाली छोड़ने पर डिफ़ॉल्ट प्राप्तकर्ता को भेजा जाएगा।
             </p>
           </div>
@@ -228,7 +228,7 @@ export const IntegrationsView: React.FC = () => {
           </li>
           <li>परीक्षण संदेश भेजकर पुष्टि करें — इसके बाद हर यूनिट से रसीद भेजी जा सकेगी</li>
         </ol>
-        <p className="text-[11px] text-amber-800 mt-2.5">
+        <p className="text-[13px] text-amber-800 mt-2.5">
           सेशन सुरक्षित रहता है — सर्वर दोबारा चालू करने पर स्वतः जुड़ जाएगा, बार-बार QR स्कैन
           करने की ज़रूरत नहीं।
         </p>

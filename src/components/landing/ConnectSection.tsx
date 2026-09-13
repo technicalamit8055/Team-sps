@@ -151,7 +151,7 @@ export const ConnectSection: React.FC<ConnectSectionProps> = ({
                   <div>
                     <span className="text-xs text-muted-foreground font-medium">हेल्पलाइन नंबर</span>
                     <p className="text-base font-bold text-foreground mt-0.5">{phone}</p>
-                    <span className="text-[11px] text-indian-green font-medium">क्लिक कर कॉल करें</span>
+                    <span className="text-[13px] text-indian-green font-medium">क्लिक कर कॉल करें</span>
                   </div>
                 </a>
               )}
@@ -169,7 +169,7 @@ export const ConnectSection: React.FC<ConnectSectionProps> = ({
                 <div>
                   <span className="text-xs text-muted-foreground font-medium">WhatsApp संवाद</span>
                   <p className="text-base font-bold text-foreground mt-0.5">24x7 त्वरित संदेश</p>
-                  <span className="text-[11px] text-emerald-600 font-medium">चैट शुरू करें</span>
+                  <span className="text-[13px] text-emerald-600 font-medium">चैट शुरू करें</span>
                 </div>
               </a>
 
@@ -297,7 +297,7 @@ export const ConnectSection: React.FC<ConnectSectionProps> = ({
                 </Button>
               </form>
 
-              <div className="mt-4 p-3 rounded-xl bg-muted/50 border border-border/50 flex items-center gap-2.5 text-[11px] text-muted-foreground">
+              <div className="mt-4 p-3 rounded-xl bg-muted/50 border border-border/50 flex items-center gap-2.5 text-[13px] text-muted-foreground">
                 <Clock className="w-4 h-4 text-victory-saffron flex-shrink-0" />
                 <span>हमारी टीम सामान्यतः 2-4 घंटे में प्रत्येक संदेश का संज्ञान लेती है।</span>
               </div>

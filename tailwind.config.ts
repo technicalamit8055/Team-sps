@@ -25,6 +25,20 @@ export default {
       fontFamily: {
         sans: ['Poppins', 'sans-serif'],
       },
+      // The default Tailwind type scale read too small on phones, where most of
+      // this app is actually used. Every step is bumped, with the largest lift
+      // at the small end (text-xs/text-sm carry most of the dense UI) and a
+      // gentler one on headings so existing layouts keep their proportions.
+      fontSize: {
+        xs: ["0.8125rem", { lineHeight: "1.125rem" }],    // 12 -> 13px
+        sm: ["0.9375rem", { lineHeight: "1.375rem" }],    // 14 -> 15px
+        base: ["1.0625rem", { lineHeight: "1.625rem" }],  // 16 -> 17px
+        lg: ["1.1875rem", { lineHeight: "1.75rem" }],     // 18 -> 19px
+        xl: ["1.3125rem", { lineHeight: "1.875rem" }],    // 20 -> 21px
+        "2xl": ["1.625rem", { lineHeight: "2.125rem" }],  // 24 -> 26px
+        "3xl": ["1.9375rem", { lineHeight: "2.375rem" }], // 30 -> 31px
+        "4xl": ["2.3125rem", { lineHeight: "2.625rem" }], // 36 -> 37px
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

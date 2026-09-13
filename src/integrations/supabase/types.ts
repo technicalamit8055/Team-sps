@@ -995,6 +995,8 @@ export type Database = {
           phone: string
           primary_role: string
           status: string
+          upi_id: string | null
+          user_id: string | null
           username: string
           workspace_permissions: Json
         }
@@ -1010,6 +1012,8 @@ export type Database = {
           phone: string
           primary_role: string
           status?: string
+          upi_id?: string | null
+          user_id?: string | null
           username: string
           workspace_permissions?: Json
         }
@@ -1025,6 +1029,8 @@ export type Database = {
           phone?: string
           primary_role?: string
           status?: string
+          upi_id?: string | null
+          user_id?: string | null
           username?: string
           workspace_permissions?: Json
         }

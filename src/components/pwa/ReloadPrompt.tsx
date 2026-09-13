@@ -67,7 +67,7 @@ export const ReloadPrompt: React.FC = () => {
           <p className="text-xs font-bold text-slate-900">
             {offlineReady ? 'ऐप ऑफ़लाइन उपयोग के लिए तैयार है' : 'नया संस्करण उपलब्ध है!'}
           </p>
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-[13px] text-slate-500">
             {offlineReady
               ? 'अब आप बिना इंटरनेट के भी इसे खोल सकते हैं।'
               : 'नवीनतम अपडेट लागू करने के लिए रीलोड करें।'}

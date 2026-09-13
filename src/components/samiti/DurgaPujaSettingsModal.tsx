@@ -156,7 +156,7 @@ export const DurgaPujaSettingsModal: React.FC<DurgaPujaSettingsModalProps> = ({
                 <span className="p-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/30 inline-flex">
                   <Settings className="w-5 h-5 animate-spin-slow" />
                 </span>
-                <Badge className="bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold">
+                <Badge className="bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[12px] font-bold">
                   यूनिट सेटिंग्स एवं संपादन
                 </Badge>
               </div>
@@ -207,18 +207,18 @@ export const DurgaPujaSettingsModal: React.FC<DurgaPujaSettingsModalProps> = ({
                 {/* Live Preview Box */}
                 <div className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-950/90 via-amber-950/90 to-slate-950/90 text-white border border-amber-400/40 shadow-inner space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-amber-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span className="text-[12px] text-amber-300 font-bold uppercase tracking-wider flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-amber-300" />
                       लाइव पूर्वावलोकन (Live Preview)
                     </span>
-                    <span className="text-[10px] text-white/60">
+                    <span className="text-[12px] text-white/60">
                       📍 {formData.location || 'स्थल'}
                     </span>
                   </div>
                   <h4 className="text-sm sm:text-base font-extrabold text-amber-100 font-serif truncate">
                     {formData.name || 'समिति का नाम'}
                   </h4>
-                  <div className="flex flex-wrap gap-1.5 text-[10px]">
+                  <div className="flex flex-wrap gap-1.5 text-[12px]">
                     <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">
                       {formData.title} • {formData.fiscalYear}
                     </span>
@@ -409,12 +409,12 @@ export const DurgaPujaSettingsModal: React.FC<DurgaPujaSettingsModalProps> = ({
                           </p>
                         </div>
                       </div>
-                      <Badge className="bg-rose-200 text-rose-900 border-none font-bold text-[10px] shrink-0">
+                      <Badge className="bg-rose-200 text-rose-900 border-none font-bold text-[12px] shrink-0">
                         अनुशंसित
                       </Badge>
                     </div>
 
-                    <p className="text-[11px] text-slate-600">
+                    <p className="text-[13px] text-slate-600">
                       सभी मौजूदा डेमो चंदा प्रविष्टियाँ और खर्च वाउचर हटा दिए जाएंगे। नई प्रविष्टियाँ 1 से प्रारंभ होंगी।
                     </p>
 
@@ -444,7 +444,7 @@ export const DurgaPujaSettingsModal: React.FC<DurgaPujaSettingsModalProps> = ({
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-slate-600">
+                    <p className="text-[13px] text-slate-600">
                       मूल 8 नमूना चंदा प्रविष्टियाँ (दुकानदार, ग्रामीण, नौकरीपेशा) एवं 5 पंडाल/पूजा खर्च वाउचर लोड हो जाएंगे।
                     </p>
 

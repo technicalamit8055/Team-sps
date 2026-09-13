@@ -196,7 +196,7 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
                       alt="Festive Donation Receipt Preview"
                       className="w-full h-auto rounded-xl shadow-inner border border-amber-200"
                     />
-                    <div className="absolute top-2 right-2 bg-emerald-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1 backdrop-blur-xs">
+                    <div className="absolute top-2 right-2 bg-emerald-600/90 text-white text-[12px] font-bold px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1 backdrop-blur-xs">
                       <Sparkles className="w-2.5 h-2.5" />
                       A4 PDF Ready
                     </div>
@@ -244,7 +244,7 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
                 <span>व्हाट्सएप मोबाइल नंबर (WhatsApp Number):</span>
-                <span className="text-[11px] text-slate-400 font-mono">10 अंक</span>
+                <span className="text-[13px] text-slate-400 font-mono">10 अंक</span>
               </label>
               <Input
                 placeholder="उदा० 9835012345"
@@ -253,7 +253,7 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
                 className="font-mono text-xs h-9 bg-white"
               />
               {!donation.phone && (
-                <p className="text-[11px] text-amber-700">
+                <p className="text-[13px] text-amber-700">
                   इस दानदाता का नंबर सेव नहीं है — ऊपर नंबर दर्ज करें।
                 </p>
               )}

@@ -175,7 +175,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
               </p>
             </div>
           </div>
-          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-navy/10 text-navy border border-navy/20 self-start sm:self-auto">
+          <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-navy/10 text-navy border border-navy/20 self-start sm:self-auto">
             Security: Active
           </span>
         </div>
@@ -191,7 +191,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                 {conf.icon}
                 <span>{conf.label}</span>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-tight">{conf.desc}</p>
+              <p className="text-[12px] text-muted-foreground leading-tight">{conf.desc}</p>
             </div>
           ))}
         </div>
@@ -226,7 +226,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
               size="sm"
               variant="outline"
               onClick={() => grantAllWorkspaces(selectedStaffFilter, 'full_control')}
-              className="text-[11px] h-7 px-2.5 rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              className="text-[13px] h-7 px-2.5 rounded-lg border-emerald-200 text-emerald-700 hover:bg-emerald-50"
             >
               Grant Full Access to All
             </Button>
@@ -234,7 +234,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
               size="sm"
               variant="outline"
               onClick={() => grantAllWorkspaces(selectedStaffFilter, 'viewer')}
-              className="text-[11px] h-7 px-2.5 rounded-lg border-blue-200 text-navy hover:bg-blue-50"
+              className="text-[13px] h-7 px-2.5 rounded-lg border-blue-200 text-navy hover:bg-blue-50"
             >
               Grant View Only to All
             </Button>
@@ -266,7 +266,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                       )}
                       <span className="truncate">{ent.name}</span>
                     </div>
-                    <span className="text-[10px] font-normal text-white/70 block truncate mt-0.5">
+                    <span className="text-[12px] font-normal text-white/70 block truncate mt-0.5">
                       {ent.location || 'Active'}
                     </span>
                   </th>
@@ -294,7 +294,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                         <p className="font-bold text-slate-900 text-xs truncate">
                           {staff.name}
                         </p>
-                        <p className="text-[10px] text-muted-foreground truncate">
+                        <p className="text-[12px] text-muted-foreground truncate">
                           {staff.designation} • {staff.phone}
                         </p>
                       </div>
@@ -321,7 +321,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                             }
                           >
                             <SelectTrigger
-                              className={`h-7 text-[11px] font-semibold border rounded-lg shadow-none truncate transition-colors ${conf.color}`}
+                              className={`h-7 text-[13px] font-semibold border rounded-lg shadow-none truncate transition-colors ${conf.color}`}
                             >
                               <div className="flex items-center gap-1.5 truncate">
                                 {conf.icon}
@@ -351,7 +351,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                           {level !== 'no_access' && (
                             <button
                               onClick={() => handleOpenModuleModal(staff, ent)}
-                              className="w-full text-[10px] font-semibold flex items-center justify-center gap-1 px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-saffron hover:text-saffron-dark hover:bg-amber-50/60 transition-colors"
+                              className="w-full text-[12px] font-semibold flex items-center justify-center gap-1 px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-saffron hover:text-saffron-dark hover:bg-amber-50/60 transition-colors"
                               title="Configure module access (Pandal & Puja Kharcha, expenses, exports…)"
                             >
                               <SlidersHorizontal className="w-2.5 h-2.5" />
@@ -363,7 +363,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                               without opening the dialog. */}
                           {level !== 'no_access' &&
                             effectiveModules(currentPerm, level).modules.pandalPujaKharcha && (
-                              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                              <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
                                 <Tent className="w-2.5 h-2.5" />
                                 पंडाल व्यय
                               </span>
@@ -413,7 +413,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                   Allowed Modules:
                 </Label>
 
-                <p className="text-[10px] text-muted-foreground leading-tight">
+                <p className="text-[12px] text-muted-foreground leading-tight">
                   Modules stack on top of the access level — e.g. a{' '}
                   <span className="font-semibold">Donation Only</span> member can also be
                   given Pandal &amp; Puja Kharcha by ticking it here. Changing the access
@@ -489,12 +489,12 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                             <p className="font-bold text-slate-800 text-xs">
                               {item.label}
                               {isSensitive && (
-                                <span className="ml-1.5 align-middle text-[9px] font-extrabold uppercase tracking-wide text-rose-700 bg-rose-100 border border-rose-200 px-1.5 py-0.5 rounded">
+                                <span className="ml-1.5 align-middle text-[11px] font-extrabold uppercase tracking-wide text-rose-700 bg-rose-100 border border-rose-200 px-1.5 py-0.5 rounded">
                                   Admin only
                                 </span>
                               )}
                             </p>
-                            <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+                            <p className="text-[12px] text-muted-foreground">{item.desc}</p>
                           </div>
                         </div>
 

@@ -118,7 +118,7 @@ export const LocalityCombobox: React.FC<LocalityComboboxProps> = ({
           className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg py-1"
         >
           {options.length === 0 ? (
-            <div className="px-3 py-2 text-[10px] text-slate-400 font-medium">
+            <div className="px-3 py-2 text-[12px] text-slate-400 font-medium">
               कोई मिलान नहीं — टाइप किया हुआ मान ही सहेजा जाएगा
             </div>
           ) : (
@@ -144,7 +144,7 @@ export const LocalityCombobox: React.FC<LocalityComboboxProps> = ({
             })
           )}
           {value.trim() && !isKnown && (
-            <div className="px-3 py-1.5 mt-1 border-t border-slate-100 text-[10px] text-slate-500 font-medium">
+            <div className="px-3 py-1.5 mt-1 border-t border-slate-100 text-[12px] text-slate-500 font-medium">
               कस्टम मान: <span className="font-bold text-slate-700">{value.trim()}</span>
             </div>
           )}

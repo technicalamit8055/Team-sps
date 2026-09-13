@@ -327,7 +327,7 @@ export const ExpenseManager: React.FC = () => {
                     {amountsLocked && (
                       <div className="bg-rose-50 border border-rose-200 rounded-2xl p-2.5 flex items-start gap-2">
                         <Lock className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
-                        <div className="text-[11px] font-semibold text-rose-900 leading-snug">
+                        <div className="text-[13px] font-semibold text-rose-900 leading-snug">
                           यह वाउचर पहले ही दर्ज हो चुका है — कुल बिल राशि बदलने का अधिकार केवल एडमिन को है।
                           {savedPaid > 0 && (
                             <>
@@ -343,7 +343,7 @@ export const ExpenseManager: React.FC = () => {
 
                     <div className="grid grid-cols-3 gap-3 bg-amber-50/40 p-3 rounded-2xl border border-amber-200">
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-700 flex items-center gap-1">
+                        <Label className="text-[13px] font-medium text-slate-700 flex items-center gap-1">
                           <span>कुल बिल (₹) *</span>
                           {amountsLocked && <Lock className="w-2.5 h-2.5 text-rose-600 shrink-0" />}
                         </Label>
@@ -361,7 +361,7 @@ export const ExpenseManager: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <Label className="text-[11px] font-medium text-emerald-800 flex items-center gap-1">
+                        <Label className="text-[13px] font-medium text-emerald-800 flex items-center gap-1">
                           <span>भुगतान (₹) *</span>
                           {amountsLocked && <ArrowUp className="w-2.5 h-2.5 text-emerald-700 shrink-0" />}
                         </Label>
@@ -381,7 +381,7 @@ export const ExpenseManager: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <Label className="text-[11px] font-medium text-rose-700">शेष देनदारी (₹)</Label>
+                        <Label className="text-[13px] font-medium text-rose-700">शेष देनदारी (₹)</Label>
                         <div className="mt-1 h-9 px-2 rounded-xl bg-white border border-rose-200 flex items-center font-mono font-bold text-rose-600 text-xs">
                           ₹{calculatedDue.toLocaleString('hi-IN')}
                         </div>
@@ -389,7 +389,7 @@ export const ExpenseManager: React.FC = () => {
                     </div>
 
                     {paidBelowRecorded && (
-                      <p className="text-[11px] font-bold text-rose-600 flex items-start gap-1">
+                      <p className="text-[13px] font-bold text-rose-600 flex items-start gap-1">
                         <AlertCircle className="w-3 h-3 shrink-0 mt-px" />
                         <span>पहले से ₹{savedPaid.toLocaleString('hi-IN')} भुगतान दर्ज है — इससे कम नहीं किया जा सकता।</span>
                       </p>
@@ -421,7 +421,7 @@ export const ExpenseManager: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <Label className="text-xs font-medium">भुगतानकर्ता</Label>
                           {payerLocked && (
-                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <span className="text-[12px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
                               <Lock className="w-2.5 h-2.5" />
                               <span>लॉक्ड</span>
                             </span>
@@ -434,7 +434,7 @@ export const ExpenseManager: React.FC = () => {
                               disabled
                               className="mt-1 text-xs rounded-xl bg-slate-100 cursor-not-allowed opacity-90 text-slate-700 font-semibold"
                             />
-                            <p className="text-[10px] text-amber-800 mt-1 font-medium">
+                            <p className="text-[12px] text-amber-800 mt-1 font-medium">
                               {editingExpense && paidBy !== accountPayerName
                                 ? `यह खर्च ${paidBy} के नाम पर दर्ज है।`
                                 : `यह खर्च स्वतः आपके नाम (${accountPayerName}) पर दर्ज होगा।`}
@@ -509,7 +509,7 @@ export const ExpenseManager: React.FC = () => {
               >
                 <span>{cat.icon}</span>
                 <span>{cat.labelHi.split(' ')[0]}</span>
-                <span className="opacity-70 text-[10px]">({count})</span>
+                <span className="opacity-70 text-[12px]">({count})</span>
               </button>
             );
           })}
@@ -545,14 +545,14 @@ export const ExpenseManager: React.FC = () => {
                         <span className="font-mono text-xs font-bold text-amber-950 bg-amber-100/70 px-2 py-0.5 rounded-lg border border-amber-200">
                           {row.voucherNo}
                         </span>
-                        <Badge variant="outline" className="text-[10px] font-medium bg-slate-50 border-slate-200 text-slate-700">
+                        <Badge variant="outline" className="text-[12px] font-medium bg-slate-50 border-slate-200 text-slate-700">
                           {cat.icon} {cat.labelHi}
                         </Badge>
                       </div>
 
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md ${
+                          className={`text-[12px] font-mono font-bold px-2 py-0.5 rounded-md ${
                             row.paymentMode === 'ONL'
                               ? 'bg-blue-50 text-blue-700 border border-blue-200'
                               : 'bg-slate-100 text-slate-700 border border-slate-200'
@@ -560,7 +560,7 @@ export const ExpenseManager: React.FC = () => {
                         >
                           {row.paymentMode}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
+                        <span className="text-[12px] text-slate-400 font-mono">
                           {row.expenseDate}
                         </span>
                       </div>
@@ -573,7 +573,7 @@ export const ExpenseManager: React.FC = () => {
                           {row.vendorName}
                         </h4>
                         {row.paidBy && (
-                          <span className="text-[10px] text-slate-400 font-mono">
+                          <span className="text-[12px] text-slate-400 font-mono">
                             भुगतान: {row.paidBy}
                           </span>
                         )}
@@ -599,19 +599,19 @@ export const ExpenseManager: React.FC = () => {
                     {/* Financial Amounts Strip */}
                     <div className="bg-amber-50/30 p-2.5 rounded-xl border border-amber-200/60 grid grid-cols-3 gap-2 text-center text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-400 block font-mono">कुल बिल</span>
+                        <span className="text-[12px] text-slate-400 block font-mono">कुल बिल</span>
                         <span className="font-mono font-semibold text-slate-900">
                           ₹{row.totalAmount.toLocaleString('hi-IN')}
                         </span>
                       </div>
                       <div className="border-x border-amber-200/60 px-1">
-                        <span className="text-[10px] text-emerald-700 block font-mono">भुगतान</span>
+                        <span className="text-[12px] text-emerald-700 block font-mono">भुगतान</span>
                         <span className="font-mono font-bold text-emerald-700">
                           ₹{row.amountPaid.toLocaleString('hi-IN')}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-rose-600 block font-mono">शेष देनदारी</span>
+                        <span className="text-[12px] text-rose-600 block font-mono">शेष देनदारी</span>
                         <span className={`font-mono font-bold ${isDue ? 'text-rose-600' : 'text-slate-400'}`}>
                           ₹{row.balanceDue.toLocaleString('hi-IN')}
                         </span>
@@ -627,7 +627,7 @@ export const ExpenseManager: React.FC = () => {
                           triggerButton={
                             <Button
                               size="sm"
-                              className="h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs mr-auto"
+                              className="h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[13px] shadow-xs mr-auto"
                               title={`शेष देनदारी ₹${row.balanceDue.toLocaleString('hi-IN')} जमा करें`}
                             >
                               <Wallet className="w-3.5 h-3.5 mr-1" />
@@ -666,24 +666,24 @@ export const ExpenseManager: React.FC = () => {
 
           {/* Compact Mobile Expense Summary Strip */}
           <div className="bg-white border border-amber-200 rounded-2xl p-4 shadow-xs text-xs space-y-2">
-            <div className="flex items-center justify-between font-mono text-[11px] text-slate-500 uppercase font-bold">
+            <div className="flex items-center justify-between font-mono text-[13px] text-slate-500 uppercase font-bold">
               <span>खर्चा कुल योग ({filteredExpenses.length} वाउचर)</span>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-100">
               <div>
-                <span className="text-[10px] text-slate-400 block font-medium">कुल बिल</span>
+                <span className="text-[12px] text-slate-400 block font-medium">कुल बिल</span>
                 <span className="font-mono font-bold text-slate-900 text-sm">
                   ₹{totals.total.toLocaleString('hi-IN')}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-emerald-700 block font-medium">कुल भुगतान</span>
+                <span className="text-[12px] text-emerald-700 block font-medium">कुल भुगतान</span>
                 <span className="font-mono font-bold text-emerald-700 text-sm">
                   ₹{totals.paid.toLocaleString('hi-IN')}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-rose-600 block font-medium">कुल देनदारी</span>
+                <span className="text-[12px] text-rose-600 block font-medium">कुल देनदारी</span>
                 <span className="font-mono font-bold text-rose-600 text-sm">
                   ₹{totals.due.toLocaleString('hi-IN')}
                 </span>
@@ -701,7 +701,7 @@ export const ExpenseManager: React.FC = () => {
           <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
             <table className="w-full min-w-[860px] text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
+                <tr className="bg-slate-50 text-slate-700 font-bold uppercase text-[13px] border-b border-slate-200">
                   <th className="p-3 border-r border-slate-100 font-mono">वाउचर सं०</th>
                   <th className="p-3 border-r border-slate-100">श्रेणी (Category)</th>
                   <th className="p-3 border-r border-slate-100">वेंडर / विवरण</th>
@@ -729,15 +729,15 @@ export const ExpenseManager: React.FC = () => {
                           {row.voucherNo}
                         </td>
                         <td className="p-3 border-r border-slate-100">
-                          <span className="text-[11px] font-semibold text-slate-700">
+                          <span className="text-[13px] font-semibold text-slate-700">
                             {cat.icon} {cat.labelHi}
                           </span>
                         </td>
                         <td className="p-3 border-r border-slate-100">
                           <p className="font-semibold text-slate-900">{row.vendorName}</p>
-                          {row.notes && <p className="text-[11px] text-slate-500">{row.notes}</p>}
+                          {row.notes && <p className="text-[13px] text-slate-500">{row.notes}</p>}
                           {row.vendorPhone && (
-                            <a href={`tel:${row.vendorPhone}`} className="text-[10px] text-emerald-600 hover:underline font-mono">
+                            <a href={`tel:${row.vendorPhone}`} className="text-[12px] text-emerald-600 hover:underline font-mono">
                               📞 {row.vendorPhone}
                             </a>
                           )}
@@ -753,7 +753,7 @@ export const ExpenseManager: React.FC = () => {
                           ₹{row.balanceDue.toLocaleString('hi-IN')}
                         </td>
                         <td className="p-3 border-r border-slate-100 text-center">
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="text-[12px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
                             {row.paymentMode}
                           </span>
                         </td>
@@ -766,7 +766,7 @@ export const ExpenseManager: React.FC = () => {
                                 triggerButton={
                                   <Button
                                     size="sm"
-                                    className="h-7 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow-xs"
+                                    className="h-7 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[12px] shadow-xs"
                                     title={`शेष देनदारी ₹${row.balanceDue.toLocaleString('hi-IN')} जमा करें`}
                                   >
                                     <Wallet className="w-3 h-3 mr-1" />

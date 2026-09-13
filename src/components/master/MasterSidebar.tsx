@@ -124,11 +124,11 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
               <span className="font-extrabold text-base tracking-tight text-white">
                 Victory OS
               </span>
-              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-saffron/20 text-saffron border border-saffron/30 uppercase">
+              <span className="text-[11px] font-bold px-1.5 py-0.2 rounded bg-saffron/20 text-saffron border border-saffron/30 uppercase">
                 Master
               </span>
             </div>
-            <p className="text-[11px] text-white/60 truncate flex items-center gap-1">
+            <p className="text-[13px] text-white/60 truncate flex items-center gap-1">
               <Radio className="w-2.5 h-2.5 text-emerald-400 animate-pulse" />
               Central Command
             </p>
@@ -146,12 +146,12 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
 
       {/* Active Main Workspace Highlight Box */}
       <div className="p-3 mx-3 mt-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
-        <div className="flex items-center justify-between text-[11px]">
+        <div className="flex items-center justify-between text-[13px]">
           <span className="text-saffron font-bold uppercase tracking-wider flex items-center gap-1.5">
             <Star className="w-3.5 h-3.5 fill-saffron text-saffron" />
             Main War Room
           </span>
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-bold border border-emerald-500/30">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             Active
           </span>
@@ -159,12 +159,12 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
         <p className="text-sm font-bold text-white mt-1 truncate">
           {mainWorkspace?.name || 'Election Campaign 2026'}
         </p>
-        <p className="text-[10px] text-white/60 truncate">
+        <p className="text-[12px] text-white/60 truncate">
           {mainWorkspace?.location || 'Central Constituency'}
         </p>
         <button
           onClick={() => handleWorkspaceQuickClick(mainWorkspaceId)}
-          className="mt-2.5 w-full py-1.5 px-3 rounded-lg btn-saffron text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20"
+          className="mt-2.5 w-full py-1.5 px-3 rounded-lg btn-saffron text-[13px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20"
         >
           <span>Launch War Room</span>
           <ExternalLink className="w-3 h-3" />
@@ -175,7 +175,7 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
       <div className="flex-1 overflow-y-auto px-3 py-3.5 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
         {navGroups.map(group => (
           <div key={group.title} className="space-y-1">
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-white/40 px-2.5 py-1">
+            <h3 className="text-[12px] font-bold uppercase tracking-wider text-white/40 px-2.5 py-1">
               {group.title}
             </h3>
             {group.items.map(item => {
@@ -205,7 +205,7 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
                         {item.label}
                       </p>
                       <p
-                        className={`text-[10px] truncate mt-0.5 ${
+                        className={`text-[12px] truncate mt-0.5 ${
                           isActive ? 'text-white/90' : 'text-white/50 group-hover:text-white/70'
                         }`}
                       >
@@ -217,7 +217,7 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
                   {item.badge && (
                     <Badge
                       variant="outline"
-                      className={`text-[10px] font-bold shrink-0 ml-1.5 ${
+                      className={`text-[12px] font-bold shrink-0 ml-1.5 ${
                         isActive
                           ? 'border-white/30 text-white bg-black/20'
                           : 'border-white/10 text-white/70 bg-white/5'
@@ -235,13 +235,13 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
         {/* Quick Launch Workspaces List */}
         <div className="space-y-1 pt-2 border-t border-white/10">
           <div className="flex items-center justify-between px-2.5 py-1">
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+            <h3 className="text-[12px] font-bold uppercase tracking-wider text-white/40">
               Units
             </h3>
             {onOpenCreateWorkspaceModal && (
               <button
                 onClick={onOpenCreateWorkspaceModal}
-                className="text-[10px] text-saffron hover:text-saffron-light font-bold flex items-center gap-0.5 transition-colors"
+                className="text-[12px] text-saffron hover:text-saffron-light font-bold flex items-center gap-0.5 transition-colors"
                 title="Create Workspace"
               >
                 <PlusCircle className="w-3 h-3" />
@@ -270,7 +270,7 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
                         <Building2 className="w-3.5 h-3.5 text-sky-400" />
                       )}
                     </span>
-                    <span className="truncate text-[11px] group-hover:text-white font-medium">
+                    <span className="truncate text-[13px] group-hover:text-white font-medium">
                       {ent.name}
                     </span>
                   </div>
@@ -296,10 +296,10 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
                 {profile?.full_name || profile?.username || 'Command Admin'}
               </p>
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-saffron/20 text-saffron font-bold uppercase tracking-wider">
+                <span className="text-[11px] px-1.5 py-0.2 rounded bg-saffron/20 text-saffron font-bold uppercase tracking-wider">
                   {role || 'ADMIN'}
                 </span>
-                <span className="text-[9px] text-white/50">• War Room</span>
+                <span className="text-[11px] text-white/50">• War Room</span>
               </div>
             </div>
           </div>
@@ -316,7 +316,7 @@ export const MasterSidebar: React.FC<MasterSidebarProps> = ({
 
         <Link
           to="/"
-          className="text-[11px] text-white/60 hover:text-white px-2 py-1 flex items-center justify-between rounded-lg hover:bg-white/5 transition-colors"
+          className="text-[13px] text-white/60 hover:text-white px-2 py-1 flex items-center justify-between rounded-lg hover:bg-white/5 transition-colors"
         >
           <span className="flex items-center gap-1.5">
             <Globe className="w-3 h-3 text-white/50" />

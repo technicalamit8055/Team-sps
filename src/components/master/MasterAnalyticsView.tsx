@@ -39,7 +39,7 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
               Target Budget
             </span>
             <DollarSign className="w-4 h-4 text-saffron" />
@@ -47,14 +47,14 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
           <p className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 font-mono">
             ₹{totalTargetBudget.toLocaleString('en-IN')}
           </p>
-          <span className="text-[11px] text-muted-foreground mt-1 block">
+          <span className="text-[13px] text-muted-foreground mt-1 block">
             {events.length} Active Campaigns
           </span>
         </div>
 
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider">
+            <span className="text-[13px] font-semibold text-emerald-800 uppercase tracking-wider">
               Total Received
             </span>
             <Wallet className="w-4 h-4 text-emerald-600" />
@@ -62,14 +62,14 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
           <p className="text-2xl sm:text-3xl font-black text-emerald-700 mt-1 font-mono">
             ₹{summary.totalReceived.toLocaleString('en-IN')}
           </p>
-          <span className="text-[11px] text-emerald-700 font-semibold mt-1 block">
+          <span className="text-[13px] text-emerald-700 font-semibold mt-1 block">
             Cash: ₹{summary.cashReceived.toLocaleString('en-IN')} • UPI: ₹{summary.onlineReceived.toLocaleString('en-IN')}
           </span>
         </div>
 
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-navy uppercase tracking-wider">
+            <span className="text-[13px] font-semibold text-navy uppercase tracking-wider">
               Net Surplus
             </span>
             <TrendingUp className="w-4 h-4 text-navy" />
@@ -77,14 +77,14 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
           <p className="text-2xl sm:text-3xl font-black text-navy mt-1 font-mono">
             ₹{summary.netSurplus.toLocaleString('en-IN')}
           </p>
-          <span className="text-[11px] text-muted-foreground mt-1 block">
+          <span className="text-[13px] text-muted-foreground mt-1 block">
             Expenses: ₹{summary.totalExpenses.toLocaleString('en-IN')}
           </span>
         </div>
 
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-purple-800 uppercase tracking-wider">
+            <span className="text-[13px] font-semibold text-purple-800 uppercase tracking-wider">
               Total Cadre
             </span>
             <Users2 className="w-4 h-4 text-purple-600" />
@@ -92,7 +92,7 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
           <p className="text-2xl sm:text-3xl font-black text-purple-900 mt-1 font-mono">
             {staffList.length}
           </p>
-          <span className="text-[11px] text-purple-700 font-semibold mt-1 block">
+          <span className="text-[13px] text-purple-700 font-semibold mt-1 block">
             Active across all units
           </span>
         </div>
@@ -121,7 +121,7 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
               War Rooms
             </span>
             <p className="text-2xl font-black text-slate-900 font-mono">{countsByType.election}</p>
-            <p className="text-[10px] text-muted-foreground">Election campaigns</p>
+            <p className="text-[12px] text-muted-foreground">Election campaigns</p>
           </div>
 
           <div className="p-3 bg-amber-50/60 border border-amber-200 rounded-xl space-y-0.5">
@@ -130,7 +130,7 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
               Cultural Samiti
             </span>
             <p className="text-2xl font-black text-amber-950 font-mono">{countsByType.festival_samiti}</p>
-            <p className="text-[10px] text-muted-foreground">Festivals & trusts</p>
+            <p className="text-[12px] text-muted-foreground">Festivals & trusts</p>
           </div>
 
           <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl space-y-0.5">
@@ -139,13 +139,13 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
               Business
             </span>
             <p className="text-2xl font-black text-navy-dark font-mono">{countsByType.business}</p>
-            <p className="text-[10px] text-muted-foreground">Trade & commerce</p>
+            <p className="text-[12px] text-muted-foreground">Trade & commerce</p>
           </div>
 
           <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-0.5">
             <span className="text-xs text-emerald-800 font-bold">🏛️ Society / NGO</span>
             <p className="text-2xl font-black text-emerald-950 font-mono">{countsByType.rwa}</p>
-            <p className="text-[10px] text-muted-foreground">Community & RWA</p>
+            <p className="text-[12px] text-muted-foreground">Community & RWA</p>
           </div>
         </div>
       </div>
@@ -200,7 +200,7 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
                         </span>
                         <span className="truncate max-w-[180px]">{ent.name}</span>
                         {isMain && (
-                          <Badge className="bg-saffron text-white font-bold text-[9px] px-1.5 py-0 rounded-full border-none">
+                          <Badge className="bg-saffron text-white font-bold text-[11px] px-1.5 py-0 rounded-full border-none">
                             Main
                           </Badge>
                         )}
@@ -210,7 +210,7 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
                     <td className="py-3 px-4">
                       <Badge
                         variant="outline"
-                        className={`text-[10px] capitalize ${
+                        className={`text-[12px] capitalize ${
                           isElection
                             ? 'bg-saffron/10 text-saffron-dark border-saffron/30'
                             : 'bg-slate-100 text-slate-700'
@@ -229,13 +229,13 @@ export const MasterAnalyticsView: React.FC<MasterAnalyticsViewProps> = ({ onOpen
                     </td>
 
                     <td className="py-3 px-4 text-center">
-                      <Badge variant="secondary" className="text-[10px] font-mono">
+                      <Badge variant="secondary" className="text-[12px] font-mono">
                         {assignedStaffCount} members
                       </Badge>
                     </td>
 
                     <td className="py-3 px-4 text-center">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
+                      <span className="inline-flex items-center gap-1 text-[13px] font-bold text-emerald-700">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                         Active
                       </span>

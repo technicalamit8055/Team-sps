@@ -29,6 +29,7 @@ import {
   RefreshCw,
   Send,
   Lock,
+  IndianRupee,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -101,6 +102,16 @@ const ACCESS_LEVEL_LABELS: Record<
   },
 };
 
+/**
+ * A UPI handle is `payee@psp` — the payee part allows letters, digits and
+ * . _ - ; the PSP handle is letters only (ybl, okaxis, paytm, upi …). Kept
+ * deliberately permissive: new PSP handles appear all the time, so this only
+ * catches obvious typos (missing @, stray spaces) rather than policing a list.
+ */
+const UPI_ID_PATTERN = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+
+const isValidUpiId = (value: string) => UPI_ID_PATTERN.test(value.trim());
+
 export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
   onNavigateToPermissions,
   isCreateModalOpen,
@@ -121,6 +132,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
   // New staff form state
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
+  const [newUpiId, setNewUpiId] = useState('');
   const [newDesignation, setNewDesignation] = useState('');
   const [newRole, setNewRole] = useState<MasterRole>('collector');
   const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<string[]>(['ent-durga-narayanpur']);
@@ -132,6 +144,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
   // Edit staff form state
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editUpiId, setEditUpiId] = useState('');
   const [editDesignation, setEditDesignation] = useState('');
   const [editRole, setEditRole] = useState<MasterRole>('karyakarta');
   const [editStatus, setEditStatus] = useState<'active' | 'inactive'>('active');
@@ -179,6 +192,12 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       toast.error('Please enter name and phone number');
       return;
     }
+    // UPI id is optional — but a typo'd one silently sends chanda nowhere,
+    // so anything entered must at least look like a real handle.
+    if (newUpiId.trim() && !isValidUpiId(newUpiId)) {
+      toast.error('UPI ID सही नहीं है। सही प्रारूप: name@bank (जैसे 9876543210@ybl)');
+      return;
+    }
 
     const autoUsername = `${newName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${newRole === 'collector' ? 'collector' : Math.floor(Math.random() * 100)}`;
     const finalUsername = newUsername.trim() || autoUsername;
@@ -208,6 +227,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       await addStaff({
         name: newName.trim(),
         phone: newPhone.trim(),
+        upiId: newUpiId.trim() || undefined,
         username: finalUsername,
         password: finalPassword,
         designation: newDesignation.trim() || ROLE_CONFIG[newRole].label,
@@ -238,6 +258,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
 
     setNewName('');
     setNewPhone('');
+    setNewUpiId('');
     setNewUsername('');
     setNewPassword('');
     setNewDesignation('');
@@ -249,6 +270,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
     setEditingStaff(staff);
     setEditName(staff.name);
     setEditPhone(staff.phone);
+    setEditUpiId(staff.upiId || '');
     setEditDesignation(staff.designation);
     setEditRole(staff.primaryRole);
     setEditStatus(staff.status);
@@ -304,6 +326,11 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
     e.preventDefault();
     if (!editingStaff || !editName.trim()) return;
 
+    if (editUpiId.trim() && !isValidUpiId(editUpiId)) {
+      toast.error('UPI ID सही नहीं है। सही प्रारूप: name@bank (जैसे 9876543210@ybl)');
+      return;
+    }
+
     const trimmedUsername = editUsername.trim();
     const usernameChanged = trimmedUsername && trimmedUsername !== editingStaff.username;
 
@@ -350,6 +377,9 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       updateStaff(editingStaff.id, {
         name: editName.trim(),
         phone: editPhone.trim(),
+        // Cleared field removes the personal UPI id, putting this member back
+        // on the unit's own UPI id.
+        upiId: editUpiId.trim() || undefined,
         designation: editDesignation.trim(),
         primaryRole: editRole,
         status: editStatus,
@@ -371,7 +401,8 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       staff.name.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
       staff.phone.includes(effectiveSearch) ||
       staff.designation.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
-      staff.username.toLowerCase().includes(effectiveSearch.toLowerCase());
+      staff.username.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
+      (staff.upiId || '').toLowerCase().includes(effectiveSearch.toLowerCase());
     return matchesRole && matchesSearch;
   });
 
@@ -385,7 +416,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
               Total Cadre
             </span>
             <Users2 className="w-4 h-4 text-saffron" />
@@ -395,7 +426,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
           </p>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] text-emerald-700 font-semibold">
+            <span className="text-[13px] text-emerald-700 font-semibold">
               {totalActive} Active Members
             </span>
           </div>
@@ -403,7 +434,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
 
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+            <span className="text-[13px] font-bold text-amber-900 uppercase tracking-wider">
               Incharges & Admins
             </span>
             <Star className="w-4 h-4 fill-saffron text-saffron" />
@@ -411,14 +442,14 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
           <p className="text-2xl sm:text-3xl font-black text-saffron-dark mt-1 font-mono">
             {totalAdmins}
           </p>
-          <span className="text-[11px] text-muted-foreground block mt-1">
+          <span className="text-[13px] text-muted-foreground block mt-1">
             Command & Oversight
           </span>
         </div>
 
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-navy uppercase tracking-wider">
+            <span className="text-[13px] font-semibold text-navy uppercase tracking-wider">
               Field Workers
             </span>
             <UserCheck className="w-4 h-4 text-navy" />
@@ -426,14 +457,14 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
           <p className="text-2xl sm:text-3xl font-black text-navy mt-1 font-mono">
             {totalKaryakartas}
           </p>
-          <span className="text-[11px] text-muted-foreground block mt-1">
+          <span className="text-[13px] text-muted-foreground block mt-1">
             Ground & Booth Team
           </span>
         </div>
 
         <div className="kpi-card shadow-sm bg-gradient-to-br from-purple-50/60 to-indigo-50/60">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-purple-900 uppercase tracking-wider">
+            <span className="text-[13px] font-bold text-purple-900 uppercase tracking-wider">
               Access Matrix
             </span>
             <Shield className="w-4 h-4 text-purple-600" />
@@ -443,7 +474,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
           </p>
           <button
             onClick={() => onNavigateToPermissions()}
-            className="text-[11px] text-purple-700 hover:text-purple-900 font-bold underline mt-1 block transition-colors"
+            className="text-[13px] text-purple-700 hover:text-purple-900 font-bold underline mt-1 block transition-colors"
           >
             Configure Matrix →
           </button>
@@ -528,7 +559,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                     </div>
                   </div>
 
-                  <Badge variant="outline" className={`text-[10px] font-semibold shrink-0 ${roleConf.badgeBg}`}>
+                  <Badge variant="outline" className={`text-[12px] font-semibold shrink-0 ${roleConf.badgeBg}`}>
                     {roleConf.label}
                   </Badge>
                 </div>
@@ -560,9 +591,31 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   </div>
                 </div>
 
+                {/* Personal UPI Strip — only for members who have their own */}
+                {staff.upiId && (
+                  <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 text-xs">
+                    <div className="flex items-center gap-1.5 font-mono text-emerald-900 min-w-0">
+                      <IndianRupee className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="truncate">{staff.upiId}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(staff.upiId!, `upi-${staff.id}`)}
+                      className="p-1.5 rounded-lg bg-white border border-emerald-200 hover:bg-emerald-100 text-emerald-700 transition-colors shrink-0"
+                      title="UPI ID कॉपी करें"
+                    >
+                      {copiedField === `upi-${staff.id}` ? (
+                        <Check className="w-3 h-3" />
+                      ) : (
+                        <Copy className="w-3 h-3" />
+                      )}
+                    </button>
+                  </div>
+                )}
+
                 {/* Assigned Workspaces Section */}
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                  <div className="flex items-center justify-between text-[13px] font-semibold text-muted-foreground">
                     <span>Assigned Units ({assignedCount})</span>
                     <button
                       onClick={() => onNavigateToPermissions(staff.id)}
@@ -575,7 +628,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
 
                   <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
                     {assignedCount === 0 ? (
-                      <span className="text-[11px] text-muted-foreground italic">
+                      <span className="text-[13px] text-muted-foreground italic">
                         No units assigned
                       </span>
                     ) : (
@@ -588,11 +641,11 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                         return (
                           <span
                             key={wsId}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${lvlInfo.badgeColor}`}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[12px] font-semibold border ${lvlInfo.badgeColor}`}
                             title={`${entity.name} (${lvlInfo.label})`}
                           >
                             <span className="truncate max-w-[110px]">{entity.name}</span>
-                            <span className="text-[8px] opacity-75 font-mono">
+                            <span className="text-[10px] opacity-75 font-mono">
                               • {lvlInfo.label}
                             </span>
                           </span>
@@ -611,7 +664,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                       staff.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'
                     }`}
                   />
-                  <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                  <span className="text-[13px] font-medium text-muted-foreground capitalize">
                     {staff.status === 'active' ? 'Active' : 'Inactive'}
                   </span>
                 </div>
@@ -708,6 +761,23 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
               />
             </div>
 
+            <div>
+              <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <IndianRupee className="w-3.5 h-3.5 text-emerald-600" />
+                UPI ID (व्यक्तिगत)
+                <span className="text-[12px] font-normal text-slate-400">— वैकल्पिक</span>
+              </Label>
+              <Input
+                placeholder="जैसे 9876543210@ybl"
+                value={newUpiId}
+                onChange={e => setNewUpiId(e.target.value)}
+                className="mt-1 text-xs font-mono rounded-xl"
+              />
+              <p className="text-[12px] text-slate-500 mt-1">
+                इस सदस्य के QR कोड में यही UPI ID दिखेगी। खाली छोड़ने पर समिति की अपनी UPI ID उपयोग होगी।
+              </p>
+            </div>
+
             {/* Login Credentials Section */}
             <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200/70 space-y-2.5">
               <div className="flex items-center justify-between">
@@ -718,7 +788,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setNewPassword(generateRandomPassword())}
-                  className="text-[10px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1 transition-colors"
+                  className="text-[12px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1 transition-colors"
                 >
                   <RefreshCw className="w-2.5 h-2.5" />
                   <span>पासवर्ड ऑटो-जनरेट</span>
@@ -727,7 +797,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <Label className="text-[11px] font-semibold text-slate-700">Username</Label>
+                  <Label className="text-[13px] font-semibold text-slate-700">Username</Label>
                   <Input
                     placeholder={newName ? `${newName.toLowerCase().replace(/[^a-z0-9]/g, '')}_collector` : 'username_123'}
                     value={newUsername}
@@ -737,7 +807,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                 </div>
 
                 <div>
-                  <Label className="text-[11px] font-semibold text-slate-700">Password</Label>
+                  <Label className="text-[13px] font-semibold text-slate-700">Password</Label>
                   <div className="relative mt-1">
                     <Input
                       type={showPassword ? 'text' : 'password'}
@@ -756,7 +826,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] text-amber-800/80">
+              <p className="text-[12px] text-amber-800/80">
                 💡 सदस्य जोड़ने के तुरंत बाद क्रेडेंशियल्स सीधे WhatsApp पर भेजने का विकल्प मिलेगा।
               </p>
             </div>
@@ -891,6 +961,23 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
               />
             </div>
 
+            <div>
+              <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <IndianRupee className="w-3.5 h-3.5 text-emerald-600" />
+                UPI ID (व्यक्तिगत)
+                <span className="text-[12px] font-normal text-slate-400">— वैकल्पिक</span>
+              </Label>
+              <Input
+                placeholder="जैसे 9876543210@ybl"
+                value={editUpiId}
+                onChange={e => setEditUpiId(e.target.value)}
+                className="mt-1 text-xs font-mono rounded-xl"
+              />
+              <p className="text-[12px] text-slate-500 mt-1">
+                खाली छोड़ने पर समिति की अपनी UPI ID उपयोग होगी।
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs font-semibold text-slate-700">Role</Label>
@@ -941,7 +1028,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                 onChange={e => setEditUsername(e.target.value)}
                 className="mt-1 text-xs font-mono rounded-xl"
               />
-              <p className="text-[10px] text-muted-foreground mt-1">
+              <p className="text-[12px] text-muted-foreground mt-1">
                 Username बदलने पर सदस्य को नया Username बताना होगा — पुराना Username काम करना बंद कर देगा।
               </p>
             </div>
@@ -966,7 +1053,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                   {showEditPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">
+              <p className="text-[12px] text-muted-foreground mt-1">
                 यदि पासवर्ड नहीं बदलना चाहते हैं, तो इसे खाली छोड़ दें।
               </p>
             </div>
@@ -1018,11 +1105,11 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
               <div className="space-y-2.5 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-slate-700">Username</span>
+                    <span className="text-[13px] font-semibold text-slate-700">Username</span>
                     <button
                       type="button"
                       onClick={() => handleCopy(viewingCredsStaff.username, 'view-username')}
-                      className="text-[11px] text-navy hover:text-navy-dark font-bold flex items-center gap-1"
+                      className="text-[13px] text-navy hover:text-navy-dark font-bold flex items-center gap-1"
                     >
                       {copiedField === 'view-username' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedField === 'view-username' ? 'कॉपी हुआ!' : 'कॉपी'}</span>
@@ -1034,7 +1121,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-700 block">Password</span>
+                  <span className="text-[13px] font-semibold text-slate-700 block">Password</span>
                   <div className="mt-1 p-2 rounded-xl bg-white border border-slate-200 text-slate-500 text-xs italic">
                     सुरक्षा कारणों से मौजूदा पासवर्ड नहीं दिखाया जा सकता। नया पासवर्ड सेट करने के लिए रीसेट करें।
                   </div>
@@ -1105,11 +1192,11 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
               <div className="space-y-2.5 bg-gradient-to-br from-amber-50/50 to-orange-50/40 p-3.5 rounded-2xl border border-amber-200/80">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-slate-700">Username</span>
+                    <span className="text-[13px] font-semibold text-slate-700">Username</span>
                     <button
                       type="button"
                       onClick={() => handleCopy(credentialModalData.username, 'username')}
-                      className="text-[11px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1"
+                      className="text-[13px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1"
                     >
                       {copiedField === 'username' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedField === 'username' ? 'कॉपी हुआ!' : 'कॉपी'}</span>
@@ -1122,11 +1209,11 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
 
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-slate-700">Password</span>
+                    <span className="text-[13px] font-semibold text-slate-700">Password</span>
                     <button
                       type="button"
                       onClick={() => handleCopy(credentialModalData.password, 'password')}
-                      className="text-[11px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1"
+                      className="text-[13px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1"
                     >
                       {copiedField === 'password' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedField === 'password' ? 'कॉपी हुआ!' : 'कॉपी'}</span>
@@ -1138,7 +1225,7 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-700 block">आवंटित यूनिट (Assigned Unit)</span>
+                  <span className="text-[13px] font-semibold text-slate-700 block">आवंटित यूनिट (Assigned Unit)</span>
                   <div className="mt-1 p-2 rounded-xl bg-white border border-amber-200/60 font-semibold text-slate-800 text-xs">
                     {credentialModalData.assignedUnitNames.join(', ')}
                   </div>
@@ -1146,11 +1233,11 @@ export const StaffKaryakartaView: React.FC<StaffKaryakartaViewProps> = ({
 
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-slate-700">पोर्टल लॉगिन लिंक (Login URL)</span>
+                    <span className="text-[13px] font-semibold text-slate-700">पोर्टल लॉगिन लिंक (Login URL)</span>
                     <button
                       type="button"
                       onClick={() => handleCopy(`${window.location.origin}/login`, 'url')}
-                      className="text-[11px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1"
+                      className="text-[13px] text-amber-800 hover:text-amber-950 font-bold flex items-center gap-1"
                     >
                       {copiedField === 'url' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedField === 'url' ? 'कॉपी हुआ!' : 'कॉपी'}</span>

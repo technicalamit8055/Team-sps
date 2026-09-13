@@ -122,7 +122,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </div>
                 <div>
                   <div className="font-bold text-foreground text-sm">24x7 जन-शिकायत प्रणाली</div>
-                  <div className="text-[11px] text-muted-foreground">त्वरित डिजिटल सुनवाई व ट्रैकिंग</div>
+                  <div className="text-[13px] text-muted-foreground">त्वरित डिजिटल सुनवाई व ट्रैकिंग</div>
                 </div>
               </div>
 
@@ -133,7 +133,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </div>
                 <div>
                   <div className="font-bold text-foreground text-sm">युवा रोजगार व कौशल विकास</div>
-                  <div className="text-[11px] text-muted-foreground">आत्मनिर्भर युवा, सशक्त भविष्य</div>
+                  <div className="text-[13px] text-muted-foreground">आत्मनिर्भर युवा, सशक्त भविष्य</div>
                 </div>
               </div>
 
@@ -144,7 +144,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </div>
                 <div>
                   <div className="font-bold text-foreground text-sm">ग्राम-वार्ड बुनियादी सशक्तिकरण</div>
-                  <div className="text-[11px] text-muted-foreground">सड़क, प्रकाश, जल व स्वच्छता</div>
+                  <div className="text-[13px] text-muted-foreground">सड़क, प्रकाश, जल व स्वच्छता</div>
                 </div>
               </div>
 
@@ -155,7 +155,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </div>
                 <div>
                   <div className="font-bold text-foreground text-sm">पारदर्शी व जवाबदेह राजनीति</div>
-                  <div className="text-[11px] text-muted-foreground">ईमानदारी और जनता का विश्वास</div>
+                  <div className="text-[13px] text-muted-foreground">ईमानदारी और जनता का विश्वास</div>
                 </div>
               </div>
 
@@ -226,7 +226,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <Star className="w-4 h-4 fill-white" />
                 </div>
                 <div className="text-left">
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">संकल्प</div>
+                  <div className="text-[12px] text-muted-foreground uppercase font-bold tracking-wider">संकल्प</div>
                   <div className="text-xs font-black text-foreground">100% पारदर्शी नेतृत्व</div>
                 </div>
               </div>
@@ -238,7 +238,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
                 </span>
                 <div className="text-left">
-                  <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">डिजिटल सहायता</div>
+                  <div className="text-[12px] text-muted-foreground uppercase font-bold tracking-wider">डिजिटल सहायता</div>
                   <div className="text-xs font-black text-emerald-600 dark:text-emerald-400">24x7 जनसंवाद केंद्र</div>
                 </div>
               </div>
@@ -310,11 +310,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 {/* Quick Badges inside Card */}
                 <div className="grid grid-cols-2 gap-2.5 mt-4">
                   <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-center">
-                    <span className="block text-[11px] text-muted-foreground">आदर्श वाक्य</span>
+                    <span className="block text-[13px] text-muted-foreground">आदर्श वाक्य</span>
                     <span className="text-xs font-bold text-foreground">सेवा, समर्पण, तकनीक</span>
                   </div>
                   <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                    <span className="block text-[11px] text-muted-foreground">कार्यक्षेत्र</span>
+                    <span className="block text-[13px] text-muted-foreground">कार्यक्षेत्र</span>
                     <span className="text-xs font-bold text-foreground">सर्व समाज उत्थान</span>
                   </div>
                 </div>
@@ -344,7 +344,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               50+
             </div>
             <div className="text-xs sm:text-sm font-bold text-foreground mt-1">ग्राम एवं वार्ड क्षेत्र</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">सक्रिय जनसंपर्क नेटवर्क</div>
+            <div className="text-[13px] text-muted-foreground mt-0.5">सक्रिय जनसंपर्क नेटवर्क</div>
           </div>
 
           {/* Stat 2: Royal Blue / Cyan Theme */}
@@ -357,7 +357,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               15,000+
             </div>
             <div className="text-xs sm:text-sm font-bold text-foreground mt-1">नागरिक संवाद</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">सीधा जन-जुड़ाव एवं समाधान</div>
+            <div className="text-[13px] text-muted-foreground mt-0.5">सीधा जन-जुड़ाव एवं समाधान</div>
           </div>
 
           {/* Stat 3: Emerald Green Theme */}
@@ -370,7 +370,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               24x7
             </div>
             <div className="text-xs sm:text-sm font-bold text-foreground mt-1">डिजिटल सहायता</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">WhatsApp एवं पोर्टल हेल्पलाइन</div>
+            <div className="text-[13px] text-muted-foreground mt-0.5">WhatsApp एवं पोर्टल हेल्पलाइन</div>
           </div>
 
           {/* Stat 4: Ruby / Amber Theme */}
@@ -383,7 +383,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               1,000+
             </div>
             <div className="text-xs sm:text-sm font-bold text-foreground mt-1">युवा कार्यकर्ता</div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">Team SPS संगठनात्मक शक्ति</div>
+            <div className="text-[13px] text-muted-foreground mt-0.5">Team SPS संगठनात्मक शक्ति</div>
           </div>
 
         </div>

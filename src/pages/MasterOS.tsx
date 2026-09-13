@@ -109,14 +109,14 @@ export const MasterOS: React.FC = () => {
               </div>
 
               {isMain ? (
-                <Badge className="bg-saffron text-white text-[10px] font-bold shrink-0 inline-flex items-center gap-1 py-0 px-2 rounded-full border-none shadow-xs">
+                <Badge className="bg-saffron text-white text-[12px] font-bold shrink-0 inline-flex items-center gap-1 py-0 px-2 rounded-full border-none shadow-xs">
                   <Star className="w-2.5 h-2.5 fill-white" />
                   Main Unit
                 </Badge>
               ) : (
                 <button
                   onClick={() => setMainWorkspaceId(currentEntity.id)}
-                  className="text-[10px] font-bold bg-white/10 hover:bg-white/20 text-white/80 px-2 py-0.5 rounded-lg border border-white/15 hidden sm:inline-flex items-center gap-1 transition-colors"
+                  className="text-[12px] font-bold bg-white/10 hover:bg-white/20 text-white/80 px-2 py-0.5 rounded-lg border border-white/15 hidden sm:inline-flex items-center gap-1 transition-colors"
                   title="Set as Main War Room"
                 >
                   <Star className="w-2.5 h-2.5" />
@@ -128,12 +128,12 @@ export const MasterOS: React.FC = () => {
 
           {/* Quick Workspace Switcher Dropdown */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="hidden lg:flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mr-1">
+            <div className="hidden lg:flex items-center gap-1 text-[13px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mr-1">
               <Radio className="w-2.5 h-2.5 text-emerald-400 animate-pulse" />
               War Room Active
             </div>
 
-            <span className="text-[11px] text-white/60 hidden md:inline">Switch:</span>
+            <span className="text-[13px] text-white/60 hidden md:inline">Switch:</span>
             <Select
               value={currentEntity.id}
               onValueChange={id => {

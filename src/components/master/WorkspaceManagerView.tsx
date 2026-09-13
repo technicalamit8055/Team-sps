@@ -171,7 +171,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
         {/* KPI 1: Total Units */}
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
               Total Units
             </span>
             <Vote className="w-4 h-4 text-saffron" />
@@ -181,7 +181,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
           </p>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] text-emerald-700 font-semibold">
+            <span className="text-[13px] text-emerald-700 font-semibold">
               100% Operational
             </span>
           </div>
@@ -190,7 +190,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
         {/* KPI 2: Active Main War Room */}
         <div className="kpi-card shadow-sm bg-gradient-to-br from-amber-50/80 via-white to-orange-50/50">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">
+            <span className="text-[13px] font-bold text-amber-900 uppercase tracking-wider">
               Main War Room
             </span>
             <Star className="w-4 h-4 fill-saffron text-saffron" />
@@ -198,7 +198,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
           <p className="text-sm sm:text-base font-extrabold text-slate-900 mt-1 truncate">
             {mainWorkspace?.name || 'Election Campaign 2026'}
           </p>
-          <span className="text-[10px] text-saffron-dark font-semibold block mt-1">
+          <span className="text-[12px] text-saffron-dark font-semibold block mt-1">
             Default Command Center
           </span>
         </div>
@@ -206,7 +206,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
         {/* KPI 3: Campaigns / Sessions */}
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider">
               Active Campaigns
             </span>
             <Calendar className="w-4 h-4 text-navy" />
@@ -214,7 +214,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
           <p className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 font-mono">
             {events.length}
           </p>
-          <span className="text-[11px] text-muted-foreground block mt-1">
+          <span className="text-[13px] text-muted-foreground block mt-1">
             2026-27 Election Cycle
           </span>
         </div>
@@ -222,7 +222,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
         {/* KPI 4: Net Surplus */}
         <div className="kpi-card shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider">
+            <span className="text-[13px] font-semibold text-emerald-800 uppercase tracking-wider">
               Net Surplus
             </span>
             <Wallet className="w-4 h-4 text-emerald-600" />
@@ -230,7 +230,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
           <p className="text-2xl sm:text-3xl font-black text-emerald-700 mt-1 font-mono">
             ₹{summary.netSurplus.toLocaleString('en-IN')}
           </p>
-          <span className="text-[11px] text-muted-foreground block mt-1">
+          <span className="text-[13px] text-muted-foreground block mt-1">
             Combined Campaign Reserve
           </span>
         </div>
@@ -330,7 +330,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
                     <div>
                       <Badge
                         variant="outline"
-                        className={`text-[10px] font-semibold ${
+                        className={`text-[12px] font-semibold ${
                           isElection
                             ? 'bg-saffron/10 text-saffron-dark border-saffron/30'
                             : ent.type === 'festival_samiti'
@@ -344,7 +344,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
                           ? 'Samiti'
                           : 'Commercial'}
                       </Badge>
-                      <span className="text-[10px] text-muted-foreground block mt-0.5 font-mono">
+                      <span className="text-[12px] text-muted-foreground block mt-0.5 font-mono">
                         Est. {ent.establishedYear || 2026}
                       </span>
                     </div>
@@ -352,14 +352,14 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
 
                   {/* Main Workspace Badge */}
                   {isMain ? (
-                    <Badge className="bg-saffron text-white font-bold text-[10px] flex items-center gap-1 py-0.5 px-2 rounded-full border-none shadow-xs">
+                    <Badge className="bg-saffron text-white font-bold text-[12px] flex items-center gap-1 py-0.5 px-2 rounded-full border-none shadow-xs">
                       <Star className="w-3 h-3 fill-white" />
                       Main Unit
                     </Badge>
                   ) : (
                     <button
                       onClick={() => setMainWorkspaceId(ent.id)}
-                      className="text-[11px] font-medium text-slate-500 hover:text-saffron hover:bg-saffron/10 px-2 py-0.5 rounded-lg border border-slate-200 hover:border-saffron/30 transition-all flex items-center gap-1"
+                      className="text-[13px] font-medium text-slate-500 hover:text-saffron hover:bg-saffron/10 px-2 py-0.5 rounded-lg border border-slate-200 hover:border-saffron/30 transition-all flex items-center gap-1"
                       title="Set as Main War Room"
                     >
                       <Star className="w-3 h-3" />
@@ -381,7 +381,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
                 {/* Location & UPI Info */}
                 <div className="bg-slate-50/80 rounded-xl p-2.5 border border-slate-100 space-y-1 text-xs">
                   <div className="flex items-center justify-between text-slate-700">
-                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <span className="text-[13px] text-muted-foreground flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-saffron" />
                       Location:
                     </span>
@@ -391,7 +391,7 @@ export const WorkspaceManagerView: React.FC<WorkspaceManagerViewProps> = ({
                   </div>
                   {ent.upiId && (
                     <div className="flex items-center justify-between text-slate-700 font-mono">
-                      <span className="text-[11px] text-muted-foreground">UPI:</span>
+                      <span className="text-[13px] text-muted-foreground">UPI:</span>
                       <span className="font-medium text-slate-800 truncate max-w-[170px]">
                         {ent.upiId}
                       </span>

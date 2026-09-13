@@ -127,12 +127,12 @@ export const WhatsAppConnectionCard: React.FC<{ className?: string }> = ({ class
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900">WhatsApp रसीद सेवा</h3>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[13px] text-slate-500">
               रसीदें सीधे WhatsApp पर भेजें (बिना किसी पेड API के)
             </p>
           </div>
         </div>
-        <Badge variant="outline" className={`text-[10px] font-semibold shrink-0 ${meta.className}`}>
+        <Badge variant="outline" className={`text-[12px] font-semibold shrink-0 ${meta.className}`}>
           {meta.label}
         </Badge>
       </div>
@@ -149,13 +149,13 @@ export const WhatsAppConnectionCard: React.FC<{ className?: string }> = ({ class
                   <p className="text-xs font-bold text-rose-900">
                     WhatsApp सर्वर नहीं चल रहा है
                   </p>
-                  <p className="text-[11px] text-rose-800 leading-relaxed mt-0.5">
+                  <p className="text-[13px] text-rose-800 leading-relaxed mt-0.5">
                     QR बनाने के लिए बैकग्राउंड सर्वर ज़रूरी है। टर्मिनल में यह चलाएँ:
                   </p>
-                  <code className="mt-1.5 block text-[11px] font-mono bg-white border border-rose-200 rounded-lg px-2 py-1 text-rose-900">
+                  <code className="mt-1.5 block text-[13px] font-mono bg-white border border-rose-200 rounded-lg px-2 py-1 text-rose-900">
                     npm run dev:all
                   </code>
-                  <p className="text-[10px] text-rose-700/80 mt-1.5 leading-relaxed">
+                  <p className="text-[12px] text-rose-700/80 mt-1.5 leading-relaxed">
                     पहले से <code className="font-mono">npm run dev</code> चल रहा हो तो उसे बंद
                     करके यह चलाएँ, या अलग टर्मिनल में{' '}
                     <code className="font-mono">npm run server</code> चलाएँ।
@@ -166,13 +166,13 @@ export const WhatsAppConnectionCard: React.FC<{ className?: string }> = ({ class
                   <p className="text-xs font-bold text-rose-900">
                     WhatsApp सर्वर कॉन्फ़िगर नहीं है
                   </p>
-                  <p className="text-[11px] text-rose-800 leading-relaxed mt-0.5">
+                  <p className="text-[13px] text-rose-800 leading-relaxed mt-0.5">
                     WhatsApp को एक हमेशा चलने वाले सर्वर की ज़रूरत है, जो Vercel पर नहीं चल
                     सकता। उसे Railway/Render पर डिप्लॉय करें, फिर Vercel में{' '}
                     <code className="font-mono">VITE_WHATSAPP_API_URL</code> सेट करके दोबारा
                     डिप्लॉय करें।
                   </p>
-                  <p className="text-[10px] text-rose-700/80 mt-1.5 leading-relaxed">
+                  <p className="text-[12px] text-rose-700/80 mt-1.5 leading-relaxed">
                     पूरी जानकारी: <code className="font-mono">docs/WHATSAPP_RECEIPTS.md</code>
                   </p>
                 </>
@@ -186,7 +186,7 @@ export const WhatsAppConnectionCard: React.FC<{ className?: string }> = ({ class
       {!serverDown && fetchError && (
         <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-2.5">
           <AlertTriangle className="w-3.5 h-3.5 text-rose-600 mt-0.5 shrink-0" />
-          <p className="text-[11px] text-rose-800 leading-relaxed">{fetchError}</p>
+          <p className="text-[13px] text-rose-800 leading-relaxed">{fetchError}</p>
         </div>
       )}
 
@@ -194,14 +194,14 @@ export const WhatsAppConnectionCard: React.FC<{ className?: string }> = ({ class
       {!serverDown && !fetchError && status?.error && (
         <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
-          <p className="text-[11px] text-amber-900 leading-relaxed">{status.error}</p>
+          <p className="text-[13px] text-amber-900 leading-relaxed">{status.error}</p>
         </div>
       )}
 
       {/* Connected identity */}
       {connected && (
         <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-          <p className="text-[11px] text-emerald-700">लिंक्ड डिवाइस:</p>
+          <p className="text-[13px] text-emerald-700">लिंक्ड डिवाइस:</p>
           <p className="text-xs font-bold text-emerald-900 font-mono break-all">
             {status?.user?.name || status?.user?.id?.split(':')[0] || 'WhatsApp खाता'}
           </p>
@@ -216,7 +216,7 @@ export const WhatsAppConnectionCard: React.FC<{ className?: string }> = ({ class
             alt="WhatsApp pairing QR code"
             className="w-44 h-44 sm:w-52 sm:h-52 rounded-lg bg-white p-1.5 border border-amber-200"
           />
-          <p className="text-[11px] text-amber-900 text-center leading-relaxed max-w-xs">
+          <p className="text-[13px] text-amber-900 text-center leading-relaxed max-w-xs">
             WhatsApp खोलें → <strong>Settings</strong> → <strong>Linked Devices</strong> →{' '}
             <strong>Link a device</strong> → यह QR स्कैन करें
           </p>

@@ -125,7 +125,7 @@ export const EventSwitcher: React.FC = () => {
             <p className="text-xs text-amber-800/80 mt-1 flex items-center gap-2">
               <span>📍 {currentEntity.location || 'मुख्य स्थल'}</span>
               <span>•</span>
-              <span className="font-mono bg-amber-200/50 px-1.5 py-0.5 rounded text-[11px]">
+              <span className="font-mono bg-amber-200/50 px-1.5 py-0.5 rounded text-[13px]">
                 UPI: {currentEntity.upiId || 'not-set'}
               </span>
             </p>

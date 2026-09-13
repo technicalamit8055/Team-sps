@@ -155,7 +155,7 @@ export const Footer: React.FC<FooterProps> = ({
               <span>ऊपर जाएं</span>
               <ArrowUp className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform text-victory-saffron" />
             </button>
-            <div className="pt-4 text-[11px] text-slate-500 lg:text-right">
+            <div className="pt-4 text-[13px] text-slate-500 lg:text-right">
               जय हिंद • जय भारत 🇮🇳
             </div>
           </div>

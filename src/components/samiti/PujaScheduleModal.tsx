@@ -104,7 +104,7 @@ export const PujaScheduleModal: React.FC<PujaScheduleModalProps> = ({ isOpen, on
               <Sparkles className="w-4 h-4 text-amber-200" />
               <span>पूजा पंचांग, कार्यक्रम एवं समिति पदाधिकारी</span>
             </DialogTitle>
-            <p className="text-[11px] text-amber-100 font-medium mt-0.5">
+            <p className="text-[13px] text-amber-100 font-medium mt-0.5">
               {currentEntity.name} • 41वाँ वार्षिकोत्सव 2026
             </p>
           </div>
@@ -114,7 +114,7 @@ export const PujaScheduleModal: React.FC<PujaScheduleModalProps> = ({ isOpen, on
           {/* Top Banner */}
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-between gap-3">
             <div className="space-y-0.5">
-              <span className="text-[10px] uppercase font-bold text-amber-800 tracking-wider">
+              <span className="text-[12px] uppercase font-bold text-amber-800 tracking-wider">
                 स्थान एवं मुख्य पंडाल
               </span>
               <h4 className="text-sm font-bold text-amber-950 flex items-center gap-1.5">
@@ -127,7 +127,7 @@ export const PujaScheduleModal: React.FC<PujaScheduleModalProps> = ({ isOpen, on
             </div>
 
             <div className="text-right shrink-0">
-              <span className="px-2.5 py-1 rounded-full bg-rose-600 text-white text-[11px] font-bold shadow-xs inline-flex items-center gap-1">
+              <span className="px-2.5 py-1 rounded-full bg-rose-600 text-white text-[13px] font-bold shadow-xs inline-flex items-center gap-1">
                 <Flame className="w-3 h-3 animate-pulse" />
                 महोत्सव 2026
               </span>
@@ -160,7 +160,7 @@ export const PujaScheduleModal: React.FC<PujaScheduleModalProps> = ({ isOpen, on
                           </span>
                           <Badge
                             variant="outline"
-                            className={`text-[10px] font-medium ${item.highlight
+                            className={`text-[12px] font-medium ${item.highlight
                                 ? 'bg-amber-100 text-amber-900 border-amber-300'
                                 : 'bg-slate-100 text-slate-700 border-slate-200'
                               }`}
@@ -175,10 +175,10 @@ export const PujaScheduleModal: React.FC<PujaScheduleModalProps> = ({ isOpen, on
                     </div>
 
                     <div className="text-right shrink-0 space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-500 font-mono block">
+                      <span className="text-[12px] font-bold text-slate-500 font-mono block">
                         {item.date}
                       </span>
-                      <span className="text-[10px] font-semibold text-amber-800 bg-amber-100/70 px-1.5 py-0.5 rounded block">
+                      <span className="text-[12px] font-semibold text-amber-800 bg-amber-100/70 px-1.5 py-0.5 rounded block">
                         {item.timing}
                       </span>
                     </div>
@@ -204,11 +204,11 @@ export const PujaScheduleModal: React.FC<PujaScheduleModalProps> = ({ isOpen, on
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-xs font-bold text-slate-900 truncate">{staff.name}</p>
-                      <Badge variant="outline" className="text-[9px] py-0 px-1.5 border-slate-300 text-slate-600">
+                      <Badge variant="outline" className="text-[11px] py-0 px-1.5 border-slate-300 text-slate-600">
                         {staff.primaryRole}
                       </Badge>
                     </div>
-                    <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                    <p className="text-[13px] text-slate-500 truncate mt-0.5">
                       {staff.designation || 'समिति सदस्य'}
                     </p>
                   </div>

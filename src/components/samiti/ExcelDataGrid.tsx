@@ -348,7 +348,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                 </button>
               </div>
             </div>
-            <div className="text-[11px] text-amber-800 font-medium">
+            <div className="text-[13px] text-amber-800 font-medium">
               संग्रहकर्ता: <strong className="text-slate-900">{workerName}</strong>
             </div>
           </div>
@@ -358,7 +358,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100 text-xs">
           {/* Category Chips: श्रेणी: सभी (N) | VIL (N) | EMP (N) | SHO (N) | OTH (N) */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
-            <span className="text-slate-500 font-bold text-[11px] shrink-0 font-serif">श्रेणी:</span>
+            <span className="text-slate-500 font-bold text-[13px] shrink-0 font-serif">श्रेणी:</span>
             <button
               type="button"
               onClick={() => setCategoryFilter('ALL')}
@@ -387,7 +387,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                   }`}
                 >
                   <span>{cat.code}</span>
-                  <span className="text-[10px] opacity-75">({count})</span>
+                  <span className="text-[12px] opacity-75">({count})</span>
                 </button>
               );
             })}
@@ -395,7 +395,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
 
           {/* Payment Method & Balance Chips: भुगतान विधि: सभी | बकाया | चुकता | नकद | UPI */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
-            <span className="text-slate-500 font-bold text-[11px] shrink-0 font-serif">भुगतान विधि:</span>
+            <span className="text-slate-500 font-bold text-[13px] shrink-0 font-serif">भुगतान विधि:</span>
             <button
               type="button"
               onClick={() => {
@@ -493,17 +493,17 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                         </span>
                         {formatEntryDay(row.date) && (
                           <span
-                            className="font-mono text-[10px] text-slate-500 whitespace-nowrap"
+                            className="font-mono text-[12px] text-slate-500 whitespace-nowrap"
                             title={formatEntryDayLong(row.date)}
                           >
                             {formatEntryDay(row.date)}
                           </span>
                         )}
-                        <Badge variant="outline" className={`text-[10px] font-mono font-bold ${cat.badgeColor}`}>
+                        <Badge variant="outline" className={`text-[12px] font-mono font-bold ${cat.badgeColor}`}>
                           {cat.code} • {cat.labelHi.split('/')[0]}
                         </Badge>
                         {isVip && (
-                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold inline-flex items-center gap-1 border-none py-0 px-2 shadow-2xs">
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[12px] font-bold inline-flex items-center gap-1 border-none py-0 px-2 shadow-2xs">
                             <Crown className="w-2.5 h-2.5" />
                             दानवीर
                           </Badge>
@@ -512,7 +512,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
 
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span
-                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md ${row.paymentMode === 'ONL'
+                          className={`text-[12px] font-mono font-bold px-2 py-0.5 rounded-md ${row.paymentMode === 'ONL'
                               ? 'bg-blue-50 text-blue-700 border border-blue-200'
                               : 'bg-slate-100 text-slate-700 border border-slate-200'
                             }`}
@@ -520,11 +520,11 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                           {row.paymentMode}
                         </span>
                         {isDue ? (
-                          <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                          <span className="text-[12px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
                             बकाया
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          <span className="text-[12px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                             चुकता
                           </span>
                         )}
@@ -538,7 +538,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                           {row.name}
                         </h4>
                         {row.caste && (
-                          <span className="text-[11px] text-slate-400 shrink-0 font-medium">
+                          <span className="text-[13px] text-slate-400 shrink-0 font-medium">
                             {row.caste}
                           </span>
                         )}
@@ -566,14 +566,14 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                             <span>{row.phone}</span>
                           </a>
                         ) : (
-                          <span className="text-[11px] text-slate-400">फोन दर्ज नहीं</span>
+                          <span className="text-[13px] text-slate-400">फोन दर्ज नहीं</span>
                         )}
 
                         {/* Handover Toggle Button */}
                         <button
                           type="button"
                           onClick={() => toggleHandover(row)}
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-all inline-flex items-center gap-1 border ${row.isHandoverDone
+                          className={`text-[12px] font-semibold px-2 py-0.5 rounded-full transition-all inline-flex items-center gap-1 border ${row.isHandoverDone
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                               : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
                             }`}
@@ -588,19 +588,19 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     {/* Financial Amounts Strip */}
                     <div className="bg-amber-50/40 p-2.5 rounded-xl border border-amber-200/70 grid grid-cols-3 gap-2 text-center text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-400 block font-mono">स्वीकृत (Pledged)</span>
+                        <span className="text-[12px] text-slate-400 block font-mono">स्वीकृत (Pledged)</span>
                         <span className="font-mono font-semibold text-slate-800">
                           ₹{row.acceptedAmount.toLocaleString('hi-IN')}
                         </span>
                       </div>
                       <div className="border-x border-amber-200/80 px-1">
-                        <span className="text-[10px] text-emerald-700 block font-mono">प्राप्त (Received)</span>
+                        <span className="text-[12px] text-emerald-700 block font-mono">प्राप्त (Received)</span>
                         <span className="font-mono font-bold text-emerald-700">
                           ₹{row.receivedAmount.toLocaleString('hi-IN')}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-rose-600 block font-mono">बकाया (Due)</span>
+                        <span className="text-[12px] text-rose-600 block font-mono">बकाया (Due)</span>
                         <span className={`font-mono font-bold ${isDue ? 'text-rose-600' : 'text-slate-400'}`}>
                           ₹{row.balanceAmount.toLocaleString('hi-IN')}
                         </span>
@@ -648,7 +648,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                             triggerButton={
                               <Button
                                 size="sm"
-                                className="h-9 xs:h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs shrink-0"
+                                className="h-9 xs:h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[13px] shadow-xs shrink-0"
                                 title={`शेष बकाया ₹${row.balanceAmount.toLocaleString('hi-IN')} जमा करें`}
                               >
                                 <Wallet className="w-3.5 h-3.5 mr-1" />
@@ -696,25 +696,25 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
 
           {/* Compact Summary Strip */}
           <div className="bg-white border border-amber-200 rounded-2xl p-4 shadow-xs text-xs space-y-2">
-            <div className="flex items-center justify-between font-mono text-[11px] text-slate-500 uppercase font-bold">
+            <div className="flex items-center justify-between font-mono text-[13px] text-slate-500 uppercase font-bold">
               <span>कुल योग ({filteredDonations.length} प्रविष्टियाँ)</span>
               <span>नकद: ₹{visibleTotals.cash.toLocaleString('hi-IN')} | UPI: ₹{visibleTotals.online.toLocaleString('hi-IN')}</span>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-100">
               <div>
-                <span className="text-[10px] text-slate-400 block font-medium">कुल स्वीकृत</span>
+                <span className="text-[12px] text-slate-400 block font-medium">कुल स्वीकृत</span>
                 <span className="font-mono font-bold text-slate-900 text-sm">
                   ₹{visibleTotals.accepted.toLocaleString('hi-IN')}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-emerald-700 block font-medium">कुल प्राप्त</span>
+                <span className="text-[12px] text-emerald-700 block font-medium">कुल प्राप्त</span>
                 <span className="font-mono font-bold text-emerald-700 text-sm">
                   ₹{visibleTotals.received.toLocaleString('hi-IN')}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-rose-600 block font-medium">कुल बकाया</span>
+                <span className="text-[12px] text-rose-600 block font-medium">कुल बकाया</span>
                 <span className="font-mono font-bold text-rose-600 text-sm">
                   ₹{visibleTotals.balance.toLocaleString('hi-IN')}
                 </span>
@@ -742,7 +742,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                 {currentEntity.name || 'श्री दुर्गा पूजा समिति, नारायणपुर'}
               </span>
             </div>
-            <div className="text-amber-900 font-mono text-[11px] hidden sm:block">
+            <div className="text-amber-900 font-mono text-[13px] hidden sm:block">
               कुल प्रविष्टियाँ: <span className="font-bold text-slate-900">{filteredDonations.length}</span>
             </div>
           </div>
@@ -752,17 +752,17 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
           <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
             <table className="w-full min-w-[1180px] text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#630b16] text-white font-bold uppercase text-[10px] sm:text-[11px] tracking-wider border-b border-[#7e111f]">
+                <tr className="bg-[#630b16] text-white font-bold uppercase text-[12px] sm:text-[13px] tracking-wider border-b border-[#7e111f]">
                   {/* S.NUM — रसीद क्रमांक (Quick Entry: रसीद क्रमांक badge) */}
                   <th
                     onClick={() => handleSort('serialNumber')}
                     className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-center align-bottom whitespace-nowrap"
                   >
                     <div className="flex items-center justify-center gap-1">
-                      <span className="font-serif normal-case text-[11px]">रसीद क्रमांक</span>
+                      <span className="font-serif normal-case text-[13px]">रसीद क्रमांक</span>
                       <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">S. NUM</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">S. NUM</div>
                   </th>
 
                   {/* DATE — दिनांक (auto-filled with the day the entry was made) */}
@@ -771,16 +771,16 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-center align-bottom whitespace-nowrap min-w-[90px]"
                   >
                     <div className="flex items-center justify-center gap-1">
-                      <span className="font-serif normal-case text-[11px]">दिनांक</span>
+                      <span className="font-serif normal-case text-[13px]">दिनांक</span>
                       <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">DATE</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">DATE</div>
                   </th>
 
                   {/* VIL/EMP/SHO/OTH — सहयोगकर्ता की श्रेणी */}
                   <th className="p-3 border-r border-[#7e111f]/60 whitespace-nowrap text-center align-bottom">
-                    <div className="font-serif normal-case text-[11px]">श्रेणी</div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">VIL/EMP/SHO/OTH</div>
+                    <div className="font-serif normal-case text-[13px]">श्रेणी</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">VIL/EMP/SHO/OTH</div>
                   </th>
 
                   {/* NAME — सहयोगकर्ता का नाम */}
@@ -789,40 +789,40 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-left align-bottom whitespace-nowrap min-w-[140px]"
                   >
                     <div className="flex items-center gap-1">
-                      <span className="font-serif normal-case text-[11px]">सहयोगकर्ता का नाम</span>
+                      <span className="font-serif normal-case text-[13px]">सहयोगकर्ता का नाम</span>
                       <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">NAME</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">NAME</div>
                   </th>
 
                   {/* IDENTITY — पहचान */}
                   <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom min-w-[140px] whitespace-nowrap">
-                    <div className="font-serif normal-case text-[11px]">पहचान</div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">IDENTITY</div>
+                    <div className="font-serif normal-case text-[13px]">पहचान</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">IDENTITY</div>
                   </th>
 
                   {/* CASTE — जाति */}
                   <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom whitespace-nowrap">
-                    <div className="font-serif normal-case text-[11px]">जाति</div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">CASTE</div>
+                    <div className="font-serif normal-case text-[13px]">जाति</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">CASTE</div>
                   </th>
 
                   {/* VILLAGE — गाँव */}
                   <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom min-w-[120px] whitespace-nowrap">
-                    <div className="font-serif normal-case text-[11px]">गाँव</div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">VILLAGE</div>
+                    <div className="font-serif normal-case text-[13px]">गाँव</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">VILLAGE</div>
                   </th>
 
                   {/* ADDRESS.1 — वार्ड नं० */}
                   <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom min-w-[130px] whitespace-nowrap">
-                    <div className="font-serif normal-case text-[11px]">वार्ड नं०</div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">ADDRESS.1</div>
+                    <div className="font-serif normal-case text-[13px]">वार्ड नं०</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">ADDRESS.1</div>
                   </th>
 
                   {/* ADDRESS.2 — लैंडमार्क */}
                   <th className="p-3 border-r border-[#7e111f]/60 text-left align-bottom min-w-[120px] whitespace-nowrap">
-                    <div className="font-serif normal-case text-[11px]">लैंडमार्क</div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">ADDRESS.2</div>
+                    <div className="font-serif normal-case text-[13px]">लैंडमार्क</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">ADDRESS.2</div>
                   </th>
 
                   {/* ACCEPTED AMOUNT — स्वीकृत राशि */}
@@ -831,16 +831,16 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-right align-bottom whitespace-nowrap min-w-[110px]"
                   >
                     <div className="flex items-center justify-end gap-1">
-                      <span className="font-serif normal-case text-[11px]">स्वीकृत राशि</span>
+                      <span className="font-serif normal-case text-[13px]">स्वीकृत राशि</span>
                       <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">ACCEPTED AMOUNT</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">ACCEPTED AMOUNT</div>
                   </th>
 
                   {/* RECEIVABLE AMOUNT — जमा राशि */}
                   <th className="p-3 border-r border-[#7e111f]/60 text-right align-bottom whitespace-nowrap min-w-[110px]">
-                    <div className="font-serif normal-case text-[11px] text-amber-200">जमा राशि</div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">RECEIVABLE AMOUNT</div>
+                    <div className="font-serif normal-case text-[13px] text-amber-200">जमा राशि</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">RECEIVABLE AMOUNT</div>
                   </th>
 
                   {/* BALANCE AMOUNT — शेष बकाया */}
@@ -849,22 +849,22 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-right align-bottom whitespace-nowrap min-w-[110px]"
                   >
                     <div className="flex items-center justify-end gap-1">
-                      <span className="font-serif normal-case text-[11px]">शेष बकाया</span>
+                      <span className="font-serif normal-case text-[13px]">शेष बकाया</span>
                       <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">BALANCE AMOUNT</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">BALANCE AMOUNT</div>
                   </th>
 
                   {/* PAYMENT MODE — भुगतान माध्यम */}
                   <th className="p-3 border-r border-[#7e111f]/60 text-center align-bottom whitespace-nowrap min-w-[100px]">
-                    <div className="font-serif normal-case text-[11px]">भुगतान माध्यम</div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">CASH/ONL</div>
+                    <div className="font-serif normal-case text-[13px]">भुगतान माध्यम</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">CASH/ONL</div>
                   </th>
 
                   {/* ACTION — कार्रवाई */}
                   <th className="p-3 text-center align-bottom whitespace-nowrap min-w-[90px]">
-                    <div className="font-serif normal-case text-[11px]">कार्रवाई</div>
-                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">ACTION</div>
+                    <div className="font-serif normal-case text-[13px]">कार्रवाई</div>
+                    <div className="font-mono text-[11px] text-amber-200/70 tracking-normal">ACTION</div>
                   </th>
                 </tr>
               </thead>
@@ -898,7 +898,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
 
                         {/* DATE — दिनांक (Click to edit directly on register) */}
                         <td
-                          className="p-1.5 border-r border-slate-100 text-center font-mono text-[11px] text-slate-600 whitespace-nowrap"
+                          className="p-1.5 border-r border-slate-100 text-center font-mono text-[13px] text-slate-600 whitespace-nowrap"
                           title={`${formatEntryDayLong(row.date)} (रजिस्टर में दिनांक बदलने के लिए चुनें)`}
                         >
                           <input
@@ -911,16 +911,16 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                                 toast.success(`रसीद #${row.serialNumber} का दिनांक बदलकर ${newDate} कर दिया गया! 📅`);
                               }
                             }}
-                            className="bg-transparent hover:bg-amber-50 focus:bg-white text-[11px] font-mono rounded px-1.5 py-1 border border-transparent hover:border-amber-300 focus:border-amber-500 cursor-pointer outline-none transition-all text-slate-700 font-semibold"
+                            className="bg-transparent hover:bg-amber-50 focus:bg-white text-[13px] font-mono rounded px-1.5 py-1 border border-transparent hover:border-amber-300 focus:border-amber-500 cursor-pointer outline-none transition-all text-slate-700 font-semibold"
                           />
                         </td>
 
                         {/* VIL/EMP/SHO/OTH */}
                         <td className="p-3 border-r border-slate-100 text-center">
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="text-[12px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                             {cat.code}
                           </span>
-                          <div className="text-[9px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">
+                          <div className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">
                             {cat.labelHi.split('/')[0].trim()}
                           </div>
                         </td>
@@ -936,7 +936,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                             )}
                           </div>
                           {row.phone && (
-                            <span className="flex items-center gap-1 text-[10px] font-normal text-slate-500 font-mono mt-0.5">
+                            <span className="flex items-center gap-1 text-[12px] font-normal text-slate-500 font-mono mt-0.5">
                               <Phone className="w-2.5 h-2.5 text-emerald-600" />
                               <span>{row.phone}</span>
                             </span>
@@ -1009,14 +1009,14 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                         {/* PAYMENT MODE */}
                         <td className="p-3 border-r border-slate-100 text-center">
                           <span
-                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${row.paymentMode === 'ONL'
+                            className={`text-[12px] font-mono font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${row.paymentMode === 'ONL'
                                 ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                 : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               }`}
                           >
                             {row.paymentMode === 'ONL' ? '📲 ONL' : '💵 CASH'}
                           </span>
-                          <div className="text-[9px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">
+                          <div className="text-[11px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">
                             {row.paymentMode === 'ONL' ? 'ऑनलाइन' : 'नकद'}
                           </div>
                         </td>
@@ -1133,10 +1133,10 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     ₹{visibleTotals.balance.toLocaleString('hi-IN')}
                   </td>
                   <td className="p-3 text-center border-r border-amber-200 leading-tight">
-                    <div className="font-mono text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+                    <div className="font-mono text-[12px] font-bold text-emerald-700 whitespace-nowrap">
                       💵 ₹{visibleTotals.cash.toLocaleString('hi-IN')}
                     </div>
-                    <div className="font-mono text-[10px] font-bold text-blue-700 whitespace-nowrap">
+                    <div className="font-mono text-[12px] font-bold text-blue-700 whitespace-nowrap">
                       📲 ₹{visibleTotals.online.toLocaleString('hi-IN')}
                     </div>
                   </td>

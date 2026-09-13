@@ -158,17 +158,17 @@ export const VendorDuePaymentDialog: React.FC<VendorDuePaymentDialogProps> = ({
           <div className="absolute -top-16 -right-16 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10 pr-8 sm:pr-10 space-y-1">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-[10px] font-extrabold tracking-wide uppercase flex items-center gap-1.5">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-[12px] font-extrabold tracking-wide uppercase flex items-center gap-1.5">
                 <Wallet className="w-3 h-3" />
                 बकाया जमा
               </span>
-              <span className="text-[10px] text-white/70 font-medium font-mono">
+              <span className="text-[12px] text-white/70 font-medium font-mono">
                 वाउचर {expense.voucherNo}
               </span>
             </div>
             <h2 className="text-lg font-black tracking-tight">{expense.vendorName}</h2>
             {expense.notes && (
-              <p className="text-[11px] text-white/70 font-medium line-clamp-1">{expense.notes}</p>
+              <p className="text-[13px] text-white/70 font-medium line-clamp-1">{expense.notes}</p>
             )}
           </div>
         </div>
@@ -177,15 +177,15 @@ export const VendorDuePaymentDialog: React.FC<VendorDuePaymentDialogProps> = ({
           {/* Current standing */}
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-white p-2.5 rounded-xl border border-amber-200/80 shadow-2xs">
-              <div className="text-[10px] font-bold text-slate-600">कुल बिल</div>
+              <div className="text-[12px] font-bold text-slate-600">कुल बिल</div>
               <div className="text-base font-black font-mono text-slate-900">{formatINR(expense.totalAmount)}</div>
             </div>
             <div className="bg-white p-2.5 rounded-xl border border-emerald-200/80 shadow-2xs">
-              <div className="text-[10px] font-bold text-emerald-800">अब तक भुगतान</div>
+              <div className="text-[12px] font-bold text-emerald-800">अब तक भुगतान</div>
               <div className="text-base font-black font-mono text-emerald-700">{formatINR(expense.amountPaid)}</div>
             </div>
             <div className={`p-2.5 rounded-xl border shadow-2xs ${due === 0 ? 'bg-emerald-50/80 border-emerald-200' : 'bg-rose-50/80 border-rose-200'}`}>
-              <div className={`text-[10px] font-bold ${due === 0 ? 'text-emerald-800' : 'text-rose-800'}`}>शेष देनदारी</div>
+              <div className={`text-[12px] font-bold ${due === 0 ? 'text-emerald-800' : 'text-rose-800'}`}>शेष देनदारी</div>
               <div className={`text-base font-black font-mono ${due === 0 ? 'text-emerald-700' : 'text-rose-600'}`}>{formatINR(due)}</div>
             </div>
           </div>
@@ -229,7 +229,7 @@ export const VendorDuePaymentDialog: React.FC<VendorDuePaymentDialogProps> = ({
                   <button
                     type="button"
                     onClick={() => setAmount(String(due))}
-                    className="text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-600 text-white border border-emerald-700 active:scale-95"
+                    className="text-[12px] font-bold px-2 py-1 rounded-lg bg-emerald-600 text-white border border-emerald-700 active:scale-95"
                   >
                     पूरी देनदारी {formatINR(due)}
                   </button>
@@ -238,7 +238,7 @@ export const VendorDuePaymentDialog: React.FC<VendorDuePaymentDialogProps> = ({
                       key={v}
                       type="button"
                       onClick={() => setAmount(String(v))}
-                      className="text-[10px] font-bold px-2 py-1 rounded-lg bg-white text-slate-700 border border-emerald-200 hover:border-emerald-400 active:scale-95"
+                      className="text-[12px] font-bold px-2 py-1 rounded-lg bg-white text-slate-700 border border-emerald-200 hover:border-emerald-400 active:scale-95"
                     >
                       {formatINR(v)}
                     </button>
@@ -246,7 +246,7 @@ export const VendorDuePaymentDialog: React.FC<VendorDuePaymentDialogProps> = ({
                 </div>
 
                 {exceedsDue && (
-                  <p className="text-[10px] font-bold text-rose-600 flex items-center gap-1">
+                  <p className="text-[12px] font-bold text-rose-600 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3 shrink-0" />
                     <span>यह राशि शेष देनदारी {formatINR(due)} से अधिक है।</span>
                   </p>
@@ -257,12 +257,12 @@ export const VendorDuePaymentDialog: React.FC<VendorDuePaymentDialogProps> = ({
               {parsedAmount > 0 && !exceedsDue && (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-[10px] font-bold text-slate-500">कुल भुगतान</div>
+                    <div className="text-[12px] font-bold text-slate-500">कुल भुगतान</div>
                     <div className="text-sm font-black font-mono text-emerald-700">{formatINR(newPaid)}</div>
                   </div>
                   <div className="text-slate-300 font-black">→</div>
                   <div className="text-right">
-                    <div className="text-[10px] font-bold text-slate-500">नई देनदारी</div>
+                    <div className="text-[12px] font-bold text-slate-500">नई देनदारी</div>
                     <div className={`text-sm font-black font-mono ${newDue === 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                       {newDue === 0 ? 'पूरा चुकता ✅' : formatINR(newDue)}
                     </div>
@@ -322,13 +322,13 @@ export const VendorDuePaymentDialog: React.FC<VendorDuePaymentDialogProps> = ({
                     className="h-11 text-xs font-semibold text-slate-900 border-slate-200 rounded-xl bg-white focus-visible:ring-emerald-500"
                   />
                   <div className="flex flex-wrap items-center gap-1 mt-1">
-                    <span className="text-[9px] text-slate-400">कार्यकर्ता:</span>
+                    <span className="text-[11px] text-slate-400">कार्यकर्ता:</span>
                     {payerOptions.map(nm => (
                       <button
                         key={nm}
                         type="button"
                         onClick={() => setPaidBy(nm)}
-                        className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-800"
+                        className="text-[11px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-800"
                       >
                         {nm}
                       </button>
@@ -354,12 +354,12 @@ export const VendorDuePaymentDialog: React.FC<VendorDuePaymentDialogProps> = ({
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
               <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-1.5">
                 <History className="w-3.5 h-3.5 text-slate-500" />
-                <span className="text-[11px] font-bold text-slate-700">भुगतान इतिहास</span>
-                <span className="text-[10px] text-slate-400 ml-auto font-mono">{history.length} किस्त</span>
+                <span className="text-[13px] font-bold text-slate-700">भुगतान इतिहास</span>
+                <span className="text-[12px] text-slate-400 ml-auto font-mono">{history.length} किस्त</span>
               </div>
               <div className="divide-y divide-slate-100">
                 {history.map(p => (
-                  <div key={p.id} className="px-3 py-2 flex items-center gap-2 text-[11px]">
+                  <div key={p.id} className="px-3 py-2 flex items-center gap-2 text-[13px]">
                     <span className="font-mono text-slate-500 w-14 shrink-0">{formatDay(p.date)}</span>
                     <span className="font-mono font-black text-emerald-700 w-20 shrink-0">{formatINR(p.amount)}</span>
                     <span className="text-slate-600 shrink-0">{MODE_LABEL[p.paymentMode] || p.paymentMode}</span>

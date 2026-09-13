@@ -92,7 +92,7 @@ export const MasterHeader: React.FC<MasterHeaderProps> = ({
 
           <div className="truncate">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-saffron hidden sm:inline-flex items-center gap-1">
+              <span className="text-[13px] font-bold uppercase tracking-wider text-saffron hidden sm:inline-flex items-center gap-1">
                 Victory OS
                 <span className="text-slate-400 font-normal">/</span>
               </span>
@@ -107,7 +107,7 @@ export const MasterHeader: React.FC<MasterHeaderProps> = ({
                   type="button"
                   onClick={() => syncWithCloud()}
                   disabled={isSyncing || !isCloudConnected}
-                  className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full border transition-all cursor-pointer ${
+                  className={`hidden sm:inline-flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-0.5 rounded-full border transition-all cursor-pointer ${
                     isSyncing
                       ? 'bg-amber-100 text-amber-800 border-amber-300 cursor-wait'
                       : isCloudConnected
@@ -135,7 +135,7 @@ export const MasterHeader: React.FC<MasterHeaderProps> = ({
                 </button>
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground truncate hidden sm:block mt-0.5">
+            <p className="text-[13px] text-muted-foreground truncate hidden sm:block mt-0.5">
               {currentInfo.subtitle}
             </p>
           </div>

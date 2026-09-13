@@ -92,6 +92,13 @@ export interface MasterStaff {
   // credentials live only in Supabase Auth (via the create-user edge
   // function) — never stored in plaintext on this record.
   userId?: string;
+  /**
+   * This member's own UPI id, for chanda collected straight into their
+   * account. Optional — when unset, QR codes and payment prompts fall back to
+   * the workspace's UPI id (MasterEntity.upiId), which is how every member
+   * behaved before this field existed.
+   */
+  upiId?: string;
   primaryRole: MasterRole;
   designation: string; // e.g. "मुख्य प्रशासक", "वॉर रूम हेड", "कोषाध्यक्ष"
   status: 'active' | 'inactive';

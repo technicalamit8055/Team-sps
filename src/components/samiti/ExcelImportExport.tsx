@@ -342,7 +342,7 @@ export const ExcelImportExport: React.FC = () => {
 
           <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] max-h-96 border border-slate-200 rounded-xl">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 text-white font-bold sticky top-0 text-[11px] uppercase tracking-wider">
+              <thead className="bg-slate-900 text-white font-bold sticky top-0 text-[13px] uppercase tracking-wider">
                 <tr>
                   <th className="p-2.5">S.NUM</th>
                   <th className="p-2.5">VIL/EMP/SHO/OTH</th>
@@ -362,7 +362,7 @@ export const ExcelImportExport: React.FC = () => {
                   <tr key={i} className="hover:bg-slate-50">
                     <td className="p-2.5 font-mono font-bold">{row.serialNumber}</td>
                     <td className="p-2.5">
-                      <Badge variant="outline" className="text-[10px] font-mono">
+                      <Badge variant="outline" className="text-[12px] font-mono">
                         {row.category}
                       </Badge>
                     </td>
@@ -375,7 +375,7 @@ export const ExcelImportExport: React.FC = () => {
                     <td className="p-2.5 text-right font-mono font-bold text-emerald-700">₹{row.receivedAmount}</td>
                     <td className="p-2.5 text-right font-mono font-black text-red-600">₹{row.balanceAmount}</td>
                     <td className="p-2.5 text-center">
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100">
+                      <span className="text-[12px] font-bold px-1.5 py-0.5 rounded bg-gray-100">
                         {row.paymentMode}
                       </span>
                     </td>
