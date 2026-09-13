@@ -96,3 +96,81 @@ Settings → API → Restart server.
   removed before retrying, instead of reporting a clean "खाता बनाया नहीं गया".
 - A missing-column / `PGRST204` failure is now reported as pending migrations
   pointing at this directory, rather than as raw PostgREST text.
+
+---
+
+# Deleting a member fails: "Database error deleting user"
+
+## What the message means
+
+It is not the app's text and not a permissions problem. It is GoTrue's generic
+wrapper for "Postgres refused the `DELETE FROM auth.users`". The real reason is
+never passed back to the caller, which is why the admin panel could only show
+the generic sentence.
+
+The reason is a foreign key. The columns that point at `auth.users` —
+`created_by`, `assigned_to`, `submitted_by`, `worker_id` and the rest — were
+declared without an `ON DELETE` clause, which in Postgres means `NO ACTION`:
+the delete is refused while any row still references it.
+
+So the failure tracks how much the member had done, not who they were:
+
+- a member who had recorded **nothing** yet deletes cleanly
+- a member who had recorded **one donation, expense, task or voter** can never
+  be deleted
+
+That is what made it look random.
+
+## The fix
+
+SQL Editor → new tab → paste the whole of `FIX_DELETE_MEMBER.sql` → Run with
+nothing selected.
+
+It rewrites each blocking foreign key:
+
+- **Authorship and assignment columns → `ON DELETE SET NULL`.** The records stay
+  and only the attribution is cleared. A donation the member collected still
+  happened: its amount, date and receipt number are the samiti's books, and
+  deleting a member must not quietly rewrite them.
+- **`profiles` and `user_roles` → `ON DELETE CASCADE`.** These describe the
+  login and mean nothing without it. This also fixes the follow-on bug where
+  re-creating a deleted member reported `यूज़रनेम "..." पहले से मौजूद है` — the
+  leftover `profiles` row was still holding the username.
+
+It also drops `NOT NULL` on `expenses.created_by` and `grievances.submitted_by`.
+`SET NULL` cannot fire into a `NOT NULL` column, and those two were declared
+that way — without this they would keep failing with the same opaque message.
+"Attribution unknown" is exactly the state being recorded, so it has to be
+storable.
+
+The file ends with a `SELECT` that prints `CLEAR` or names whatever is still
+blocking. Run it and read that grid rather than trusting the DO block's
+"Success. No rows returned".
+
+The same SQL is committed as
+`supabase/migrations/20260913180000_fix_auth_user_delete_fks.sql`. Keep the two
+identical.
+
+## Then redeploy the edge function
+
+```bash
+supabase functions deploy delete-user
+```
+
+`delete-user` now recognises the opaque GoTrue string and reports what it
+actually means, so if this recurs the panel names the cause instead of the
+symptom.
+
+## If it still fails
+
+Run `WHY_DELETE_FAILS.sql`. The first grid lists every foreign key into
+`auth.users` with its delete rule, blocking ones first. The second lists, for
+one member, exactly which tables still hold rows referencing them — change the
+username on the `member_username` line and Run again.
+
+## What this does not change
+
+Deleting a member still removes their login, profile, role and roster row, and
+still revokes the refresh tokens of any device already signed in. The safeguards
+are unchanged: you cannot delete your own account, managers cannot delete admins
+or other managers, and the last remaining admin cannot be deleted.

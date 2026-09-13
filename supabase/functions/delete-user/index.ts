@@ -175,7 +175,23 @@ serve(async (req) => {
       // account cannot sign in, and that already holds.
       if (deleteAuthError && !/not found/i.test(deleteAuthError.message || '')) {
         console.error('Error deleting auth user:', deleteAuthError);
-        return new Response(JSON.stringify({ error: deleteAuthError.message || 'Failed to delete login account' }), {
+
+        // GoTrue collapses every Postgres failure here into the single string
+        // "Database error deleting user" and does not pass the detail through,
+        // so this is the one place that can explain it. In practice it means a
+        // foreign key into auth.users is still set to NO ACTION and the member
+        // has data referencing them — see
+        // supabase/migrations/20260913180000_fix_auth_user_delete_fks.sql,
+        // which rewrites those keys, and supabase/manual/WHY_DELETE_FAILS.sql,
+        // which lists whichever ones are still blocking.
+        const isOpaqueDbError = /database error deleting user/i.test(deleteAuthError.message || '');
+        const message = isOpaqueDbError
+          ? 'This member has recorded data (donations, expenses, tasks) that is still linked to their login, ' +
+            'and the database is refusing to remove the login while it is. ' +
+            'Apply the pending migration 20260913180000_fix_auth_user_delete_fks.sql, then try again.'
+          : deleteAuthError.message || 'Failed to delete login account';
+
+        return new Response(JSON.stringify({ error: message }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

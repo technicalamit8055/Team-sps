@@ -31,23 +31,18 @@ JOIN pg_attribute a
  AND a.attnum = ANY (c.conkey)
 WHERE c.contype = 'f'
   AND c.confrelid = 'auth.users'::regclass
+  AND c.connamespace = 'public'::regnamespace
 ORDER BY
   CASE WHEN c.confdeltype IN ('a', 'r') THEN 0 ELSE 1 END,
   referencing_table;
 
 -- 2. For one specific member: which tables still hold rows that reference them.
---    Put the member's username in the `target` line below, then Run again and
---    read the second grid. Any row with blocking_rows > 0 is a reason the
---    delete fails; `blocked_by` names the rule.
-WITH target AS (
-  SELECT id
-  FROM public.profiles
-  WHERE username ILIKE 'niraj04'          -- <<< change this username
-  UNION
-  SELECT user_id
-  FROM public.master_staff
-  WHERE username ILIKE 'niraj04'          -- <<< and this one, to the same value
-    AND user_id IS NOT NULL
+--    Change the username on the `member_username` line below — it is the only
+--    place it appears — then Run the file again and read the second grid. Any
+--    row with blocking_rows > 0 is a reason the delete fails; `blocked_by`
+--    names the rule that turns those rows into a hard stop.
+WITH params AS (
+  SELECT 'niraj04'::text AS member_username   -- <<< change this
 ),
 fks AS (
   SELECT
@@ -60,33 +55,30 @@ fks AS (
    AND a.attnum = ANY (c.conkey)
   WHERE c.contype = 'f'
     AND c.confrelid = 'auth.users'::regclass
+    AND c.connamespace = 'public'::regnamespace
+    AND c.confdeltype IN ('a', 'r')   -- only the blocking kind
 )
 SELECT
-  f.tbl   AS referencing_table,
-  f.col   AS referencing_column,
-  CASE f.del
-    WHEN 'a' THEN 'NO ACTION'
-    WHEN 'r' THEN 'RESTRICT'
-    WHEN 'c' THEN 'CASCADE'
-    WHEN 'n' THEN 'SET NULL'
-    ELSE 'SET DEFAULT'
-  END     AS blocked_by,
-  (
-    -- Counting a dynamic table name needs a query per table; xpath over
-    -- query_to_xml is the standard way to do that inside a plain SELECT.
-    xpath(
-      '/row/cnt/text()',
-      query_to_xml(
-        format(
-          'SELECT COUNT(*) AS cnt FROM %s WHERE %I IN (SELECT id FROM (%s) t)',
-          f.tbl,
-          f.col,
-          'SELECT id FROM public.profiles WHERE username ILIKE ''niraj04'''
-        ),
-        false, true, ''
-      )
-    )
-  )[1]::text::int AS blocking_rows
+  f.tbl AS referencing_table,
+  f.col AS referencing_column,
+  CASE f.del WHEN 'a' THEN 'NO ACTION' ELSE 'RESTRICT' END AS blocked_by,
+  -- Counting rows in a table whose name is only known at runtime needs one
+  -- query per table; xpath over query_to_xml runs them from a plain SELECT.
+  (xpath(
+     '/row/cnt/text()',
+     query_to_xml(
+       format(
+         $q$SELECT COUNT(*) AS cnt FROM %s WHERE %I IN (
+              SELECT id FROM public.profiles WHERE username ILIKE %L
+              UNION
+              SELECT user_id FROM public.master_staff
+               WHERE username ILIKE %L AND user_id IS NOT NULL
+            )$q$,
+         f.tbl, f.col, p.member_username, p.member_username
+       ),
+       false, true, ''
+     )
+   ))[1]::text::int AS blocking_rows
 FROM fks f
-WHERE f.del IN ('a', 'r')
+CROSS JOIN params p
 ORDER BY blocking_rows DESC, referencing_table;
