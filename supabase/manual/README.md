@@ -40,8 +40,26 @@ supabase functions list
 
 ## 3. Clear the orphaned worker login
 
-Run `STEP3_DELETE_ORPHANS.sql`. It confirms `upi_id` exists, previews exactly
-what it will remove, deletes it, and verifies the username is free again.
+Run `DELETE_NIRAJ04.sql`, then `CHECK_NIRAJ04.sql`, each in its own tab with
+nothing selected.
+
+`STEP3_DELETE_ORPHANS.sql` is the combined version and is kept for reference,
+but prefer the two single-statement files. See "Reading the SQL Editor" below
+for why.
+
+### Reading the SQL Editor
+
+Two things about this editor cost real time here:
+
+- **It runs the selected text.** With a selection, the rest of the file is
+  skipped. Run with nothing selected, or run one block at a time.
+- **It shows only the last statement's grid.** In a file of preview → delete →
+  confirm, an earlier preview's rows can stay on screen and look like the
+  confirm step's output, i.e. like the delete failed when it never ran.
+- **A `DO` block always reports "Success. No rows returned".** It returns no
+  rows by design, whether it changed everything or matched nothing. Its
+  `RAISE NOTICE` output goes to the Messages/Notices pane, not Results — which
+  is why `CHECK_NIRAJ04.sql` is a plain `SELECT` returning a verdict instead.
 
 **Admin and manager accounts are excluded, deliberately.** They are *supposed*
 to have no `master_staff` row — `fetchStaffCollectorInfo` reads a missing row
