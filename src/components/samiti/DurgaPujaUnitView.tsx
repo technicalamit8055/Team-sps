@@ -10,7 +10,6 @@ import { ChandaQRCodeModal } from './ChandaQRCodeModal';
 import { DailyCashierSheetModal } from './DailyCashierSheetModal';
 import { QuickDonationDialog } from './QuickDonationDialog';
 import { DurgaPujaSettingsModal } from './DurgaPujaSettingsModal';
-import { DurgaPujaSidebar } from './DurgaPujaSidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -39,7 +38,6 @@ import {
   Bell,
   Settings,
   Pencil,
-  Menu,
   Users,
   LogOut,
 } from 'lucide-react';
@@ -140,7 +138,6 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [settingsDefaultTab, setSettingsDefaultTab] = useState<'header' | 'reset'>('header');
   const [isQuickDonationOpen, setIsQuickDonationOpen] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Top Donors (VIP Patrons)
   const topDonors = [...donations]
@@ -157,19 +154,8 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
         <div className="h-0.5 bg-gradient-to-r from-amber-400 via-yellow-200 to-rose-500" />
 
         <div className="w-full px-2.5 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between gap-1.5 sm:gap-4">
-          {/* Left: Hamburger (mobile), Sacred Emblem, Title & Location */}
+          {/* Left: Sacred Emblem, Title & Location */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            {/* Mobile Sidebar Menu Button */}
-            <button
-              type="button"
-              onClick={() => setIsMobileSidebarOpen(true)}
-              className="lg:hidden h-10 w-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/25 text-white shrink-0 border border-white/20"
-              title="मेनू खोलें"
-              aria-label="मेनू खोलें"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
             {/* Back to Master OS if available */}
             {!isCollector && onBackToMaster && (
               <Button
@@ -318,54 +304,9 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
       </header>
 
       {/* ------------------------------------------------------------- */}
-      {/* 2. BODY WITH SIDEBAR, MAIN CONTENT & RIGHT SACRED STRIP        */}
+      {/* 2. BODY WITH MAIN CONTENT & RIGHT SACRED STRIP                 */}
       {/* ------------------------------------------------------------- */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Desktop Sidebar */}
-        <div className="hidden lg:block">
-          <DurgaPujaSidebar
-            activeTab={activeTab}
-            onSelectTab={setActiveTab}
-            onOpenQR={() => setIsQRModalOpen(true)}
-            onOpenCashierSheet={() => setIsCashierSheetOpen(true)}
-            onOpenSettings={() => {
-              setSettingsDefaultTab('header');
-              setIsSettingsModalOpen(true);
-            }}
-            onOpenSeva={() => setIsCashierSheetOpen(true)}
-            isCollector={isCollector}
-            canSeeKharcha={canSeeKharcha}
-            workerName={workerName}
-          />
-        </div>
-
-        {/* Mobile Slide-over Drawer */}
-        {isMobileSidebarOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden flex">
-            <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-              onClick={() => setIsMobileSidebarOpen(false)}
-            />
-            <div className="relative w-[82vw] max-w-[260px] z-10 animate-in slide-in-from-left duration-300">
-              <DurgaPujaSidebar
-                activeTab={activeTab}
-                onSelectTab={setActiveTab}
-                onOpenQR={() => setIsQRModalOpen(true)}
-                onOpenCashierSheet={() => setIsCashierSheetOpen(true)}
-                onOpenSettings={() => {
-                  setSettingsDefaultTab('header');
-                  setIsSettingsModalOpen(true);
-                }}
-                onOpenSeva={() => setIsCashierSheetOpen(true)}
-                isCollector={isCollector}
-                canSeeKharcha={canSeeKharcha}
-                workerName={workerName}
-                onCloseMobileDrawer={() => setIsMobileSidebarOpen(false)}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Main Center Stage */}
         <main className="flex-1 min-w-0 overflow-y-auto px-2.5 sm:px-5 py-3 sm:py-4 space-y-3 sm:space-y-4">
           {/* ----------------------------------------------------------- */}

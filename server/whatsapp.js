@@ -443,14 +443,16 @@ export async function sendReceipt({
 
     const recipient = found.jid || jid;
 
-    // The PDF is the receipt. When one is attached it goes out on its own,
-    // with no caption, so the donor gets a single document and no wall of
-    // duplicated text. Text-only sends (e.g. the setup test) still use it.
+    // The PDF rides along as an attachment with the receipt text as its
+    // caption, so the donor gets one message carrying both the readable
+    // summary and the printable document. Text-only sends (e.g. the setup
+    // test) just send the body.
     const payload = pdf
       ? {
           document: pdf,
           mimetype: 'application/pdf',
           fileName: `receipt-${receiptNo || Date.now()}.pdf`,
+          caption: text,
         }
       : { text };
 

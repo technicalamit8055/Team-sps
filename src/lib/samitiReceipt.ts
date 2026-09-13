@@ -5,37 +5,35 @@ import type { SamitiDonation } from '@/types/samiti';
  *
  * Shared by the receipt modal, the wa.me deep link, and the one-tap direct
  * send in the data grid, so a donor gets identical wording on every path.
+ * Also rides along as the caption on the PDF receipt sent via Baileys.
  */
 export function buildSamitiReceiptMessage(
   donation: SamitiDonation,
   entity: { name: string; location?: string; tagline?: string },
   event: { title: string },
 ): string {
+  const title = entity.location ? `${entity.name}, ${entity.location}` : entity.name;
+
   const balanceText =
     donation.balanceAmount === 0
       ? '✅ पूर्ण भुगतान (कोई बकाया नहीं)'
       : `⚠️ शेष बकाया राशि: ₹${donation.balanceAmount.toLocaleString('hi-IN')}`;
 
-  const locationLine = entity.location ? `📍 ${entity.location}\n` : '';
+  const paymentModeText = donation.paymentMode === 'ONL' ? '📲 ऑनलाइन/UPI' : '💵 नकद/Cash';
 
-  return `🚩 *${entity.name}* 🚩
-${locationLine}🎉 ${event.title}
-===========================
-📜 *डिजिटल चंदा / सहयोग रसीद (Official Receipt)*
-===========================
-🔢 *रसीद सं० (Receipt No):* #${String(donation.serialNumber).padStart(4, '0')}
-📅 *दिनांक (Date):* ${donation.date || new Date().toISOString().split('T')[0]}
-👤 *सहयोगकर्ता (Donor):* ${donation.name}
+  return `🚩 ${title} 🚩
 
-💰 *स्वीकृत राशि (Pledged):* ₹${donation.acceptedAmount.toLocaleString('hi-IN')}
-💵 *प्राप्त राशि (Received):* ₹${donation.receivedAmount.toLocaleString('hi-IN')} (${donation.paymentMode === 'ONL' ? '📲 ऑनलाइन/UPI' : '💵 नकद/Cash'})
+📜 सहयोग रसीद
+
+🔢 रसीद सं०: #${String(donation.serialNumber).padStart(4, '0')}
+📅 दिनांक: ${donation.date || new Date().toISOString().split('T')[0]}
+👤 सहयोगकर्ता: ${donation.name}
+
+💰 स्वीकृत राशि: ₹${donation.acceptedAmount.toLocaleString('hi-IN')}
+💵 प्राप्त राशि: ₹${donation.receivedAmount.toLocaleString('hi-IN')} (${paymentModeText})
 ${balanceText}
 
-संग्रहकर्ता प्रतिनिधि: ${donation.collectorName || 'श्री दुर्गा पूजा समिति'}
-===========================
-🙏 *"${entity.tagline || 'माँ दुर्गा की असीम कृपा आप और आपके परिवार पर सदा बनी रहे।'}"*
-===========================
-🚩 माँ भगवती आपको सुख, शांति, समृद्धि व उत्तम स्वास्थ्य प्रदान करें! जय माँ दुर्गे! 🚩`;
+संग्रहकर्ता प्रतिनिधि: ${donation.collectorName || 'श्री दुर्गा पूजा समिति'}`;
 }
 
 /** Receipt payload fields derived from a donation, for the send API. */
@@ -54,4 +52,3 @@ export function toReceiptPayload(
     message: buildSamitiReceiptMessage(donation, entity, event),
   };
 }
-

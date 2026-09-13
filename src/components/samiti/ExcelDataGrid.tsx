@@ -227,8 +227,8 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
 
     setSendingReceiptId(donation.id);
     try {
-      // The PDF is the whole receipt now, so a render failure has to surface
-      // rather than silently degrade to a text message.
+      // The receipt goes out as the PDF plus the message as its caption, so a
+      // render failure has to surface rather than silently degrade to text only.
       const pdfDataUrl = await generateReceiptPdfDataUrl(donation, currentEntity, currentEvent);
 
       await sendWhatsAppReceipt({

@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Trash2, Receipt, Phone, LayoutGrid, Table, Sparkles, Building2 } from 'lucide-react';
+import { Plus, Search, Trash2, Receipt, Phone, LayoutGrid, Table, Sparkles, Building2, Wallet, Edit2, Lock, ArrowUp, AlertCircle } from 'lucide-react';
+import { VendorDuePaymentDialog } from './VendorDuePaymentDialog';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,16 +24,26 @@ import {
 // भुगतानकर्ता (payer) ke liye tay naam — in ke alawa koi aur naam nahi chuna ja sakta
 const PAYER_OPTIONS = ['सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत'] as const;
 
-// जल्दी भरें chips — dropdown ke same naam, bas ek click me
-const QUICK_PAYERS = PAYER_OPTIONS;
-
 export const ExpenseManager: React.FC = () => {
-  const { currentEvent, expenses, addExpense, deleteExpense } = useSamiti();
+  const { currentEvent, expenses, addExpense, updateExpense, deleteExpense, canEditFinalizedAmounts, currentStaffMember } = useSamiti();
+
+  // भुगतानकर्ता हमेशा लॉग-इन खाते का नाम रहता है — voucher kis ke naam par kharch
+  // hua, ye user khud nahi badal sakta. Jis account ka koi staff record nahi hai
+  // (master admin), sirf usi ke liye dropdown khula rehta hai.
+  const accountPayerName = currentStaffMember?.name || '';
+  const payerLocked = !!accountPayerName;
 
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  /**
+   * The voucher currently open in the form. `null` means the form is
+   * creating a new voucher — the same dialog serves both, so a member never
+   * has to learn two layouts.
+   */
+  const [editingExpense, setEditingExpense] = useState<SamitiExpense | null>(null);
 
   // View Mode: auto-detect mobile vs desktop
   const [viewMode, setViewMode] = useState<'cards' | 'grid'>(() => {
@@ -58,7 +70,7 @@ export const ExpenseManager: React.FC = () => {
   const [totalAmount, setTotalAmount] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('CASH');
-  const [paidBy, setPaidBy] = useState<string>(PAYER_OPTIONS[0]);
+  const [paidBy, setPaidBy] = useState<string>(accountPayerName || PAYER_OPTIONS[0]);
   const [notes, setNotes] = useState('');
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -66,28 +78,106 @@ export const ExpenseManager: React.FC = () => {
   const parsedPaid = parseFloat(amountPaid) || 0;
   const calculatedDue = Math.max(0, parsedTotal - parsedPaid);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!vendorName.trim() || !parsedTotal) return;
+  /**
+   * Amount locks apply only when revising a voucher already on the books — a
+   * brand new voucher is always free to type. Members without
+   * `editFinalizedAmounts` cannot restate the bill total, and may only raise
+   * what has been paid (the बकाया जमा dialog is the normal route).
+   */
+  const amountsLocked = !!editingExpense && !canEditFinalizedAmounts;
+  const savedPaid = editingExpense?.amountPaid ?? 0;
+  const paidBelowRecorded = amountsLocked && parsedPaid < savedPaid;
 
-    addExpense({
-      eventId: currentEvent.id,
-      category,
-      vendorName: vendorName.trim(),
-      vendorPhone: vendorPhone.trim(),
-      totalAmount: parsedTotal,
-      amountPaid: parsedPaid,
-      paymentMode,
-      paidBy,
-      expenseDate,
-      notes: notes.trim(),
-    });
-
+  const resetForm = () => {
+    setCategory('pandal_tent');
     setVendorName('');
     setVendorPhone('');
     setTotalAmount('');
     setAmountPaid('');
+    setPaymentMode('CASH');
+    setPaidBy(accountPayerName || PAYER_OPTIONS[0]);
     setNotes('');
+    setExpenseDate(new Date().toISOString().split('T')[0]);
+  };
+
+  // Load a voucher into the shared form, or clear it back to "new voucher"
+  // when the dialog closes, so one edit never bleeds into the next entry.
+  useEffect(() => {
+    if (!isOpen) {
+      setEditingExpense(null);
+      resetForm();
+      return;
+    }
+    if (editingExpense) {
+      setCategory(editingExpense.category);
+      setVendorName(editingExpense.vendorName || '');
+      setVendorPhone(editingExpense.vendorPhone || '');
+      setTotalAmount(String(editingExpense.totalAmount ?? ''));
+      setAmountPaid(String(editingExpense.amountPaid ?? ''));
+      setPaymentMode(editingExpense.paymentMode || 'CASH');
+      // Purane voucher ka darj payer waisa hi rehta hai — kisi aur ke kharch ko
+      // edit karne wale ke naam par nahi likha ja sakta.
+      setPaidBy(editingExpense.paidBy || accountPayerName || PAYER_OPTIONS[0]);
+      setNotes(editingExpense.notes || '');
+      setExpenseDate(editingExpense.expenseDate || new Date().toISOString().split('T')[0]);
+    }
+  }, [isOpen, editingExpense, accountPayerName]);
+
+  const openEditDialog = (exp: SamitiExpense) => {
+    setEditingExpense(exp);
+    setIsOpen(true);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vendorName.trim() || !parsedTotal) return;
+
+    // Locked accounts ke liye payer form state se nahi, account se aata hai:
+    // naya voucher hamesha khate ke naam par, purana voucher apne darj naam par.
+    const effectivePaidBy = payerLocked
+      ? (editingExpense?.paidBy || accountPayerName)
+      : paidBy;
+
+    if (editingExpense) {
+      if (amountsLocked && parsedTotal !== editingExpense.totalAmount) {
+        toast.error('कुल बिल राशि बदलने का अधिकार केवल एडमिन को है।', {
+          description: 'सुधार के लिए एडमिन से संपर्क करें।',
+        });
+        return;
+      }
+      if (paidBelowRecorded) {
+        toast.error(`भुगतान राशि ₹${savedPaid.toLocaleString('hi-IN')} से कम नहीं हो सकती।`, {
+          description: 'वेंडर को दी गई राशि केवल बढ़ाई जा सकती है — घटाने के लिए एडमिन से संपर्क करें।',
+        });
+        return;
+      }
+
+      updateExpense(editingExpense.id, {
+        category,
+        vendorName: vendorName.trim(),
+        vendorPhone: vendorPhone.trim(),
+        totalAmount: parsedTotal,
+        amountPaid: parsedPaid,
+        paymentMode,
+        paidBy: effectivePaidBy,
+        expenseDate,
+        notes: notes.trim(),
+      });
+    } else {
+      addExpense({
+        eventId: currentEvent.id,
+        category,
+        vendorName: vendorName.trim(),
+        vendorPhone: vendorPhone.trim(),
+        totalAmount: parsedTotal,
+        amountPaid: parsedPaid,
+        paymentMode,
+        paidBy: effectivePaidBy,
+        expenseDate,
+        notes: notes.trim(),
+      });
+    }
+
     setIsOpen(false);
   };
 
@@ -183,7 +273,11 @@ export const ExpenseManager: React.FC = () => {
                   <DialogHeader>
                     <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
                       <Receipt className="w-4 h-4 text-amber-600" />
-                      <span>नया खर्चा वाउचर दर्ज करें (Expense Voucher)</span>
+                      <span>
+                        {editingExpense
+                          ? `खर्चा वाउचर संपादन — ${editingExpense.voucherNo}`
+                          : 'नया खर्चा वाउचर दर्ज करें (Expense Voucher)'}
+                      </span>
                     </DialogTitle>
                   </DialogHeader>
 
@@ -230,27 +324,60 @@ export const ExpenseManager: React.FC = () => {
                       </div>
                     </div>
 
+                    {amountsLocked && (
+                      <div className="bg-rose-50 border border-rose-200 rounded-2xl p-2.5 flex items-start gap-2">
+                        <Lock className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                        <div className="text-[11px] font-semibold text-rose-900 leading-snug">
+                          यह वाउचर पहले ही दर्ज हो चुका है — कुल बिल राशि बदलने का अधिकार केवल एडमिन को है।
+                          {savedPaid > 0 && (
+                            <>
+                              {' '}भुगतान राशि ₹{savedPaid.toLocaleString('hi-IN')} से घटाई नहीं जा सकती, केवल बढ़ाई जा सकती है।
+                            </>
+                          )}
+                          <span className="block text-rose-700/90 font-medium mt-0.5">
+                            बकाया चुकाने के लिए “बकाया जमा करें” का उपयोग करें। वेंडर नाम, फोन व विवरण अब भी बदले जा सकते हैं।
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-3 gap-3 bg-amber-50/40 p-3 rounded-2xl border border-amber-200">
                       <div>
-                        <Label className="text-[11px] font-medium text-slate-700">कुल बिल (₹) *</Label>
+                        <Label className="text-[11px] font-medium text-slate-700 flex items-center gap-1">
+                          <span>कुल बिल (₹) *</span>
+                          {amountsLocked && <Lock className="w-2.5 h-2.5 text-rose-600 shrink-0" />}
+                        </Label>
                         <Input
                           type="number"
                           placeholder="50000"
                           value={totalAmount}
                           onChange={e => setTotalAmount(e.target.value)}
                           required
-                          className="mt-1 font-mono font-bold text-xs rounded-xl"
+                          readOnly={amountsLocked}
+                          title={amountsLocked ? 'दर्ज वाउचर की कुल बिल राशि केवल एडमिन बदल सकते हैं' : undefined}
+                          className={`mt-1 font-mono font-bold text-xs rounded-xl ${
+                            amountsLocked ? 'bg-slate-100 cursor-not-allowed opacity-90' : ''
+                          }`}
                         />
                       </div>
                       <div>
-                        <Label className="text-[11px] font-medium text-emerald-800">भुगतान (₹) *</Label>
+                        <Label className="text-[11px] font-medium text-emerald-800 flex items-center gap-1">
+                          <span>भुगतान (₹) *</span>
+                          {amountsLocked && <ArrowUp className="w-2.5 h-2.5 text-emerald-700 shrink-0" />}
+                        </Label>
                         <Input
                           type="number"
                           placeholder="20000"
                           value={amountPaid}
                           onChange={e => setAmountPaid(e.target.value)}
                           required
-                          className="mt-1 font-mono font-bold text-emerald-700 border-emerald-300 text-xs rounded-xl"
+                          min={amountsLocked ? savedPaid : 0}
+                          title={amountsLocked ? `पहले से दर्ज ₹${savedPaid.toLocaleString('hi-IN')} से कम नहीं हो सकती` : undefined}
+                          className={`mt-1 font-mono font-bold text-xs rounded-xl ${
+                            paidBelowRecorded
+                              ? 'text-rose-700 border-rose-300'
+                              : 'text-emerald-700 border-emerald-300'
+                          }`}
                         />
                       </div>
                       <div>
@@ -260,6 +387,13 @@ export const ExpenseManager: React.FC = () => {
                         </div>
                       </div>
                     </div>
+
+                    {paidBelowRecorded && (
+                      <p className="text-[11px] font-bold text-rose-600 flex items-start gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0 mt-px" />
+                        <span>पहले से ₹{savedPaid.toLocaleString('hi-IN')} भुगतान दर्ज है — इससे कम नहीं किया जा सकता।</span>
+                      </p>
+                    )}
 
                     <div className="grid grid-cols-3 gap-3">
                       <div>
@@ -284,38 +418,43 @@ export const ExpenseManager: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <Label className="text-xs font-medium">भुगतानकर्ता</Label>
-                        <Select value={paidBy} onValueChange={val => setPaidBy(val)}>
-                          <SelectTrigger className="mt-1 text-xs rounded-xl">
-                            <SelectValue placeholder="नाम चुनें" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PAYER_OPTIONS.map(name => (
-                              <SelectItem key={name} value={name} className="text-xs">
-                                {name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-medium">भुगतानकर्ता</Label>
+                          {payerLocked && (
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>लॉक्ड</span>
+                            </span>
+                          )}
+                        </div>
+                        {payerLocked ? (
+                          <>
+                            <Input
+                              value={paidBy}
+                              disabled
+                              className="mt-1 text-xs rounded-xl bg-slate-100 cursor-not-allowed opacity-90 text-slate-700 font-semibold"
+                            />
+                            <p className="text-[10px] text-amber-800 mt-1 font-medium">
+                              {editingExpense && paidBy !== accountPayerName
+                                ? `यह खर्च ${paidBy} के नाम पर दर्ज है।`
+                                : `यह खर्च स्वतः आपके नाम (${accountPayerName}) पर दर्ज होगा।`}
+                            </p>
+                          </>
+                        ) : (
+                          <Select value={paidBy} onValueChange={val => setPaidBy(val)}>
+                            <SelectTrigger className="mt-1 text-xs rounded-xl">
+                              <SelectValue placeholder="नाम चुनें" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PAYER_OPTIONS.map(name => (
+                                <SelectItem key={name} value={name} className="text-xs">
+                                  {name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] text-slate-500 shrink-0">जल्दी भरें:</span>
-                      {QUICK_PAYERS.map(name => (
-                        <button
-                          key={name}
-                          type="button"
-                          onClick={() => setPaidBy(name)}
-                          className={`px-2.5 py-1 rounded-full border text-[11px] transition-colors ${
-                            paidBy === name
-                              ? 'bg-amber-500 border-amber-500 text-white font-medium'
-                              : 'bg-white border-amber-200 text-amber-800 hover:bg-amber-50'
-                          }`}
-                        >
-                          {name}
-                        </button>
-                      ))}
                     </div>
 
                     <div>
@@ -333,7 +472,7 @@ export const ExpenseManager: React.FC = () => {
                         रद्द करें
                       </Button>
                       <Button type="submit" size="sm" className="bg-slate-900 text-white rounded-xl font-semibold">
-                        सुरक्षित करें
+                        {editingExpense ? 'अपडेट सुरक्षित करें' : 'सुरक्षित करें'}
                       </Button>
                     </div>
                   </form>
@@ -480,7 +619,34 @@ export const ExpenseManager: React.FC = () => {
                     </div>
 
                     {/* Actions Row */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                      {isDue && (
+                        <VendorDuePaymentDialog
+                          expense={row}
+                          payerOptions={PAYER_OPTIONS}
+                          triggerButton={
+                            <Button
+                              size="sm"
+                              className="h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs mr-auto"
+                              title={`शेष देनदारी ₹${row.balanceDue.toLocaleString('hi-IN')} जमा करें`}
+                            >
+                              <Wallet className="w-3.5 h-3.5 mr-1" />
+                              <span>बकाया जमा</span>
+                            </Button>
+                          }
+                        />
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditDialog(row)}
+                        className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 border-slate-200 rounded-xl"
+                        title="वाउचर संपादित करें"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Button>
+
                       <Button
                         size="sm"
                         variant="outline"
@@ -591,15 +757,43 @@ export const ExpenseManager: React.FC = () => {
                             {row.paymentMode}
                           </span>
                         </td>
-                        <td className="p-3 text-center">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setDeletingId(row.id)}
-                            className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                        <td className="p-3">
+                          <div className="flex items-center justify-center gap-1">
+                            {row.balanceDue > 0 && (
+                              <VendorDuePaymentDialog
+                                expense={row}
+                                payerOptions={PAYER_OPTIONS}
+                                triggerButton={
+                                  <Button
+                                    size="sm"
+                                    className="h-7 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow-xs"
+                                    title={`शेष देनदारी ₹${row.balanceDue.toLocaleString('hi-IN')} जमा करें`}
+                                  >
+                                    <Wallet className="w-3 h-3 mr-1" />
+                                    <span>बकाया जमा</span>
+                                  </Button>
+                                }
+                              />
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openEditDialog(row)}
+                              className="h-7 w-7 p-0 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+                              title="वाउचर संपादित करें"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setDeletingId(row.id)}
+                              className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                              title="वाउचर हटाएँ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );

@@ -25,6 +25,8 @@ import {
   Briefcase,
   Store,
   Check,
+  Lock,
+  ArrowUp,
 } from 'lucide-react';
 import { WhatsAppReceiptModal } from './WhatsAppReceiptModal';
 import { CasteCombobox } from './CasteCombobox';
@@ -81,8 +83,16 @@ const CATEGORY_META: Record<DonationCategory, { icon: React.FC<{ className?: str
   },
 };
 
-/** Quick-pick collector names shown as chips under the संग्रहकर्ता field */
-const QUICK_COLLECTORS = ['सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत', 'सुनील वर्मा', 'अमित कुमार'];
+// संग्रहकर्ता dropdown ke tay naam — in ke alawa koi aur naam nahi chuna ja sakta
+const COLLECTOR_OPTIONS = ['कार्यकर्ता प्रतिनिधि', 'सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत', 'सुनील वर्मा', 'अमित कुमार'];
+
+/**
+ * Green tick shown beside a label once its field carries a value. Sits in the
+ * label row rather than inside the input, since every combobox and the ward
+ * Select already occupy their right edge with a chevron.
+ */
+const FieldTick: React.FC<{ filled: boolean }> = ({ filled }) =>
+  filled ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : null;
 
 export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   initialData,
@@ -93,7 +103,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
 }) => {
-  const { addDonation, updateDonation, currentEvent, currentEntity, donations, isCollectorMode: contextCollectorMode, currentStaffMember } = useSamiti();
+  const { addDonation, updateDonation, currentEvent, currentEntity, donations, isCollectorMode: contextCollectorMode, currentStaffMember, canEditFinalizedAmounts } = useSamiti();
 
   const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
   const workerCollectorName = defaultCollectorName || currentStaffMember?.name || 'सुनील वर्मा';
@@ -147,6 +157,8 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
     } else if (isOpen) {
       if (isCollector) {
         setCollectorName(workerCollectorName);
+        // Collectors have no toggle for this, so it must never be left off.
+        setAutoSendReceipt(true);
       }
       // Focus name input when modal opens
       setTimeout(() => {
@@ -187,15 +199,38 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
     }
   }, [isOpen]);
 
-  // Quick preset amount click
-  const handlePresetClick = (amount: number) => {
-    setAcceptedAmount(String(amount));
-    setReceivedAmount(String(amount));
-  };
-
   const parsedAccepted = parseFloat(acceptedAmount) || 0;
   const parsedReceived = parseFloat(receivedAmount) || 0;
   const calculatedBalance = Math.max(0, parsedAccepted - parsedReceived);
+
+  /**
+   * Visual confirmation that a field carries a value. Filled inputs pick up a
+   * soft emerald wash so a collector can see at a glance which details are
+   * already captured while scanning the form mid-entry.
+   */
+  const filledStyle = (value: string) =>
+    value.trim()
+      ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+      : 'bg-slate-50/40 border-slate-200';
+
+  /**
+   * Amount locks apply only when revising a receipt that is already on the
+   * books — a brand new entry is always free to type. Members without
+   * `editFinalizedAmounts` cannot restate the pledge at all, and may only
+   * raise what has been collected (the बकाया जमा dialog is the normal route).
+   */
+  const isEditingSaved = !!initialData;
+  const amountsLocked = isEditingSaved && !canEditFinalizedAmounts;
+  const savedReceived = initialData?.receivedAmount ?? 0;
+  const receivedBelowRecorded = amountsLocked && parsedReceived < savedReceived;
+
+  // Quick preset amount click — inert on a locked receipt, so a stray tap
+  // cannot rewrite a pledge the member is not allowed to change.
+  const handlePresetClick = (amount: number) => {
+    if (amountsLocked) return;
+    setAcceptedAmount(String(amount));
+    setReceivedAmount(String(amount));
+  };
 
   // Next receipt number preview
   const nextReceiptNumber = donations && donations.length > 0
@@ -223,8 +258,8 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
 
     const toastId = toast.loading(`रसीद ${donation.name} को भेजी जा रही है…`);
     try {
-      // The PDF is the whole receipt now, so a render failure has to surface
-      // rather than silently degrade to a text message.
+      // The receipt goes out as the PDF plus the message as its caption, so a
+      // render failure has to surface rather than silently degrade to text only.
       const pdfDataUrl = await generateReceiptPdfDataUrl(donation, currentEntity, currentEvent);
 
       await sendWhatsAppReceipt({
@@ -254,6 +289,20 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       parsedReceived < 0
     ) {
       toast.error('राशि ऋणात्मक (negative) नहीं हो सकती। कृपया सही राशि दर्ज करें।');
+      return;
+    }
+
+    if (amountsLocked && parsedAccepted !== (initialData?.acceptedAmount ?? 0)) {
+      toast.error('स्वीकृत राशि बदलने का अधिकार केवल एडमिन को है।', {
+        description: 'सुधार के लिए एडमिन से संपर्क करें।',
+      });
+      return;
+    }
+
+    if (receivedBelowRecorded) {
+      toast.error(`जमा राशि ₹${savedReceived.toLocaleString('hi-IN')} से कम नहीं हो सकती।`, {
+        description: 'दानदाता से मिली राशि केवल बढ़ाई जा सकती है — घटाने के लिए एडमिन से संपर्क करें।',
+      });
       return;
     }
 
@@ -328,9 +377,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     <Flame className="w-3 h-3 text-amber-300 animate-pulse" />
                     {currentEntity?.name || 'श्री दुर्गा पूजा महासमिति'}
                   </span>
-                  <span className="text-[10px] text-white/70 font-medium hidden xs:inline">
-                    {currentEvent?.title || 'शारदीय नवरात्र 2026'}
-                  </span>
                 </div>
 
                 <h3 className="text-base sm:text-lg font-black text-white font-serif tracking-wide flex items-center gap-2">
@@ -366,7 +412,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     <Tag className="w-3.5 h-3.5 text-amber-600" />
                     <span>सहयोगकर्ता की श्रेणी</span>
                   </Label>
-                  <span className="text-[10px] text-slate-500 font-medium">VIL / EMP / SHO / OTH</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -416,13 +461,14 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                   <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1">
                     <User className="w-3.5 h-3.5 text-amber-600" />
                     <span>सहयोगकर्ता का नाम *</span>
+                    <FieldTick filled={!!name.trim()} />
                   </Label>
                   <Input
                     ref={nameInputRef}
                     value={name}
                     onChange={e => setName(e.target.value)}
                     required
-                    className="h-10 text-sm font-semibold text-slate-900 border-slate-200 focus-visible:ring-amber-500 focus-visible:border-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
+                    className={`h-10 text-sm font-semibold focus-visible:ring-amber-500 focus-visible:border-amber-500 rounded-xl hover:bg-white transition-colors ${filledStyle(name)}`}
                   />
                 </div>
 
@@ -432,7 +478,8 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     <div className="flex items-center justify-between mb-1">
                       <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                         <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>व्हाट्सएप नंबर</span>
+                        <span>व्हाट्सएप नंबर *</span>
+                        <FieldTick filled={!!phone.trim()} />
                       </Label>
                     </div>
                     <div className="relative">
@@ -444,7 +491,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                           const val = e.target.value.replace(/[^\d\s]/g, '');
                           setPhone(val);
                         }}
-                        className="h-10 pl-11 text-xs font-mono font-bold text-slate-900 border-slate-200 focus-visible:ring-emerald-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors tracking-wide"
+                        className={`h-10 pl-11 text-xs font-mono font-bold focus-visible:ring-emerald-500 rounded-xl hover:bg-white transition-colors tracking-wide ${filledStyle(phone)}`}
                       />
                     </div>
                   </div>
@@ -453,13 +500,14 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     <div className="flex items-center justify-between mb-1">
                       <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                         <Tag className="w-3.5 h-3.5 text-slate-500" />
-                        <span>जाति</span>
+                        <span>जाति *</span>
+                        <FieldTick filled={!!caste.trim()} />
                       </Label>
                     </div>
                     <CasteCombobox
                       value={caste}
                       onChange={setCaste}
-                      className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
+                      className={`h-10 text-xs font-medium focus-visible:ring-amber-500 rounded-xl hover:bg-white transition-colors ${filledStyle(caste)}`}
                     />
                   </div>
                 </div>
@@ -469,22 +517,24 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                   <div>
                     <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                      <span>गाँव</span>
+                      <span>गाँव *</span>
+                      <FieldTick filled={!!village.trim()} />
                     </Label>
                     <VillageCombobox
                       value={village}
                       onChange={setVillage}
-                      className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
+                      className={`h-10 text-xs font-medium focus-visible:ring-amber-500 rounded-xl hover:bg-white transition-colors ${filledStyle(village)}`}
                     />
                   </div>
 
                   <div>
                     <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                      <span>वार्ड नं०</span>
+                      <span>वार्ड नं० *</span>
+                      <FieldTick filled={!!address1.trim()} />
                     </Label>
                     <Select value={address1} onValueChange={setAddress1}>
-                      <SelectTrigger className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors">
+                      <SelectTrigger className={`h-10 text-xs font-medium focus-visible:ring-amber-500 rounded-xl hover:bg-white transition-colors ${filledStyle(address1)}`}>
                         <SelectValue placeholder="वार्ड नं० चुनें" />
                       </SelectTrigger>
                       <SelectContent>
@@ -500,12 +550,13 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                   <div>
                     <Label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      <span>लैंडमार्क</span>
+                      <span>लैंडमार्क *</span>
+                      <FieldTick filled={!!address2.trim()} />
                     </Label>
                     <LocalityCombobox
                       value={address2}
                       onChange={setAddress2}
-                      className="h-10 text-xs font-medium text-slate-900 border-slate-200 focus-visible:ring-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
+                      className={`h-10 text-xs font-medium focus-visible:ring-amber-500 rounded-xl hover:bg-white transition-colors ${filledStyle(address2)}`}
                     />
                   </div>
                 </div>
@@ -522,8 +573,27 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <Coins className="w-3.5 h-3.5 text-amber-600" />
                       <span>त्वरित राशि:</span>
                     </span>
-                    <span className="text-[10px] text-amber-800/80 font-medium">1-क्लिक में दोनों राशि स्वतः भरें</span>
+                    <span className="text-[10px] text-amber-800/80 font-medium">
+                      {amountsLocked ? 'दर्ज रसीद — राशि लॉक है' : '1-क्लिक में दोनों राशि स्वतः भरें'}
+                    </span>
                   </div>
+
+                  {amountsLocked && (
+                    <div className="mb-2 bg-rose-50 border border-rose-200 rounded-xl p-2.5 flex items-start gap-2">
+                      <Lock className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                      <div className="text-[11px] font-semibold text-rose-900 leading-snug">
+                        यह रसीद पहले ही दर्ज हो चुकी है — स्वीकृत राशि बदलने का अधिकार केवल एडमिन को है।
+                        {savedReceived > 0 && (
+                          <>
+                            {' '}जमा राशि ₹{savedReceived.toLocaleString('hi-IN')} से घटाई नहीं जा सकती, केवल बढ़ाई जा सकती है।
+                          </>
+                        )}
+                        <span className="block text-rose-700/90 font-medium mt-0.5">
+                          बकाया वसूली के लिए “बकाया जमा करें” का उपयोग करें। नाम, पता व मोबाइल अब भी बदले जा सकते हैं।
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
                     {PRESET_AMOUNTS.map(amount => {
                       const isMatched = parsedAccepted === amount && parsedReceived === amount;
@@ -552,6 +622,12 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <Label className="text-xs font-bold text-slate-800">
                         स्वीकृत राशि
                       </Label>
+                      {amountsLocked && (
+                        <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                          <Lock className="w-2.5 h-2.5" />
+                          <span>लॉक्ड</span>
+                        </span>
+                      )}
                     </div>
                     <div className="relative">
                       <span className="absolute left-3 top-2 text-sm text-slate-500 font-bold">₹</span>
@@ -561,7 +637,11 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         value={acceptedAmount}
                         onChange={e => setAcceptedAmount(e.target.value)}
                         required
-                        className="pl-7 h-10 text-base font-mono font-black text-slate-900 border-amber-200 focus-visible:ring-amber-500 rounded-xl"
+                        readOnly={amountsLocked}
+                        title={amountsLocked ? 'दर्ज रसीद की स्वीकृत राशि केवल एडमिन बदल सकते हैं' : undefined}
+                        className={`pl-7 h-10 text-base font-mono font-black text-slate-900 border-amber-200 focus-visible:ring-amber-500 rounded-xl ${
+                          amountsLocked ? 'bg-slate-100 cursor-not-allowed opacity-90' : ''
+                        }`}
                       />
                     </div>
                   </div>
@@ -572,18 +652,35 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                       <Label className="text-xs font-bold text-emerald-900">
                         जमा राशि
                       </Label>
+                      {amountsLocked && (
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                          <ArrowUp className="w-2.5 h-2.5" />
+                          <span>केवल बढ़ा सकते हैं</span>
+                        </span>
+                      )}
                     </div>
                     <div className="relative">
                       <span className="absolute left-3 top-2 text-sm text-emerald-600 font-bold">₹</span>
                       <Input
                         type="number"
-                        min="0"
+                        min={amountsLocked ? savedReceived : 0}
                         value={receivedAmount}
                         onChange={e => setReceivedAmount(e.target.value)}
                         required
-                        className="pl-7 h-10 text-base font-mono font-black text-emerald-800 border-emerald-200 focus-visible:ring-emerald-500 rounded-xl"
+                        title={amountsLocked ? `पहले से दर्ज ₹${savedReceived.toLocaleString('hi-IN')} से कम नहीं हो सकती` : undefined}
+                        className={`pl-7 h-10 text-base font-mono font-black rounded-xl ${
+                          receivedBelowRecorded
+                            ? 'text-rose-700 border-rose-300 focus-visible:ring-rose-500'
+                            : 'text-emerald-800 border-emerald-200 focus-visible:ring-emerald-500'
+                        }`}
                       />
                     </div>
+                    {receivedBelowRecorded && (
+                      <p className="text-[10px] font-bold text-rose-600 flex items-start gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0 mt-px" />
+                        <span>पहले से ₹{savedReceived.toLocaleString('hi-IN')} जमा है — इससे कम नहीं किया जा सकता।</span>
+                      </p>
+                    )}
                   </div>
 
                   {/* Card 3: Balance Display */}
@@ -701,32 +798,30 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                         </span>
                       )}
                     </div>
-                    <Input
-                      value={collectorName}
-                      onChange={e => setCollectorName(e.target.value)}
-                      disabled={isCollector}
-                      className={`h-11 text-xs font-semibold text-slate-900 border-slate-200 rounded-xl ${isCollector ? 'bg-slate-100 cursor-not-allowed opacity-90 text-slate-700' : 'bg-white'
-                        } focus-visible:ring-amber-500`}
-                    />
                     {isCollector ? (
-                      <p className="text-[10px] text-amber-800 mt-1 font-medium">
-                        यह रसीद स्वतः आपके नाम ({workerCollectorName}) पर दर्ज होगी।
-                      </p>
+                      <>
+                        <Input
+                          value={collectorName}
+                          disabled
+                          className="h-11 text-xs font-semibold border-slate-200 rounded-xl bg-slate-100 cursor-not-allowed opacity-90 text-slate-700"
+                        />
+                        <p className="text-[10px] text-amber-800 mt-1 font-medium">
+                          यह रसीद स्वतः आपके नाम ({workerCollectorName}) पर दर्ज होगी।
+                        </p>
+                      </>
                     ) : (
-                      /* Quick collector selection chips */
-                      <div className="flex flex-wrap items-center gap-1 mt-1">
-                        <span className="text-[9px] text-slate-400">कार्यकर्ता:</span>
-                        {QUICK_COLLECTORS.map(name => (
-                          <button
-                            key={name}
-                            type="button"
-                            onClick={() => setCollectorName(name)}
-                            className="text-[9px] px-1.5 py-0.2 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
-                          >
-                            {name}
-                          </button>
-                        ))}
-                      </div>
+                      <Select value={collectorName} onValueChange={val => setCollectorName(val)}>
+                        <SelectTrigger className="h-11 text-xs font-semibold text-slate-900 border-slate-200 rounded-xl bg-white focus:ring-amber-500">
+                          <SelectValue placeholder="नाम चुनें" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COLLECTOR_OPTIONS.map(name => (
+                            <SelectItem key={name} value={name} className="text-xs">
+                              {name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
                 </div>
@@ -746,8 +841,9 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
 
               {/* ------------------------------------------------------- */}
               {/* SECTION 3: DIGITAL RECEIPT AUTO-LAUNCH TOGGLE           */}
+              {/* Admins only — collectors always auto-send.               */}
               {/* ------------------------------------------------------- */}
-              {!initialData && (
+              {!initialData && !isCollector && (
                 <div className="bg-emerald-50/70 p-3 rounded-2xl border border-emerald-200/80 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">

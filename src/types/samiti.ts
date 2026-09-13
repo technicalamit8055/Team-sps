@@ -157,6 +157,21 @@ export const EXPENSE_CATEGORIES: Record<ExpenseCategory, ExpenseCategoryInfo> = 
   other_essential: { code: 'other_essential', labelEn: 'Other Essential Expenses', labelHi: 'अन्य जरूरी खर्च', icon: '📌' },
 };
 
+/**
+ * One instalment paid to a vendor against a voucher. A bill settled with an
+ * advance and cleared later gets one entry per payment, so the ledger shows
+ * when each rupee actually left the fund.
+ */
+export interface ExpensePayment {
+  id: string;
+  amount: number;
+  paymentMode: PaymentMode;
+  date: string; // YYYY-MM-DD — the day this instalment was paid
+  paidBy?: string;
+  note?: string;
+  createdAt: string;
+}
+
 export interface SamitiExpense {
   id: string;
   eventId: string;
@@ -172,7 +187,14 @@ export interface SamitiExpense {
   paidBy?: string;
   billReceiptUrl?: string;
   notes?: string;
+  /**
+   * Instalment log behind amountPaid. Vouchers created before this existed
+   * carry no log, so an empty list means "the paid amount went out on
+   * `expenseDate`" — never "nothing was paid".
+   */
+  payments?: ExpensePayment[];
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CashHandoverRecord {

@@ -464,17 +464,36 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                       desc: 'Download reports as Excel or PDF',
                       icon: <Download className="w-4 h-4 text-purple-600" />,
                     },
+                    {
+                      key: 'editFinalizedAmounts' as keyof ModuleAccess,
+                      label: 'Revise Recorded Amounts (राशि संशोधन)',
+                      desc: 'Correct a saved receipt or voucher amount. Without this, a member can still collect outstanding dues — but can never reduce an amount already recorded.',
+                      icon: <Lock className="w-4 h-4 text-rose-600" />,
+                      sensitive: true,
+                    },
                   ].map(item => {
                     const isChecked = !!moduleModalData.modules[item.key];
+                    const isSensitive = (item as { sensitive?: boolean }).sensitive === true;
                     return (
                       <label
                         key={item.key}
-                        className="flex items-start justify-between gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                        className={`flex items-start justify-between gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                          isSensitive
+                            ? 'bg-rose-50/40 border border-rose-200/70 hover:bg-rose-50 mt-1'
+                            : 'hover:bg-slate-50'
+                        }`}
                       >
                         <div className="flex items-start gap-2.5 min-w-0">
                           <div className="mt-0.5 shrink-0">{item.icon}</div>
                           <div>
-                            <p className="font-bold text-slate-800 text-xs">{item.label}</p>
+                            <p className="font-bold text-slate-800 text-xs">
+                              {item.label}
+                              {isSensitive && (
+                                <span className="ml-1.5 align-middle text-[9px] font-extrabold uppercase tracking-wide text-rose-700 bg-rose-100 border border-rose-200 px-1.5 py-0.5 rounded">
+                                  Admin only
+                                </span>
+                              )}
+                            </p>
                             <p className="text-[10px] text-muted-foreground">{item.desc}</p>
                           </div>
                         </div>

@@ -10,6 +10,17 @@ export interface ModuleAccess {
   analytics: boolean;       // Financial & demographic charts
   karyakartaMgmt: boolean;  // Manage volunteers in that workspace
   exportData: boolean;      // Excel/PDF download & export
+  /**
+   * Revise an amount that is already on the books — a donor's pledge, the
+   * money already receipted against it, or a vendor's bill and payments.
+   *
+   * Withheld from everyone but full-access members on purpose. A collector
+   * who mistypes a receipt must have it corrected by an admin, and money a
+   * donor has already handed over can never be quietly reduced. Without this
+   * flag a member can still collect more against a pledge (बकाया जमा) —
+   * that only ever moves the received figure upward.
+   */
+  editFinalizedAmounts: boolean;
 }
 
 export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAccess> = {
@@ -21,6 +32,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     analytics: true,
     karyakartaMgmt: true,
     exportData: true,
+    editFinalizedAmounts: true,
   },
   editor: {
     votersCRM: true,
@@ -30,6 +42,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     analytics: true,
     karyakartaMgmt: false,
     exportData: true,
+    editFinalizedAmounts: false, // may add entries, but not revise saved amounts
   },
   viewer: {
     votersCRM: true,
@@ -39,6 +52,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     analytics: true,
     karyakartaMgmt: false,
     exportData: false,
+    editFinalizedAmounts: false,
   },
   collector: {
     votersCRM: false,
@@ -48,6 +62,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     analytics: false,        // Strictly hidden
     karyakartaMgmt: false,   // Strictly hidden
     exportData: false,       // Strictly hidden
+    editFinalizedAmounts: false, // Corrections must be made by an admin
   },
   no_access: {
     votersCRM: false,
@@ -57,6 +72,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     analytics: false,
     karyakartaMgmt: false,
     exportData: false,
+    editFinalizedAmounts: false,
   },
 };
 

@@ -6,6 +6,7 @@ import {
   SamitiDonation,
   DonationPayment,
   SamitiExpense,
+  ExpensePayment,
   SamitiFinancialSummary,
   DonationCategory,
   PaymentMode,
@@ -519,6 +520,15 @@ interface SamitiContextType {
   currentStaffMember: MasterStaff | null;
   /** Effective module permissions of the logged-in user for the current workspace. */
   currentModuleAccess: ModuleAccess;
+  /**
+   * Whether the logged-in member may revise amounts already recorded — the
+   * pledged/received figures on a donation receipt and the bill/paid figures
+   * on an expense voucher. Everyone else may only add to what was collected
+   * or paid. UI uses this to lock the amount inputs; the mutations enforce it
+   * regardless.
+   */
+  canEditFinalizedAmounts: boolean;
+  recordExpensePayment: (id: string, payment: { amount: number; paymentMode: PaymentMode; date: string; paidBy?: string; note?: string }) => void;
   isCloudConnected: boolean;
   isSyncing: boolean;
   syncWithCloud: () => Promise<void>;
@@ -737,6 +747,15 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return merged;
   }, [currentStaffMember, currentEntityId, isCollectorMode]);
 
+  /**
+   * May the logged-in member revise an amount that is already on the books?
+   *
+   * Only full-access staff. Members with donation/expense access can create
+   * entries and collect outstanding dues freely, but a figure already
+   * receipted is theirs to add to — never to reduce or rewrite.
+   */
+  const canEditFinalizedAmounts = currentModuleAccess.editFinalizedAmounts === true;
+
   // Auto-lock current entity for assigned collector
   useEffect(() => {
     if (auth?.assignedWorkspaceId && currentEntityId !== auth.assignedWorkspaceId) {
@@ -944,7 +963,9 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               paidBy: newRow.paid_by || undefined,
               billReceiptUrl: newRow.bill_receipt_url || undefined,
               notes: newRow.notes || undefined,
+              payments: Array.isArray(newRow.payments) ? newRow.payments : [],
               createdAt: newRow.created_at || new Date().toISOString(),
+              updatedAt: newRow.updated_at || newRow.created_at || new Date().toISOString(),
             }];
           });
         } else if (eventType === 'UPDATE' && newRow) {
@@ -963,6 +984,8 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             paidBy: newRow.paid_by || undefined,
             billReceiptUrl: newRow.bill_receipt_url || undefined,
             notes: newRow.notes || undefined,
+            payments: Array.isArray(newRow.payments) ? newRow.payments : e.payments,
+            updatedAt: newRow.updated_at || e.updatedAt,
           } : e));
         } else if (eventType === 'DELETE' && oldRow) {
           setExpenses(prev => prev.filter(e => e.id !== oldRow.id));
@@ -1193,44 +1216,110 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [currentDonations, saveDonationToCloud]
   );
 
-  // Update donation
+  /**
+   * Update a donation entry.
+   *
+   * Amounts on a saved receipt are locked to members without
+   * `editFinalizedAmounts` (i.e. everyone but full-access staff). Two separate
+   * rules apply, and both are enforced here rather than only in the form, so a
+   * stale dialog or a direct call cannot slip past them:
+   *
+   *  1. The pledged (स्वीकृत) amount cannot be changed at all — that figure is
+   *     what the donor signed for and what the printed receipt shows.
+   *  2. The received (जमा) amount can only grow. A member collecting a donor's
+   *     बकाया adds to it; nobody can quietly write down money the donor has
+   *     already handed over.
+   *
+   * Amount edits that violate this are dropped and the rest of the edit (name,
+   * address, phone, remarks…) still saves, so a collector fixing a spelling is
+   * never blocked by a locked amount field.
+   */
   const updateDonation = useCallback((id: string, updates: Partial<SamitiDonation>) => {
     let updatedItem: SamitiDonation | null = null;
+    let blockedAccepted = false;
+    let blockedReceived = false;
+
     setDonations(prev =>
       prev.map(item => {
         if (item.id === id) {
+          if (!canEditFinalizedAmounts) {
+            if (updates.acceptedAmount !== undefined && updates.acceptedAmount !== item.acceptedAmount) {
+              blockedAccepted = true;
+              updates = { ...updates, acceptedAmount: item.acceptedAmount };
+            }
+            if (updates.receivedAmount !== undefined && updates.receivedAmount < item.receivedAmount) {
+              blockedReceived = true;
+              updates = { ...updates, receivedAmount: item.receivedAmount };
+            }
+          }
           const accepted = updates.acceptedAmount !== undefined ? updates.acceptedAmount : item.acceptedAmount;
           const received = updates.receivedAmount !== undefined ? updates.receivedAmount : item.receivedAmount;
           const balanceAmount = Math.max(0, accepted - received);
 
-          // A manual edit of the received total is the authority — collapse the
-          // instalment log to that corrected figure rather than leaving a
-          // history whose sum no longer matches receivedAmount.
+          // How the instalment log follows a changed received total depends on
+          // who changed it and which way it moved:
+          //
+          //  - An admin restating the figure is correcting the books, so the
+          //    log collapses to that one authoritative amount. Leaving the old
+          //    instalments would give a history whose sum no longer matches
+          //    receivedAmount.
+          //  - A member topping up (the only direction they are allowed) has
+          //    collected more money, so the difference is appended as a fresh
+          //    instalment and every earlier payment stays on the record.
           const receivedChanged =
             updates.receivedAmount !== undefined && updates.receivedAmount !== item.receivedAmount;
+          const isTopUp = receivedChanged && received > item.receivedAmount;
+          const now = new Date().toISOString();
+
+          const existingLog: DonationPayment[] = Array.isArray(item.payments) ? item.payments : [];
+          // Rows saved before the log existed carry none — seed the opening
+          // instalment so the appended history still totals receivedAmount.
+          const priorLog: DonationPayment[] =
+            existingLog.length === 0 && item.receivedAmount > 0
+              ? [{
+                  id: `pay-${item.id}-opening`,
+                  amount: item.receivedAmount,
+                  paymentMode: item.paymentMode,
+                  date: item.date,
+                  collectorName: item.collectorName,
+                  note: 'प्रथम जमा',
+                  createdAt: item.createdAt,
+                }]
+              : existingLog;
+
           const payments =
             updates.payments !== undefined
               ? updates.payments
-              : receivedChanged
-                ? (received > 0
-                    ? [{
-                        id: `pay-${item.id}-opening`,
-                        amount: received,
-                        paymentMode: (updates.paymentMode ?? item.paymentMode),
-                        date: updates.date ?? item.date,
-                        collectorName: updates.collectorName ?? item.collectorName,
-                        note: 'संशोधित जमा',
-                        createdAt: new Date().toISOString(),
-                      }]
-                    : [])
-                : item.payments;
+              : isTopUp
+                ? [...priorLog, {
+                    id: `pay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    amount: received - item.receivedAmount,
+                    paymentMode: (updates.paymentMode ?? item.paymentMode),
+                    date: updates.date ?? new Date().toISOString().split('T')[0],
+                    collectorName: updates.collectorName ?? item.collectorName,
+                    note: 'बकाया जमा',
+                    createdAt: now,
+                  }]
+                : receivedChanged
+                  ? (received > 0
+                      ? [{
+                          id: `pay-${item.id}-opening`,
+                          amount: received,
+                          paymentMode: (updates.paymentMode ?? item.paymentMode),
+                          date: updates.date ?? item.date,
+                          collectorName: updates.collectorName ?? item.collectorName,
+                          note: 'संशोधित जमा',
+                          createdAt: now,
+                        }]
+                      : [])
+                  : item.payments;
 
           updatedItem = {
             ...item,
             ...updates,
             payments,
             balanceAmount,
-            updatedAt: new Date().toISOString(),
+            updatedAt: now,
           };
           return updatedItem;
         }
@@ -1240,8 +1329,21 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (updatedItem) {
       saveDonationToCloud(updatedItem);
     }
+
+    if (blockedAccepted || blockedReceived) {
+      toast.warning(
+        blockedAccepted && blockedReceived
+          ? 'राशि में बदलाव सुरक्षित नहीं हुआ — स्वीकृत राशि बदलने और जमा राशि घटाने का अधिकार केवल एडमिन को है। बाकी विवरण अपडेट कर दिए गए।'
+          : blockedAccepted
+            ? 'स्वीकृत राशि नहीं बदली गई — दर्ज रसीद की राशि केवल एडमिन बदल सकते हैं। बाकी विवरण अपडेट कर दिए गए।'
+            : 'जमा राशि घटाई नहीं जा सकती — दानदाता से मिली राशि केवल बढ़ाई जा सकती है (बकाया जमा करें)। बाकी विवरण अपडेट कर दिए गए।',
+        { description: 'सुधार के लिए एडमिन से संपर्क करें।' }
+      );
+      return;
+    }
+
     toast.success('दान प्रविष्टि सफलतापूर्वक अपडेट की गई!');
-  }, [saveDonationToCloud]);
+  }, [saveDonationToCloud, canEditFinalizedAmounts]);
 
   /**
    * Record a follow-up instalment (बकाया जमा) against an existing pledge.
@@ -1359,12 +1461,34 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const voucherNo = `VCH-${String(currentExpenses.length + 1).padStart(3, '0')}`;
       const balanceDue = Math.max(0, expenseData.totalAmount - expenseData.amountPaid);
 
+      const now = new Date().toISOString();
+      const id = `exp-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+      // Open the instalment log with whatever was paid at entry time, so a
+      // vendor bill cleared later builds on a complete history.
+      const payments: ExpensePayment[] =
+        expenseData.payments && expenseData.payments.length > 0
+          ? expenseData.payments
+          : expenseData.amountPaid > 0
+            ? [{
+                id: `epay-${id}-opening`,
+                amount: expenseData.amountPaid,
+                paymentMode: expenseData.paymentMode,
+                date: expenseData.expenseDate,
+                paidBy: expenseData.paidBy,
+                note: 'प्रथम भुगतान',
+                createdAt: now,
+              }]
+            : [];
+
       const newExpense: SamitiExpense = {
         ...expenseData,
-        id: `exp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id,
         voucherNo,
         balanceDue,
-        createdAt: new Date().toISOString(),
+        payments,
+        createdAt: now,
+        updatedAt: now,
       };
 
       setExpenses(prev => [...prev, newExpense]);
@@ -1375,20 +1499,93 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [currentExpenses.length, saveExpenseToCloud]
   );
 
-  // Update expense
+  /**
+   * Update an expense voucher.
+   *
+   * Mirrors `updateDonation`: once a voucher is saved, members without
+   * `editFinalizedAmounts` cannot restate the bill total, and the amount paid
+   * to the vendor can only grow (via बकाया जमा). Everything else — vendor
+   * name, phone, category, notes — stays freely editable, and a blocked
+   * amount never discards the rest of the edit.
+   */
   const updateExpense = useCallback((id: string, updates: Partial<SamitiExpense>) => {
     let updatedExp: SamitiExpense | null = null;
+    let blockedTotal = false;
+    let blockedPaid = false;
+
     setExpenses(prev =>
       prev.map(item => {
         if (item.id === id) {
+          if (!canEditFinalizedAmounts) {
+            if (updates.totalAmount !== undefined && updates.totalAmount !== item.totalAmount) {
+              blockedTotal = true;
+              updates = { ...updates, totalAmount: item.totalAmount };
+            }
+            if (updates.amountPaid !== undefined && updates.amountPaid < item.amountPaid) {
+              blockedPaid = true;
+              updates = { ...updates, amountPaid: item.amountPaid };
+            }
+          }
+
           const total = updates.totalAmount !== undefined ? updates.totalAmount : item.totalAmount;
           const paid = updates.amountPaid !== undefined ? updates.amountPaid : item.amountPaid;
           const balanceDue = Math.max(0, total - paid);
 
+          // Same split as updateDonation: an admin restating the paid total is
+          // correcting the books and the log collapses to it, while a member
+          // topping up has actually paid the vendor more, so the difference is
+          // appended and the earlier payment runs stay on the record.
+          const paidChanged = updates.amountPaid !== undefined && updates.amountPaid !== item.amountPaid;
+          const isTopUp = paidChanged && paid > item.amountPaid;
+          const now = new Date().toISOString();
+
+          const existingLog: ExpensePayment[] = Array.isArray(item.payments) ? item.payments : [];
+          const priorLog: ExpensePayment[] =
+            existingLog.length === 0 && item.amountPaid > 0
+              ? [{
+                  id: `epay-${item.id}-opening`,
+                  amount: item.amountPaid,
+                  paymentMode: item.paymentMode,
+                  date: item.expenseDate,
+                  paidBy: item.paidBy,
+                  note: 'प्रथम भुगतान',
+                  createdAt: item.createdAt,
+                }]
+              : existingLog;
+
+          const payments =
+            updates.payments !== undefined
+              ? updates.payments
+              : isTopUp
+                ? [...priorLog, {
+                    id: `epay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                    amount: paid - item.amountPaid,
+                    paymentMode: updates.paymentMode ?? item.paymentMode,
+                    date: updates.expenseDate ?? new Date().toISOString().split('T')[0],
+                    paidBy: updates.paidBy ?? item.paidBy,
+                    note: 'बकाया जमा',
+                    createdAt: now,
+                  }]
+                : paidChanged
+                  ? (paid > 0
+                      ? [{
+                          id: `epay-${item.id}-opening`,
+                          amount: paid,
+                          paymentMode: updates.paymentMode ?? item.paymentMode,
+                          date: updates.expenseDate ?? item.expenseDate,
+                          paidBy: updates.paidBy ?? item.paidBy,
+                          note: 'संशोधित भुगतान',
+                          createdAt: now,
+                        }]
+                      : [])
+                  : item.payments;
+
           updatedExp = {
             ...item,
             ...updates,
+            payments,
             balanceDue,
+            updatedAt: now,
           };
           return updatedExp;
         }
@@ -1398,8 +1595,116 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (updatedExp) {
       saveExpenseToCloud(updatedExp);
     }
+
+    if (blockedTotal || blockedPaid) {
+      toast.warning(
+        blockedTotal && blockedPaid
+          ? 'राशि में बदलाव सुरक्षित नहीं हुआ — कुल बिल बदलने और भुगतान घटाने का अधिकार केवल एडमिन को है। बाकी विवरण अपडेट कर दिए गए।'
+          : blockedTotal
+            ? 'कुल बिल राशि नहीं बदली गई — दर्ज वाउचर की राशि केवल एडमिन बदल सकते हैं। बाकी विवरण अपडेट कर दिए गए।'
+            : 'भुगतान राशि घटाई नहीं जा सकती — वेंडर को दी गई राशि केवल बढ़ाई जा सकती है (बकाया जमा करें)। बाकी विवरण अपडेट कर दिए गए।',
+        { description: 'सुधार के लिए एडमिन से संपर्क करें।' }
+      );
+      return;
+    }
+
     toast.success('खर्चा वाउचर अपडेट किया गया!');
-  }, [saveExpenseToCloud]);
+  }, [saveExpenseToCloud, canEditFinalizedAmounts]);
+
+  /**
+   * Record a follow-up payment (बकाया जमा) against a vendor's outstanding
+   * voucher balance — the expense-side twin of `recordDonationPayment`.
+   *
+   * The instalment is appended to the voucher's payment log and amountPaid
+   * grows by that amount, so one voucher keeps one vendor bill while every
+   * payment run stays individually visible. Vouchers that pre-date the log
+   * carry an empty `payments`, meaning "the whole paid amount went out on
+   * `expenseDate`"; seeding that opening instalment here keeps the log's
+   * total equal to amountPaid for those rows too.
+   */
+  const recordExpensePayment = useCallback(
+    (
+      id: string,
+      payment: { amount: number; paymentMode: PaymentMode; date: string; paidBy?: string; note?: string }
+    ) => {
+      const amount = Number(payment.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        toast.error('भुगतान राशि शून्य से अधिक होनी चाहिए।');
+        return;
+      }
+
+      let updatedExp: SamitiExpense | null = null;
+      let rejected = false;
+
+      setExpenses(prev =>
+        prev.map(item => {
+          if (item.id !== id) return item;
+
+          const due = Math.max(0, item.totalAmount - item.amountPaid);
+          if (amount > due) {
+            rejected = true;
+            return item;
+          }
+
+          const now = new Date().toISOString();
+          const existing = Array.isArray(item.payments) ? item.payments : [];
+          // Backfill the opening instalment for vouchers saved before the log existed.
+          const history: ExpensePayment[] =
+            existing.length === 0 && item.amountPaid > 0
+              ? [{
+                  id: `epay-${item.id}-opening`,
+                  amount: item.amountPaid,
+                  paymentMode: item.paymentMode,
+                  date: item.expenseDate,
+                  paidBy: item.paidBy,
+                  note: 'प्रथम भुगतान',
+                  createdAt: item.createdAt,
+                }]
+              : existing;
+
+          const newPayment: ExpensePayment = {
+            id: `epay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            amount,
+            paymentMode: payment.paymentMode,
+            date: payment.date,
+            paidBy: payment.paidBy?.trim() || item.paidBy,
+            note: payment.note?.trim() || undefined,
+            createdAt: now,
+          };
+
+          const payments = [...history, newPayment];
+          const amountPaid = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+          updatedExp = {
+            ...item,
+            payments,
+            amountPaid,
+            balanceDue: Math.max(0, item.totalAmount - amountPaid),
+            updatedAt: now,
+          };
+          return updatedExp;
+        })
+      );
+
+      if (rejected) {
+        toast.error('भुगतान राशि शेष देनदारी से अधिक नहीं हो सकती।');
+        return;
+      }
+      if (!updatedExp) {
+        toast.error('खर्चा वाउचर नहीं मिला।');
+        return;
+      }
+
+      saveExpenseToCloud(updatedExp);
+      const settled = (updatedExp as SamitiExpense).balanceDue === 0;
+      toast.success(
+        settled
+          ? `₹${amount.toLocaleString('hi-IN')} भुगतान — वेंडर की देनदारी पूरी चुकता हो गई! ✅`
+          : `₹${amount.toLocaleString('hi-IN')} भुगतान — शेष देनदारी ₹${(updatedExp as SamitiExpense).balanceDue.toLocaleString('hi-IN')}`
+      );
+    },
+    [saveExpenseToCloud]
+  );
 
   // Delete expense
   const deleteExpense = useCallback((id: string) => {
@@ -1832,6 +2137,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         deleteDonation,
         addExpense,
         updateExpense,
+        recordExpensePayment,
         deleteExpense,
         importDonations,
         addEntity,
@@ -1848,6 +2154,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         resetMasterDemoData,
         resetDurgaPujaUnitData,
         isCollectorMode,
+        canEditFinalizedAmounts,
         currentStaffMember,
         currentModuleAccess,
         isCloudConnected: db.isCloudConnected,

@@ -298,7 +298,9 @@ export function useSamitiDatabase() {
         paidBy: item.paid_by || undefined,
         billReceiptUrl: item.bill_receipt_url || undefined,
         notes: item.notes || undefined,
+        payments: Array.isArray((item as any).payments) ? ((item as any).payments as SamitiExpense['payments']) : [],
         createdAt: item.created_at || new Date().toISOString(),
+        updatedAt: (item as any).updated_at || item.created_at || new Date().toISOString(),
       }));
     } catch (err) {
       console.warn('Network error fetching expenses:', err);
@@ -323,6 +325,8 @@ export function useSamitiDatabase() {
         paid_by: expense.paidBy || null,
         bill_receipt_url: expense.billReceiptUrl || null,
         notes: expense.notes || null,
+        payments: expense.payments ?? [],
+        updated_at: new Date().toISOString(),
       });
       if (error) throw error;
     } catch (err: any) {
