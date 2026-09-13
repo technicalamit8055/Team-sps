@@ -269,13 +269,13 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
           </div>
 
           {/* View Toggles & Red Add Button */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 min-w-0">
             {/* View Mode Toggle Button */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs">
               <button
                 type="button"
                 onClick={() => setViewMode('cards')}
-                className={`p-1.5 rounded-lg transition-all ${
+                className={`h-9 w-9 sm:h-auto sm:w-auto flex items-center justify-center sm:p-1.5 rounded-lg transition-all ${
                   viewMode === 'cards'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
@@ -287,7 +287,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-all ${
+                className={`h-9 w-9 sm:h-auto sm:w-auto flex items-center justify-center sm:p-1.5 rounded-lg transition-all ${
                   viewMode === 'grid'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-500 hover:text-slate-800'
@@ -305,7 +305,9 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                 className="bg-gradient-to-r from-[#cf1d32] to-[#990e1f] hover:from-[#b91527] hover:to-[#830a18] text-white font-serif font-black text-xs sm:text-sm tracking-wide h-9 px-4 rounded-xl shrink-0 border border-amber-400/70 shadow-md shadow-rose-900/30 ring-1 ring-amber-300/30 transition-transform hover:scale-105 active:scale-95"
               >
                 <Plus className="w-4 h-4 mr-1 stroke-[3.5] text-amber-300 shrink-0" />
-                <span className="whitespace-nowrap font-black">नया चंदा जोड़ें</span>
+                <span className="whitespace-nowrap font-black">
+                  नया चंदा<span className="hidden xs:inline"> जोड़ें</span>
+                </span>
               </Button>
             )}
           </div>
@@ -329,7 +331,8 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                       : 'text-amber-900 hover:text-amber-950'
                   }`}
                 >
-                  मेरी प्रविष्टियाँ (My Entries)
+                  <span className="sm:hidden">मेरी</span>
+                  <span className="hidden sm:inline">मेरी प्रविष्टियाँ (My Entries)</span>
                 </button>
                 <button
                   type="button"
@@ -340,7 +343,8 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                       : 'text-amber-900 hover:text-amber-950'
                   }`}
                 >
-                  समस्त यूनिट प्रविष्टियाँ (All)
+                  <span className="sm:hidden">समस्त यूनिट</span>
+                  <span className="hidden sm:inline">समस्त यूनिट प्रविष्टियाँ (All)</span>
                 </button>
               </div>
             </div>
@@ -353,7 +357,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
         {/* Segmented Filter Controls matching Reference Design */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100 text-xs">
           {/* Category Chips: श्रेणी: सभी (N) | VIL (N) | EMP (N) | SHO (N) | OTH (N) */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
             <span className="text-slate-500 font-bold text-[11px] shrink-0 font-serif">श्रेणी:</span>
             <button
               type="button"
@@ -390,7 +394,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
           </div>
 
           {/* Payment Method & Balance Chips: भुगतान विधि: सभी | बकाया | चुकता | नकद | UPI */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
             <span className="text-slate-500 font-bold text-[11px] shrink-0 font-serif">भुगतान विधि:</span>
             <button
               type="button"
@@ -482,9 +486,9 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                       }`}
                   >
                     {/* Top Row: S.NUM, Category & Mode */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-amber-900 bg-amber-100/70 px-2 py-0.5 rounded-lg border border-amber-200">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+                        <span className="font-mono text-xs font-bold text-amber-900 bg-amber-100/70 px-2 py-0.5 rounded-lg border border-amber-200 shrink-0">
                           #{row.serialNumber}
                         </span>
                         {formatEntryDay(row.date) && (
@@ -506,7 +510,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <span
                           className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md ${row.paymentMode === 'ONL'
                               ? 'bg-blue-50 text-blue-700 border border-blue-200'
@@ -604,12 +608,12 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     </div>
 
                     {/* Actions Row */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div className="pt-2 border-t border-slate-100 flex flex-col xs:flex-row xs:items-center justify-between gap-2">
                       <Button
                         size="sm"
                         onClick={() => sendReceiptDirect(row)}
                         disabled={sendingReceiptId === row.id}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-8 rounded-xl shadow-xs"
+                        className="w-full xs:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 xs:h-8 rounded-xl shadow-xs"
                         title={
                           row.phone
                             ? `${row.phone} पर सीधे भेजें`
@@ -626,24 +630,25 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                         </span>
                       </Button>
 
+                      <div className="flex items-center justify-end gap-1.5 shrink-0">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => openReceiptModal(row)}
-                        className="h-8 w-8 p-0 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900"
+                        className="h-9 w-9 xs:h-8 xs:w-8 p-0 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900 shrink-0"
                         title="रसीद देखें / नंबर बदलें"
                       >
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-4 h-4 xs:w-3.5 xs:h-3.5" />
                       </Button>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         {isDue && (
                           <DuePaymentDialog
                             donation={row}
                             triggerButton={
                               <Button
                                 size="sm"
-                                className="h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs"
+                                className="h-9 xs:h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs shrink-0"
                                 title={`शेष बकाया ₹${row.balanceAmount.toLocaleString('hi-IN')} जमा करें`}
                               >
                                 <Wallet className="w-3.5 h-3.5 mr-1" />
@@ -661,10 +666,10 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 w-8 p-0 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900"
+                              className="h-9 w-9 xs:h-8 xs:w-8 p-0 rounded-xl border-slate-200 text-slate-600 hover:text-slate-900 shrink-0"
                               title="संपादित करें"
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
+                              <Edit2 className="w-4 h-4 xs:w-3.5 xs:h-3.5" />
                             </Button>
                           }
                         />
@@ -674,12 +679,13 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                             size="sm"
                             variant="outline"
                             onClick={() => setDeletingId(row.id)}
-                            className="h-8 w-8 p-0 rounded-xl border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                            className="h-9 w-9 xs:h-8 xs:w-8 p-0 rounded-xl border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 shrink-0"
                             title="हटाएँ"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4 xs:w-3.5 xs:h-3.5" />
                           </Button>
                         )}
+                      </div>
                       </div>
                     </div>
                   </div>
@@ -724,14 +730,15 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
       {viewMode === 'grid' && (
         <div className="bg-white rounded-2xl border border-amber-300/80 shadow-md overflow-hidden">
           {/* Table Header Title Bar */}
-          <div className="bg-gradient-to-r from-[#fff9ec] via-[#fffbf2] to-[#fff9ec] px-4 sm:px-5 py-2.5 border-b border-amber-200 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4 text-[#8a1424]" />
-              <span className="font-bold text-[#480911] tracking-wide uppercase font-serif text-xs sm:text-sm">
-                चंदा रजिस्टर (DONATION LEDGER)
+          <div className="bg-gradient-to-r from-[#fff9ec] via-[#fffbf2] to-[#fff9ec] px-3 sm:px-5 py-2.5 border-b border-amber-200 flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <FileSpreadsheet className="w-4 h-4 text-[#8a1424] shrink-0" />
+              <span className="font-bold text-[#480911] tracking-wide uppercase font-serif text-xs sm:text-sm whitespace-nowrap">
+                चंदा रजिस्टर
+                <span className="hidden sm:inline"> (DONATION LEDGER)</span>
               </span>
-              <span className="text-amber-500">•</span>
-              <span className="text-amber-950 font-serif font-bold">
+              <span className="text-amber-500 hidden sm:inline">•</span>
+              <span className="text-amber-950 font-serif font-bold truncate hidden sm:inline">
                 {currentEntity.name || 'श्री दुर्गा पूजा समिति, नारायणपुर'}
               </span>
             </div>
@@ -740,9 +747,10 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
             </div>
           </div>
 
-          {/* The 14 Columns DataGrid */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+          {/* The 14 Columns DataGrid — below lg the grid scrolls horizontally
+              at a fixed legible width; the card view is the primary mobile UI. */}
+          <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+            <table className="w-full min-w-[1180px] text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#630b16] text-white font-bold uppercase text-[10px] sm:text-[11px] tracking-wider border-b border-[#7e111f]">
                   {/* S.NUM — रसीद क्रमांक (Quick Entry: रसीद क्रमांक badge) */}
@@ -888,12 +896,23 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                           #{row.serialNumber}
                         </td>
 
-                        {/* DATE — दिनांक */}
+                        {/* DATE — दिनांक (Click to edit directly on register) */}
                         <td
-                          className="p-3 border-r border-slate-100 text-center font-mono text-[11px] text-slate-600 whitespace-nowrap"
-                          title={formatEntryDayLong(row.date)}
+                          className="p-1.5 border-r border-slate-100 text-center font-mono text-[11px] text-slate-600 whitespace-nowrap"
+                          title={`${formatEntryDayLong(row.date)} (रजिस्टर में दिनांक बदलने के लिए चुनें)`}
                         >
-                          {formatEntryDay(row.date) || <span className="text-slate-300">-</span>}
+                          <input
+                            type="date"
+                            value={row.date || ''}
+                            onChange={(e) => {
+                              const newDate = e.target.value;
+                              if (newDate) {
+                                updateDonation(row.id, { date: newDate });
+                                toast.success(`रसीद #${row.serialNumber} का दिनांक बदलकर ${newDate} कर दिया गया! 📅`);
+                              }
+                            }}
+                            className="bg-transparent hover:bg-amber-50 focus:bg-white text-[11px] font-mono rounded px-1.5 py-1 border border-transparent hover:border-amber-300 focus:border-amber-500 cursor-pointer outline-none transition-all text-slate-700 font-semibold"
+                          />
                         </td>
 
                         {/* VIL/EMP/SHO/OTH */}

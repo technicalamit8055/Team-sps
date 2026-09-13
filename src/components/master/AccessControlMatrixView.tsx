@@ -60,7 +60,7 @@ const ACCESS_CONFIG: Record<
     label: 'Donation Only',
     color: 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100',
     icon: <Receipt className="w-3.5 h-3.5 text-amber-600" />,
-    desc: 'Only add & view donations in this unit; all dashboards & expenses hidden',
+    desc: 'Add & view donations by default; extra sections can be ticked under Modules',
   },
   no_access: {
     label: 'No Access',
@@ -68,6 +68,35 @@ const ACCESS_CONFIG: Record<
     icon: <Lock className="w-3.5 h-3.5 text-slate-400" />,
     desc: 'Workspace hidden from this member',
   },
+};
+
+/**
+ * Layers a saved permission's module flags over its access-level defaults.
+ * Permissions saved before a module key existed have no entry for it, so a
+ * plain read would yield `undefined` and the module would look missing.
+ */
+const mergeModules = (
+  saved: Partial<ModuleAccess> | undefined,
+  level: WorkspaceAccessLevel
+): ModuleAccess => {
+  const merged: ModuleAccess = { ...DEFAULT_MODULE_ACCESS_MAP[level] };
+  Object.entries(saved || {}).forEach(([key, value]) => {
+    if (typeof value === 'boolean') (merged as any)[key] = value;
+  });
+  return merged;
+};
+
+const TOTAL_MODULES = Object.keys(DEFAULT_MODULE_ACCESS_MAP.full_control).length;
+
+const effectiveModules = (
+  perm: { modules?: Partial<ModuleAccess> } | undefined,
+  level: WorkspaceAccessLevel
+) => {
+  const modules = mergeModules(perm?.modules, level);
+  return {
+    modules,
+    enabledCount: Object.values(modules).filter(Boolean).length,
+  };
 };
 
 export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = ({
@@ -99,7 +128,7 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
   const handleOpenModuleModal = (staff: MasterStaff, ws: MasterEntity) => {
     const currentPerm = staff.workspacePermissions[ws.id];
     const level = currentPerm?.accessLevel || 'no_access';
-    const modules = currentPerm?.modules || { ...DEFAULT_MODULE_ACCESS_MAP[level] };
+    const modules = mergeModules(currentPerm?.modules, level);
 
     setModuleModalData({
       staff,
@@ -322,13 +351,23 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                           {level !== 'no_access' && (
                             <button
                               onClick={() => handleOpenModuleModal(staff, ent)}
-                              className="text-[10px] text-muted-foreground hover:text-saffron-dark font-medium flex items-center gap-1 transition-colors"
-                              title="Configure module access"
+                              className="w-full text-[10px] font-semibold flex items-center justify-center gap-1 px-2 py-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-saffron hover:text-saffron-dark hover:bg-amber-50/60 transition-colors"
+                              title="Configure module access (Pandal & Puja Kharcha, expenses, exports…)"
                             >
                               <SlidersHorizontal className="w-2.5 h-2.5" />
-                              <span>Modules</span>
+                              <span>Modules ({effectiveModules(currentPerm, level).enabledCount}/{TOTAL_MODULES})</span>
                             </button>
                           )}
+
+                          {/* Explicit badge so a granted extra module is visible
+                              without opening the dialog. */}
+                          {level !== 'no_access' &&
+                            effectiveModules(currentPerm, level).modules.pandalPujaKharcha && (
+                              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                                <Tent className="w-2.5 h-2.5" />
+                                पंडाल व्यय
+                              </span>
+                            )}
                         </div>
                       </td>
                     );
@@ -361,12 +400,25 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                 <p className="text-muted-foreground">
                   Workspace: {moduleModalData.workspace.name}
                 </p>
+                <p className="text-muted-foreground">
+                  Access level:{' '}
+                  <span className="font-semibold text-slate-700">
+                    {ACCESS_CONFIG[moduleModalData.accessLevel].label}
+                  </span>
+                </p>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-slate-700 block">
                   Allowed Modules:
                 </Label>
+
+                <p className="text-[10px] text-muted-foreground leading-tight">
+                  Modules stack on top of the access level — e.g. a{' '}
+                  <span className="font-semibold">Donation Only</span> member can also be
+                  given Pandal &amp; Puja Kharcha by ticking it here. Changing the access
+                  level in the matrix resets these to that level's defaults.
+                </p>
 
                 <div className="space-y-1.5 border border-slate-200 rounded-xl p-2.5 bg-white">
                   {[

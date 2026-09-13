@@ -340,7 +340,7 @@ export const ExcelImportExport: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto max-h-96 border border-slate-200 rounded-xl">
+          <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] max-h-96 border border-slate-200 rounded-xl">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-900 text-white font-bold sticky top-0 text-[11px] uppercase tracking-wider">
                 <tr>

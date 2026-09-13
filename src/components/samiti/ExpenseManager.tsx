@@ -19,8 +19,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-// भुगतानकर्ता (payer) field ke liye quick-fill naam
-const QUICK_PAYERS = ['सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत'];
+// भुगतानकर्ता (payer) ke liye tay naam — in ke alawa koi aur naam nahi chuna ja sakta
+const PAYER_OPTIONS = ['सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत'] as const;
+
+// जल्दी भरें chips — dropdown ke same naam, bas ek click me
+const QUICK_PAYERS = PAYER_OPTIONS;
 
 export const ExpenseManager: React.FC = () => {
   const { currentEvent, expenses, addExpense, deleteExpense } = useSamiti();
@@ -55,7 +58,7 @@ export const ExpenseManager: React.FC = () => {
   const [totalAmount, setTotalAmount] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('CASH');
-  const [paidBy, setPaidBy] = useState('कोषाध्यक्ष (मनोज कुमार)');
+  const [paidBy, setPaidBy] = useState<string>(PAYER_OPTIONS[0]);
   const [notes, setNotes] = useState('');
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -75,7 +78,7 @@ export const ExpenseManager: React.FC = () => {
       totalAmount: parsedTotal,
       amountPaid: parsedPaid,
       paymentMode,
-      paidBy: paidBy.trim(),
+      paidBy,
       expenseDate,
       notes: notes.trim(),
     });
@@ -137,7 +140,7 @@ export const ExpenseManager: React.FC = () => {
           </div>
 
           {/* View Mode Toggle & Add Button */}
-          <div className="flex items-center justify-between sm:justify-end gap-2">
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
             {/* View Mode Toggle Button */}
             <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs">
               <button
@@ -168,16 +171,15 @@ export const ExpenseManager: React.FC = () => {
               </button>
             </div>
 
-            {/* Desktop Add Voucher Trigger */}
-            <div className="hidden sm:block">
-              <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            {/* Add Voucher Trigger — available at every width. */}
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-xs h-9 px-3.5 rounded-xl">
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    + नया खर्चा वाउचर
+                  <Button className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs shadow-xs h-9 px-3 sm:px-3.5 rounded-xl shrink-0">
+                    <Plus className="w-3.5 h-3.5 sm:mr-1 shrink-0" />
+                    <span className="hidden xs:inline whitespace-nowrap">+ नया खर्चा वाउचर</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-lg w-[94vw] max-h-[92vh] overflow-y-auto rounded-3xl">
+                <DialogContent className="max-w-lg w-[94vw] max-h-[90vh] overflow-y-auto rounded-3xl">
                   <DialogHeader>
                     <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
                       <Receipt className="w-4 h-4 text-amber-600" />
@@ -283,12 +285,18 @@ export const ExpenseManager: React.FC = () => {
                       </div>
                       <div>
                         <Label className="text-xs font-medium">भुगतानकर्ता</Label>
-                        <Input
-                          placeholder="कोषाध्यक्ष"
-                          value={paidBy}
-                          onChange={e => setPaidBy(e.target.value)}
-                          className="mt-1 text-xs rounded-xl"
-                        />
+                        <Select value={paidBy} onValueChange={val => setPaidBy(val)}>
+                          <SelectTrigger className="mt-1 text-xs rounded-xl">
+                            <SelectValue placeholder="नाम चुनें" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PAYER_OPTIONS.map(name => (
+                              <SelectItem key={name} value={name} className="text-xs">
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
@@ -330,13 +338,12 @@ export const ExpenseManager: React.FC = () => {
                     </div>
                   </form>
                 </DialogContent>
-              </Dialog>
-            </div>
+            </Dialog>
           </div>
         </div>
 
         {/* Clean Category Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pt-2 border-t border-slate-100 text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 pt-2 border-t border-slate-100 text-xs -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
           <button
             type="button"
             onClick={() => setCategoryFilter('ALL')}
@@ -525,8 +532,8 @@ export const ExpenseManager: React.FC = () => {
       {/* ------------------------------------------------------------------ */}
       {viewMode === 'grid' && (
         <div className="bg-white rounded-2xl border border-amber-200/80 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+            <table className="w-full min-w-[860px] text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
                   <th className="p-3 border-r border-slate-100 font-mono">वाउचर सं०</th>
@@ -617,7 +624,7 @@ export const ExpenseManager: React.FC = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
-        <AlertDialogContent className="max-w-[92vw] sm:max-w-lg rounded-2xl">
+        <AlertDialogContent className="w-[94vw] max-w-[94vw] sm:max-w-lg rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>क्या आप यह खर्चा वाउचर हटाना चाहते हैं?</AlertDialogTitle>
             <AlertDialogDescription>यह वाउचर हटाने से वित्तीय योग स्वतः पुनः गणना हो जाएगा।</AlertDialogDescription>

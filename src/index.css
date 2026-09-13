@@ -111,6 +111,19 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Poppins', sans-serif;
   }
+
+  /* iOS Safari zooms the page whenever a focused field renders below 16px.
+     The shadcn Input base already guards this (text-base, md:text-sm), but the
+     Durga Puja forms override it with text-xs/text-sm at the call site, so on a
+     phone every tap into a field jumped the viewport. Restore the 16px floor on
+     coarse-pointer (touch) devices only, leaving desktop typography untouched. */
+  @media (pointer: coarse) {
+    input:not([type='checkbox']):not([type='radio']),
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
 }
 
 @layer components {

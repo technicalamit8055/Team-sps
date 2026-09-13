@@ -156,17 +156,18 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
         {/* Top Sacred Accent Line */}
         <div className="h-0.5 bg-gradient-to-r from-amber-400 via-yellow-200 to-rose-500" />
 
-        <div className="w-full px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full px-2.5 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between gap-1.5 sm:gap-4">
           {/* Left: Hamburger (mobile), Sacred Emblem, Title & Location */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             {/* Mobile Sidebar Menu Button */}
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="lg:hidden p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white shrink-0 border border-white/20"
+              className="lg:hidden h-10 w-10 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/25 text-white shrink-0 border border-white/20"
               title="मेनू खोलें"
+              aria-label="मेनू खोलें"
             >
-              <Menu className="w-4 h-4" />
+              <Menu className="w-5 h-5" />
             </button>
 
             {/* Back to Master OS if available */}
@@ -184,7 +185,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             )}
 
             {/* Sacred Trishul & Om Crest */}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 via-yellow-200 to-amber-600 p-0.5 shadow-md shrink-0">
+            <div className="hidden xs:block w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-amber-400 via-yellow-200 to-amber-600 p-0.5 shadow-md shrink-0">
               <img
                 src="/images/durga/sacred-trishul-om.jpg"
                 alt="Trishul Om"
@@ -195,7 +196,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             {/* Title & Subtitle */}
             <div className="min-w-0 truncate">
               <div className="flex items-center gap-1.5 truncate">
-                <h1 className="text-sm sm:text-base font-extrabold text-white font-serif tracking-wide truncate">
+                <h1 className="text-[13px] sm:text-base font-extrabold text-white font-serif tracking-wide truncate">
                   {currentEntity.name || 'श्री दुर्गा पूजा समिति, नारायणपुर'}
                 </h1>
                 {!isCollector && (
@@ -216,7 +217,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           </div>
 
           {/* Right: Quick Action Buttons & Total Collections Box */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Notification Bell */}
             <button
               type="button"
@@ -231,11 +232,12 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             <Button
               size="sm"
               onClick={() => setIsQRModalOpen(true)}
-              className="h-8 text-xs bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-2.5 sm:px-3 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1.5"
+              className="h-9 xs:h-8 text-xs bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-2.5 sm:px-3 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1.5"
               title="त्वरित QR कोड खोलें"
+              aria-label="त्वरित QR कोड खोलें"
             >
-              <QrCode className="w-3.5 h-3.5 text-slate-950" />
-              <span className="hidden xs:inline font-serif">त्वरित QR कोड</span>
+              <QrCode className="w-4 h-4 xs:w-3.5 xs:h-3.5 text-slate-950 shrink-0" />
+              <span className="hidden sm:inline font-serif">त्वरित QR कोड</span>
             </Button>
 
             {/* Daily Cashier Receipt Button */}
@@ -268,7 +270,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             )}
 
             {/* Total Collection Pill with Glowing Lotus Badge */}
-            <div className="flex items-center gap-2 bg-[#250308] border border-[#6b1420] px-3 py-1 rounded-xl shadow-inner">
+            <div className="hidden sm:flex items-center gap-2 bg-[#250308] border border-[#6b1420] px-3 py-1 rounded-xl shadow-inner">
               <div className="text-right">
                 <span className="text-[8px] text-amber-200/70 block uppercase font-bold tracking-wider">
                   कुल संग्रह
@@ -291,12 +293,26 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               size="sm"
               variant="outline"
               onClick={() => setIsLogoutConfirmOpen(true)}
-              className="h-8 text-xs bg-[#520914] hover:bg-[#6e0d1c] text-rose-200 hover:text-white border border-rose-600/60 hover:border-rose-400 font-serif font-bold px-3 rounded-xl shadow-xs transition-all flex items-center gap-1.5 active:scale-95 shrink-0"
+              className="h-9 sm:h-8 w-9 sm:w-auto p-0 sm:px-3 text-xs bg-[#520914] hover:bg-[#6e0d1c] text-rose-200 hover:text-white border border-rose-600/60 hover:border-rose-400 font-serif font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 shrink-0"
               title="खाता लॉगआउट करें"
+              aria-label="खाता लॉगआउट करें"
             >
-              <LogOut className="w-3.5 h-3.5 text-rose-300" />
-              <span className="font-serif">लॉगआउट</span>
+              <LogOut className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-rose-300 shrink-0" />
+              <span className="font-serif hidden sm:inline">लॉगआउट</span>
             </Button>
+          </div>
+        </div>
+
+        {/* Mobile-only collection strip — replaces the header pill, which has no
+            room beside the action buttons on a phone. */}
+        <div className="sm:hidden flex items-center justify-between gap-2 px-2.5 pb-2 -mt-0.5">
+          <div className="flex-1 flex items-center justify-between gap-2 bg-[#250308] border border-[#6b1420] px-3 py-1.5 rounded-xl shadow-inner">
+            <span className="text-[9px] text-amber-200/70 uppercase font-bold tracking-wider">
+              कुल संग्रह
+            </span>
+            <span className="text-sm font-black font-mono text-amber-300">
+              ₹{summary.totalReceived.toLocaleString('hi-IN')}
+            </span>
           </div>
         </div>
       </header>
@@ -330,7 +346,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
               onClick={() => setIsMobileSidebarOpen(false)}
             />
-            <div className="relative flex-1 max-w-[240px] z-10 animate-in slide-in-from-left duration-300">
+            <div className="relative w-[82vw] max-w-[260px] z-10 animate-in slide-in-from-left duration-300">
               <DurgaPujaSidebar
                 activeTab={activeTab}
                 onSelectTab={setActiveTab}
@@ -351,36 +367,40 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
         )}
 
         {/* Main Center Stage */}
-        <main className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 space-y-4">
+        <main className="flex-1 min-w-0 overflow-y-auto px-2.5 sm:px-5 py-3 sm:py-4 space-y-3 sm:space-y-4">
           {/* ----------------------------------------------------------- */}
           {/* A. GRAND FESTIVE HERO BANNER (Maa Durga Lion + Temple Arch)   */}
           {/* ----------------------------------------------------------- */}
-          <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-400/60 shadow-xl min-h-[150px] sm:min-h-[200px] lg:min-h-[240px] flex items-center">
+          <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-400/60 shadow-xl min-h-[128px] sm:min-h-[200px] lg:min-h-[240px] flex items-center">
             {/* Background Art Image */}
             <div
               className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: `url('/images/durga/durga-banner-bg.jpg')` }}
             />
 
-            {/* Soft gradient overlay: transparent over the artwork (left), readable wash on the right */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-50/60 to-amber-50/85" />
+            {/* Soft gradient overlay: on phones a vertical wash over the whole
+                artwork (the text spans full width); from sm up the original
+                left-to-right wash that keeps the Goddess artwork clear. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-amber-50/95 via-amber-50/75 to-amber-50/45 sm:bg-gradient-to-r sm:from-transparent sm:via-amber-50/60 sm:to-amber-50/85" />
 
             {/* Hero Banner Content Layer */}
             <div className="relative z-10 w-full flex items-center">
-              {/* Spacer reserving the Goddess Durga on Lion artwork area */}
-              <div className="w-[34%] sm:w-[32%] lg:w-[30%] shrink-0" aria-hidden="true" />
+              {/* Spacer reserving the Goddess Durga on Lion artwork area.
+                  Dropped on phones so the Hindi title is not squeezed into a
+                  two-thirds column at 360px. */}
+              <div className="hidden sm:block sm:w-[32%] lg:w-[30%] shrink-0" aria-hidden="true" />
 
               {/* Majestic Typography, placed beside the artwork */}
-              <div className="flex-1 min-w-0 py-4 pr-3 sm:py-6 sm:pr-6 lg:py-8 lg:pr-10 text-center space-y-1.5 sm:space-y-2">
-                <h2 className="text-sm sm:text-2xl lg:text-4xl font-black font-serif text-[#480911] tracking-wide drop-shadow-xs leading-tight text-balance">
+              <div className="flex-1 min-w-0 px-3 py-4 sm:px-0 sm:py-6 sm:pr-6 lg:py-8 lg:pr-10 text-center space-y-1 sm:space-y-2">
+                <h2 className="text-base sm:text-2xl lg:text-4xl font-black font-serif text-[#480911] tracking-wide drop-shadow-xs leading-tight text-balance">
                   {currentEntity.name || 'श्री दुर्गा पूजा समिति, नारायणपुर'}
                 </h2>
 
-                <p className="text-[10px] sm:text-sm lg:text-base font-extrabold font-serif text-amber-950">
+                <p className="text-[11px] sm:text-sm lg:text-base font-extrabold font-serif text-amber-950">
                   {currentEntity.bannerBadgeText || 'श्री दुर्गा पूजा महोत्सव 2026'}
                 </p>
 
-                <p className="text-[9px] sm:text-xs lg:text-sm font-serif italic text-slate-800 max-w-md mx-auto leading-snug">
+                <p className="hidden xs:block text-[10px] sm:text-xs lg:text-sm font-serif italic text-slate-800 max-w-md mx-auto leading-snug">
                   "{currentEntity.tagline || 'माँ दुर्गा की असीम कृपा आप और आपके परिवार पर सदा बनी रहे।'}"
                 </p>
               </div>
@@ -390,10 +410,10 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           {/* ----------------------------------------------------------- */}
           {/* B. 5 PASTEL KPI METRIC CARDS (Exact match to reference)      */}
           {/* ----------------------------------------------------------- */}
-          <div className={`grid grid-cols-2 md:grid-cols-3 gap-3 ${isCollector ? '' : 'lg:grid-cols-5'}`}>
+          <div className={`grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 ${isCollector ? '' : 'lg:grid-cols-5'}`}>
             {/* Card 1: Pledged Funds (Warm Cream / Gold) */}
-            <div className="bg-[#fff9ec] border border-[#f0dcaf] rounded-2xl p-3.5 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
-              <div className="flex items-start justify-between">
+            <div className="bg-[#fff9ec] border border-[#f0dcaf] rounded-2xl p-3 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#fdeecf] border border-[#e8ce94] flex items-center justify-center text-amber-700 shrink-0">
                   <Coins className="w-4 h-4" />
                 </div>
@@ -401,7 +421,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                     स्वीकृत चंदा <span className="font-mono text-[8px]">(PLEDGED)</span>
                   </span>
-                  <p className="text-base sm:text-xl font-black text-slate-900 mt-0.5 font-mono">
+                  <p className="text-[15px] sm:text-xl font-black text-slate-900 mt-0.5 font-mono">
                     ₹{summary.totalAccepted.toLocaleString('hi-IN')}
                   </p>
                 </div>
@@ -412,8 +432,8 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             </div>
 
             {/* Card 2: Received Funds (Mint / Cream) */}
-            <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-2xl p-3.5 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
-              <div className="flex items-start justify-between">
+            <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-2xl p-3 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#dcfce7] border border-[#86efac] flex items-center justify-center text-emerald-600 shrink-0">
                   <CheckCircle2 className="w-4 h-4" />
                 </div>
@@ -421,7 +441,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <span className="text-[9px] sm:text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
                     प्राप्त चंदा <span className="font-mono text-[8px]">(RECEIVED)</span>
                   </span>
-                  <p className="text-base sm:text-xl font-black text-emerald-700 mt-0.5 font-mono">
+                  <p className="text-[15px] sm:text-xl font-black text-emerald-700 mt-0.5 font-mono">
                     ₹{summary.totalReceived.toLocaleString('hi-IN')}
                   </p>
                 </div>
@@ -433,8 +453,8 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             </div>
 
             {/* Card 3: Pending Balance (Pale Rose / Cream) */}
-            <div className="bg-[#fff1f2] border border-[#fecdd3] rounded-2xl p-3.5 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
-              <div className="flex items-start justify-between">
+            <div className="bg-[#fff1f2] border border-[#fecdd3] rounded-2xl p-3 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#ffe4e6] border border-[#fda4af] flex items-center justify-center text-rose-500 shrink-0">
                   <Hourglass className="w-4 h-4" />
                 </div>
@@ -442,7 +462,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <span className="text-[9px] sm:text-[10px] font-bold text-rose-600 uppercase tracking-wider block">
                     बकाया राशि <span className="font-mono text-[8px]">(DUE)</span>
                   </span>
-                  <p className="text-base sm:text-xl font-black text-rose-600 mt-0.5 font-mono">
+                  <p className="text-[15px] sm:text-xl font-black text-rose-600 mt-0.5 font-mono">
                     ₹{summary.totalBalance.toLocaleString('hi-IN')}
                   </p>
                 </div>
@@ -454,8 +474,8 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
 
             {/* Card 4: Total Expenses (Sky Blue / Cream) — hidden from collectors */}
             {!isCollector && (
-            <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-2xl p-3.5 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
-              <div className="flex items-start justify-between">
+            <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-2xl p-3 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#e0f2fe] border border-[#7dd3fc] flex items-center justify-center text-sky-600 shrink-0">
                   <Receipt className="w-4 h-4" />
                 </div>
@@ -463,7 +483,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <span className="text-[9px] sm:text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
                     पंडाल व पूजा व्यय
                   </span>
-                  <p className="text-base sm:text-xl font-black text-slate-900 mt-0.5 font-mono">
+                  <p className="text-[15px] sm:text-xl font-black text-slate-900 mt-0.5 font-mono">
                     ₹{summary.totalExpenses.toLocaleString('hi-IN')}
                   </p>
                 </div>
@@ -477,8 +497,8 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
 
             {/* Card 5: Net Surplus / Active Participation (Amber / Cream) — hidden from collectors */}
             {!isCollector && (
-            <div className="col-span-2 sm:col-span-1 bg-[#fffbeb] border border-[#fde68a] rounded-2xl p-3.5 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
-              <div className="flex items-start justify-between">
+            <div className="col-span-2 sm:col-span-1 bg-[#fffbeb] border border-[#fde68a] rounded-2xl p-3 sm:p-4 shadow-xs hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-2">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#fef3c7] border border-[#fcd34d] flex items-center justify-center text-amber-700 shrink-0">
                   <Users className="w-4 h-4" />
                 </div>
@@ -486,7 +506,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   <span className="text-[9px] sm:text-[10px] font-bold text-amber-900 uppercase tracking-wider block">
                     सक्रिय चंदा-सहयोग
                   </span>
-                  <p className="text-base sm:text-xl font-black text-amber-950 mt-0.5 font-mono">
+                  <p className="text-[15px] sm:text-xl font-black text-amber-950 mt-0.5 font-mono">
                     ₹{summary.netSurplus.toLocaleString('hi-IN')}
                   </p>
                 </div>
@@ -502,26 +522,28 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           {/* C. NAVIGATION TABS RIBBON & SANSKRIT BLESSING MOTIF           */}
           {/* ----------------------------------------------------------- */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 border-b border-amber-200/80 pb-2">
-            {/* Horizontal Tabs Pill Row */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            {/* Horizontal Tabs Pill Row — scrolls edge-to-edge on phones so the
+                last pill is not clipped by the main gutter. */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-2.5 px-2.5 sm:mx-0 sm:px-0">
               <button
                 type="button"
                 onClick={() => setActiveTab('chanda')}
-                className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                className={`px-3.5 sm:px-4 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                   activeTab === 'chanda'
                     ? 'bg-[#7a121d] text-white shadow-md shadow-rose-950/30 ring-1 ring-amber-400/40'
                     : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
                 }`}
               >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>चंदा रजिस्टर (11 कॉलम)</span>
+                <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+                <span className="sm:hidden">चंदा रजिस्टर</span>
+                <span className="hidden sm:inline">चंदा रजिस्टर (11 कॉलम)</span>
               </button>
 
               {canSeeKharcha && (
                 <button
                   type="button"
                   onClick={() => setActiveTab('kharcha')}
-                  className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                  className={`px-3.5 sm:px-4 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                     activeTab === 'kharcha'
                       ? 'bg-[#7a121d] text-white shadow-md shadow-rose-950/30 ring-1 ring-amber-400/40'
                       : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
@@ -536,7 +558,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('analytics')}
-                  className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                  className={`px-3.5 sm:px-4 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                     activeTab === 'analytics'
                       ? 'bg-[#7a121d] text-white shadow-md shadow-rose-950/30 ring-1 ring-amber-400/40'
                       : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
@@ -550,21 +572,22 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('donors')}
-                className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                className={`px-3.5 sm:px-4 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                   activeTab === 'donors'
                     ? 'bg-[#7a121d] text-white shadow-md shadow-rose-950/30 ring-1 ring-amber-400/40'
                     : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
                 }`}
               >
-                <Crown className="w-3.5 h-3.5 text-amber-500" />
-                <span>दानवीर सूची (VIP Patrons)</span>
+                <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="sm:hidden">दानवीर सूची</span>
+                <span className="hidden sm:inline">दानवीर सूची (VIP Patrons)</span>
               </button>
 
               {!isCollector && (
                 <button
                   type="button"
                   onClick={() => setActiveTab('import_export')}
-                  className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                  className={`px-3.5 sm:px-4 py-2 sm:py-1.5 min-h-[38px] sm:min-h-0 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
                     activeTab === 'import_export'
                       ? 'bg-[#7a121d] text-white shadow-md shadow-rose-950/30 ring-1 ring-amber-400/40'
                       : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
@@ -597,18 +620,21 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           )}
 
           {activeTab === 'donors' && (
-            <div className="bg-white border border-amber-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="bg-white border border-amber-200 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100 pb-3">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 font-serif">
-                    <Crown className="w-5 h-5 text-amber-500" />
-                    <span>प्रमुख दानदाता एवं भामाशाह सूची (Top Patrons Leaderboard)</span>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-start sm:items-center gap-2 font-serif">
+                    <Crown className="w-5 h-5 text-amber-500 shrink-0 mt-0.5 sm:mt-0" />
+                    <span>
+                      प्रमुख दानदाता एवं भामाशाह सूची
+                      <span className="hidden sm:inline"> (Top Patrons Leaderboard)</span>
+                    </span>
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     माँ दुर्गा पूजा महोत्सव में उत्कृष्ट आर्थिक सहयोग प्रदान करने वाले महानुभाव
                   </p>
                 </div>
-                <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-xs px-3 py-1 font-bold">
+                <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-xs px-3 py-1 font-bold self-start shrink-0">
                   कुल शीर्ष सहयोगी: {topDonors.length}
                 </Badge>
               </div>
@@ -622,7 +648,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                   return (
                     <div
                       key={donor.id}
-                      className={`p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                      className={`p-3 sm:p-4 rounded-2xl border transition-all flex items-center justify-between gap-2 sm:gap-3 ${
                         isRank1
                           ? 'bg-gradient-to-r from-amber-100/70 to-yellow-50 border-amber-400 ring-2 ring-amber-400/30 shadow-sm'
                           : isRank2
@@ -632,9 +658,9 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                           : 'bg-white border-slate-200'
                       }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                         <div
-                          className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 shadow-xs ${
+                          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center font-black text-xs sm:text-sm shrink-0 shadow-xs ${
                             isRank1
                               ? 'bg-amber-500 text-white'
                               : isRank2
@@ -680,7 +706,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
         {/* ----------------------------------------------------------- */}
         {/* 3. RIGHT SACRED VERTICAL STRIP & GOLDEN DIYA LAMP (Desktop)  */}
         {/* ----------------------------------------------------------- */}
-        <aside className="hidden xl:flex w-14 shrink-0 flex-col items-center justify-between py-6 px-1 border-l border-amber-300/80 bg-[#fffbf2] select-none text-center">
+        <aside className="hidden 2xl:flex w-14 shrink-0 flex-col items-center justify-between py-6 px-1 border-l border-amber-300/80 bg-[#fffbf2] select-none text-center">
           {/* Top Traditional Motif */}
           <div className="text-amber-600 text-sm">🪔</div>
 
@@ -734,7 +760,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
 
       {/* लॉगआउट पुष्टि संवाद (केवल हिंदी में) */}
       <AlertDialog open={isLogoutConfirmOpen} onOpenChange={setIsLogoutConfirmOpen}>
-        <AlertDialogContent className="bg-[#fffcf7] border border-amber-300 sm:rounded-2xl max-w-md shadow-2xl">
+        <AlertDialogContent className="bg-[#fffcf7] border border-amber-300 rounded-2xl w-[94vw] max-w-md shadow-2xl">
           <AlertDialogHeader className="text-left space-y-2">
             <div className="w-12 h-12 rounded-2xl bg-rose-100 border border-rose-300 text-rose-700 flex items-center justify-center mx-auto sm:mx-0 shadow-xs">
               <LogOut className="w-6 h-6" />

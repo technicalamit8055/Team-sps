@@ -65,9 +65,9 @@ export const FinancialOverview: React.FC = () => {
   }, [expenses]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Target Budget Milestone Card */}
-      <div className="bg-gradient-to-r from-amber-500 via-orange-600 to-rose-700 text-white rounded-3xl p-5 sm:p-6 shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-r from-amber-500 via-orange-600 to-rose-700 text-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-lg relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-1 max-w-xl">
@@ -84,7 +84,7 @@ export const FinancialOverview: React.FC = () => {
             </p>
           </div>
 
-          <div className="text-right shrink-0 bg-black/20 p-3.5 rounded-2xl backdrop-blur-md border border-white/20 min-w-[170px]">
+          <div className="text-left md:text-right w-full md:w-auto shrink-0 bg-black/20 p-3 sm:p-3.5 rounded-2xl backdrop-blur-md border border-white/20 md:min-w-[170px]">
             <span className="text-[10px] text-white/70 uppercase tracking-wider font-bold block">
               हैंडओवर संदूक शेष
             </span>
@@ -99,7 +99,7 @@ export const FinancialOverview: React.FC = () => {
 
         {/* Visual Progress Bar */}
         <div className="mt-5 space-y-1.5 relative z-10">
-          <div className="flex justify-between text-xs font-bold text-white/90">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-2 text-[11px] sm:text-xs font-bold text-white/90">
             <span>प्राप्ति: {budgetProgress}% (₹{summary.totalReceived.toLocaleString('hi-IN')})</span>
             <span>स्वीकृत संकल्प: {pledgedProgress}% (₹{summary.totalAccepted.toLocaleString('hi-IN')})</span>
             <span>लक्ष्य: ₹{currentEvent.targetBudget.toLocaleString('hi-IN')}</span>
@@ -182,7 +182,7 @@ export const FinancialOverview: React.FC = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Bar Chart: Overall Financial Flow */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-xs">
           <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2 mb-3 sm:mb-4">
             <BarChart3 className="w-4 h-4 text-amber-600" />
             <span>वित्तीय प्रवाह तुलना: चंदा, व्यय एवं शुद्ध शेष (₹ में)</span>
@@ -208,7 +208,7 @@ export const FinancialOverview: React.FC = () => {
         </div>
 
         {/* Donut Chart: Collection by Category */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs">
+        <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-xs">
           <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">
             <PieIcon className="w-4 h-4 text-emerald-600" />
             <span>श्रेणीवार चंदा संकलन (VIL / EMP / SHO / OTH)</span>
@@ -253,8 +253,8 @@ export const FinancialOverview: React.FC = () => {
       {/* Cash vs Online Split & Major Expense Heads */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Cash vs Online Breakdown Bar */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
-          <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-xs space-y-4">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <span className="flex items-center gap-2">
               <HandCoins className="w-4 h-4 text-amber-600" />
               <span>भुगतान माध्यम वितरण (CASH vs UPI)</span>
@@ -275,7 +275,7 @@ export const FinancialOverview: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-1 text-xs">
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4 pt-1 text-xs">
             <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-200/60">
               <p className="font-bold text-slate-900">💵 नकद (CASH in Hand):</p>
               <p className="text-sm font-mono font-black text-amber-900 mt-1">
@@ -299,7 +299,7 @@ export const FinancialOverview: React.FC = () => {
         </div>
 
         {/* Top Expense Categories Breakdown */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-3">
+        <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-xs space-y-3">
           <h3 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-rose-600" />
             <span>प्रमुख पूजा व्यय शीर्ष (Major Expense Heads)</span>
@@ -310,12 +310,12 @@ export const FinancialOverview: React.FC = () => {
               const pct = summary.totalExpenses > 0 ? Math.round((cat.total / summary.totalExpenses) * 100) : 0;
               return (
                 <div key={cat.name} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-                      <span>{cat.icon}</span>
-                      <span>{cat.name}</span>
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="font-semibold text-slate-800 flex items-center gap-1.5 min-w-0">
+                      <span className="shrink-0">{cat.icon}</span>
+                      <span className="truncate">{cat.name}</span>
                     </span>
-                    <span className="font-mono font-bold text-slate-900">
+                    <span className="font-mono font-bold text-slate-900 shrink-0 whitespace-nowrap">
                       ₹{cat.total.toLocaleString('hi-IN')} ({pct}%)
                     </span>
                   </div>

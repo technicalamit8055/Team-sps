@@ -109,7 +109,7 @@ export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
   ];
 
   return (
-    <aside className="w-52 lg:w-56 h-full flex flex-col bg-gradient-to-b from-[#3a050e] via-[#2a0309] to-[#1b0206] text-white border-r border-[#691420]/70 shadow-2xl relative select-none shrink-0">
+    <aside className="w-full lg:w-56 h-full flex flex-col bg-gradient-to-b from-[#3a050e] via-[#2a0309] to-[#1b0206] text-white border-r border-[#691420]/70 shadow-2xl relative select-none shrink-0">
       {/* Subtle ornate gold top rim */}
       <div className="h-1 w-full bg-gradient-to-r from-amber-500 via-yellow-300 to-rose-600" />
 
@@ -118,9 +118,10 @@ export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
         <button
           type="button"
           onClick={onCloseMobileDrawer}
-          className="absolute top-3 right-3 p-1.5 rounded-full bg-black/40 text-rose-200 hover:text-white md:hidden z-10"
+          className="absolute top-2.5 right-2.5 h-9 w-9 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-rose-200 hover:text-white z-10"
+          aria-label="मेनू बंद करें"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
       )}
 
@@ -135,7 +136,7 @@ export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
         </div>
 
         {/* Circular Maa Durga Avatar Medallion */}
-        <div className="relative mx-auto w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl ring-2 ring-amber-400/40 group cursor-pointer transition-transform hover:scale-105">
+        <div className="relative mx-auto w-20 h-20 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-yellow-200 to-amber-600 shadow-2xl ring-2 ring-amber-400/40 group cursor-pointer transition-transform hover:scale-105">
           <div className="w-full h-full rounded-full overflow-hidden border border-amber-300/60 bg-[#2d040a]">
             <img
               src="/images/durga/durga-avatar.jpg"
@@ -165,7 +166,7 @@ export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
                 item.action();
                 if (onCloseMobileDrawer) onCloseMobileDrawer();
               }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-serif font-bold rounded-xl transition-all text-left ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 lg:py-2 min-h-[44px] lg:min-h-0 text-xs font-serif font-bold rounded-xl transition-all text-left ${
                 active
                   ? 'bg-gradient-to-r from-[#cf1d32] to-[#990e1f] text-white shadow-lg shadow-rose-950/70 border border-rose-400/50 ring-1 ring-amber-400/30 font-extrabold translate-x-0.5'
                   : 'text-rose-100/80 hover:text-white hover:bg-white/10 border border-transparent'

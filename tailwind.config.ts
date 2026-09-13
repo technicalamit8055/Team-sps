@@ -16,6 +16,12 @@ export default {
       },
     },
     extend: {
+      // `xs:` is used across the Durga Puja unit to reveal button labels once
+      // there is room for them. Without this entry Tailwind silently drops
+      // every `xs:` class, so those labels never appeared at any width.
+      screens: {
+        xs: "420px",
+      },
       fontFamily: {
         sans: ['Poppins', 'sans-serif'],
       },

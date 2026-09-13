@@ -10,6 +10,7 @@ import {
   Sparkles,
   CheckCircle2,
   Smartphone,
+  Calendar,
   User,
   MapPin,
   Tag,
@@ -81,7 +82,7 @@ const CATEGORY_META: Record<DonationCategory, { icon: React.FC<{ className?: str
 };
 
 /** Quick-pick collector names shown as chips under the संग्रहकर्ता field */
-const QUICK_COLLECTORS = ['सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत'];
+const QUICK_COLLECTORS = ['सूरज', 'ओमवीर', 'विशाल', 'नीरज', 'रंजीत', 'सुनील वर्मा', 'अमित कुमार'];
 
 export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   initialData,
@@ -112,6 +113,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   const [address1, setAddress1] = useState(initialData?.address1 || '');
   const [address2, setAddress2] = useState(initialData?.address2 || '');
   const [phone, setPhone] = useState(initialData?.phone || '');
+  const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
   const [acceptedAmount, setAcceptedAmount] = useState<string>(
     initialData?.acceptedAmount ? String(initialData.acceptedAmount) : '2100'
   );
@@ -136,6 +138,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setAddress1(initialData.address1 || '');
       setAddress2(initialData.address2 || '');
       setPhone(initialData.phone || '');
+      setDate(initialData.date || new Date().toISOString().split('T')[0]);
       setAcceptedAmount(String(initialData.acceptedAmount || '2100'));
       setReceivedAmount(String(initialData.receivedAmount || '2100'));
       setPaymentMode(initialData.paymentMode || 'CASH');
@@ -154,6 +157,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setName('');
       setIdentity('');
       setPhone('');
+      setDate(new Date().toISOString().split('T')[0]);
       setVillage('');
       setAddress1('');
       setAddress2('');
@@ -267,6 +271,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
         receivedAmount: parsedReceived,
         paymentMode,
         collectorName: collectorName.trim(),
+        date: date || initialData.date || new Date().toISOString().split('T')[0],
         remarks: remarks.trim(),
       });
       setIsOpen(false);
@@ -287,7 +292,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
         paymentMode,
         collectorName: collectorName.trim(),
         isHandoverDone: false,
-        date: new Date().toISOString().split('T')[0],
+        date: date || new Date().toISOString().split('T')[0],
         remarks: remarks.trim(),
       });
 
@@ -615,8 +620,44 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                   </div>
                 </div>
 
-                {/* Payment Mode & Collector */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-amber-200/80">
+                {/* Date, Payment Mode & Collector */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-amber-200/80">
+                  {/* Entry / Receipt Date */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <Label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                        <span>रसीद दिनांक (Date)</span>
+                      </Label>
+                    </div>
+                    <Input
+                      type="date"
+                      value={date}
+                      onChange={e => setDate(e.target.value)}
+                      className="h-11 text-xs font-semibold text-slate-900 border-slate-200 rounded-xl bg-white focus-visible:ring-amber-500"
+                    />
+                    <div className="flex items-center gap-1 mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setDate(new Date().toISOString().split('T')[0])}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
+                      >
+                        आज (Today)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const yest = new Date();
+                          yest.setDate(yest.getDate() - 1);
+                          setDate(yest.toISOString().split('T')[0]);
+                        }}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:border-amber-300 hover:text-amber-800"
+                      >
+                        कल (Yesterday)
+                      </button>
+                    </div>
+                  </div>
+
                   <div>
                     <Label className="text-xs font-bold text-slate-800 block mb-1.5">
                       भुगतान माध्यम

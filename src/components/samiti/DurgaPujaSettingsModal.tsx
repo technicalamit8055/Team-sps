@@ -146,7 +146,7 @@ export const DurgaPujaSettingsModal: React.FC<DurgaPujaSettingsModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-0 bg-white border border-amber-300/80 shadow-2xl">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-0 bg-white border border-amber-300/80 shadow-2xl">
           {/* Festive Sacred Header */}
           <div className="bg-gradient-to-r from-rose-950 via-amber-950 to-slate-950 text-white p-5 sm:p-6 rounded-t-3xl relative overflow-hidden border-b border-amber-500/30">
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-2xl pointer-events-none -mr-16 -mt-16" />
@@ -478,7 +478,7 @@ export const DurgaPujaSettingsModal: React.FC<DurgaPujaSettingsModalProps> = ({
 
       {/* Confirmation Alert Dialog for Safety */}
       <AlertDialog open={!!resetConfirmMode} onOpenChange={open => !open && setResetConfirmMode(null)}>
-        <AlertDialogContent className="rounded-2xl max-w-md bg-white border border-amber-200">
+        <AlertDialogContent className="rounded-2xl w-[94vw] max-w-md bg-white border border-amber-200">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-slate-900 text-base sm:text-lg font-serif">
               <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />

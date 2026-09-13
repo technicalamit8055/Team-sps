@@ -54,14 +54,14 @@ export function numberToHindiWords(num: number): string {
   return result.trim() + ' रुपये मात्र';
 }
 
-const TEMPLATE_URL = '/receipt_clean_v2.png';
+const TEMPLATE_URL = '/receipt_clean_v3.png';
 const CANVAS_WIDTH = 1084;
 const CANVAS_HEIGHT = 1451;
 
 let cachedImage: HTMLImageElement | null = null;
 
 function loadTemplateImage(): Promise<HTMLImageElement> {
-  if (cachedImage && cachedImage.complete && cachedImage.naturalWidth > 0) {
+  if (cachedImage && cachedImage.complete && cachedImage.naturalWidth > 0 && cachedImage.src.includes(TEMPLATE_URL)) {
     return Promise.resolve(cachedImage);
   }
 
@@ -98,93 +98,88 @@ export async function generateReceiptCanvas(
   // 1. Draw base high-resolution festive template
   ctx.drawImage(template, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // 2. Receipt Number inside Left Meta Pill (Centered in number slot at x = 310, baseline y = 749)
+  // 2. Receipt Number inside Left Meta Pill (Centered in number box: x = 309, y = 742)
   const serialNo = `#${String(donation.serialNumber).padStart(4, '0')}`;
   ctx.save();
-  ctx.font = '900 28px "Noto Sans Devanagari", "Segoe UI", sans-serif';
+  ctx.font = '900 26px "Noto Sans Devanagari", "Segoe UI", sans-serif';
   ctx.fillStyle = '#dc2626'; // Vivid red
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(serialNo, 310, 749);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(serialNo, 309, 742);
   ctx.restore();
 
-  // 3. Date inside Right Meta Pill (Centered in date slot at x = 850, baseline y = 749)
+  // 3. Date inside Right Meta Pill (Centered in date box: x = 840, y = 742)
   const dateStr = donation.date || new Date().toISOString().split('T')[0];
   ctx.save();
   ctx.font = 'bold 24px "Noto Sans Devanagari", "Segoe UI", sans-serif';
   ctx.fillStyle = '#1c1917'; // Rich slate dark
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(dateStr, 850, 749);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(dateStr, 840, 742);
   ctx.restore();
 
-  // 4. Donor Information (Label 'सहयोगकर्ता का नाम:' is already crisp in template)
+  // 4. Donor Information (Centered in donor name box: x = 650, y = 822)
   ctx.save();
   ctx.font = '900 30px "Noto Sans Devanagari", "Segoe UI", sans-serif';
   ctx.fillStyle = '#0f172a'; // Slate-950
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(donation.name, 190, 852);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(donation.name, 650, 822);
   ctx.restore();
 
   // 5. THE THREE FINANCIAL CARDS (Strict Pixel-Perfect Alignment across all 3 cards)
-  // Labels 'स्वीकृत राशि:', 'प्राप्त राशि:', 'शेष राशि:' and all 3 icons are already crisp in template!
   const accepted = donation.acceptedAmount || donation.receivedAmount;
   const received = donation.receivedAmount;
   const balance = donation.balanceAmount ?? Math.max(0, accepted - received);
 
-  // Common Baselines for all 3 cards
-  const amountY = 960;
-  const wordsY = 994;
+  // Box Centers Y: 956
+  const boxY = 956;
 
-  // --- CARD 1: स्वीकृत राशि (Accepted Amount, X = 190) ---
+  // --- CARD 1: स्वीकृत राशि (Accepted Amount, Center X = 258) ---
   ctx.save();
-  ctx.font = '900 32px "Noto Sans Devanagari", "Segoe UI", sans-serif';
+  ctx.font = '900 30px "Noto Sans Devanagari", "Segoe UI", sans-serif';
   ctx.fillStyle = '#0f172a'; // Slate-900
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(`₹${accepted.toLocaleString('hi-IN')}`, 190, amountY);
-
-  ctx.font = 'bold 13px "Noto Sans Devanagari", "Segoe UI", sans-serif';
-  ctx.fillStyle = '#92400e'; // Amber-800
-  ctx.fillText(`(${numberToHindiWords(accepted)})`, 190, wordsY);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`₹${accepted.toLocaleString('hi-IN')}`, 258, boxY);
   ctx.restore();
 
-  // --- CARD 2: प्राप्त राशि (Received Amount, X = 495) ---
+  // --- CARD 2: प्राप्त राशि (Received Amount, Center X = 563) ---
   ctx.save();
-  ctx.font = '900 32px "Noto Sans Devanagari", "Segoe UI", sans-serif';
+  ctx.font = '900 30px "Noto Sans Devanagari", "Segoe UI", sans-serif';
   ctx.fillStyle = '#047857'; // Emerald-700
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(`₹${received.toLocaleString('hi-IN')}`, 495, amountY);
-
-  ctx.font = 'bold 13px "Noto Sans Devanagari", "Segoe UI", sans-serif';
-  ctx.fillStyle = '#065f46'; // Emerald-800
-  ctx.fillText(`(${numberToHindiWords(received)})`, 495, wordsY);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`₹${received.toLocaleString('hi-IN')}`, 563, boxY);
   ctx.restore();
 
-  // --- CARD 3: शेष राशि (Bakaya / Balance Due, X = 800) ---
+  // --- CARD 3: शेष राशि (Bakaya / Balance Due, Center X = 868) ---
   ctx.save();
-  ctx.font = '900 32px "Noto Sans Devanagari", "Segoe UI", sans-serif';
+  ctx.font = '900 30px "Noto Sans Devanagari", "Segoe UI", sans-serif';
   ctx.fillStyle = balance > 0 ? '#dc2626' : '#16a34a'; // Red if due, Green if 0
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(`₹${balance.toLocaleString('hi-IN')}`, 800, amountY);
-
-  const balanceWords = balance === 0 ? '(शून्य रुपये)' : `(${numberToHindiWords(balance)})`;
-  ctx.font = 'bold 13px "Noto Sans Devanagari", "Segoe UI", sans-serif';
-  ctx.fillStyle = balance > 0 ? '#b91c1c' : '#15803d';
-  ctx.fillText(balanceWords, 800, wordsY);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`₹${balance.toLocaleString('hi-IN')}`, 868, boxY);
   ctx.restore();
 
-  // 6. Payment Mode (Beside the pristine Cash note icon, starting at X = 318)
+  // 6. Bottom Row: भुगतान माध्यम (Payment Mode, Center X = 381, Y = 1049)
   const modeText = donation.paymentMode === 'ONL' ? 'ऑनलाइन (UPI/QR)' : 'नकद (Cash)';
   ctx.save();
-  ctx.font = '900 23px "Noto Sans Devanagari", "Segoe UI", sans-serif';
+  ctx.font = '900 20px "Noto Sans Devanagari", "Segoe UI", sans-serif';
   ctx.fillStyle = '#78350f'; // Amber-900
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText(modeText, 318, 1056);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(modeText, 381, 1049);
+  ctx.restore();
+
+  // 7. Bottom Row: संग्रहकर्ता (Collector Name, Center X = 800, Y = 1049)
+  const collectorText = donation.collectorName || 'श्री दुर्गा पूजा समिति';
+  ctx.save();
+  ctx.font = '900 20px "Noto Sans Devanagari", "Segoe UI", sans-serif';
+  ctx.fillStyle = '#78350f'; // Amber-900
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(collectorText, 800, 1049);
   ctx.restore();
 
   return canvas;

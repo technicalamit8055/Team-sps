@@ -728,10 +728,13 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     const perm = currentStaffMember.workspacePermissions?.[currentEntityId];
     const level = perm?.accessLevel || 'no_access';
-    return {
-      ...DEFAULT_MODULE_ACCESS_MAP[level],
-      ...(perm?.modules || {}),
-    };
+    const merged: ModuleAccess = { ...DEFAULT_MODULE_ACCESS_MAP[level] };
+    // Only copy keys the saved record actually decided, so a stale permission
+    // stored before a module existed cannot blank out its default.
+    Object.entries(perm?.modules || {}).forEach(([key, value]) => {
+      if (typeof value === 'boolean') (merged as any)[key] = value;
+    });
+    return merged;
   }, [currentStaffMember, currentEntityId, isCollectorMode]);
 
   // Auto-lock current entity for assigned collector
@@ -1627,9 +1630,15 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           if (staff.id !== staffId) return staff;
           const currentPerm = staff.workspacePermissions[workspaceId];
           const defaultModules = DEFAULT_MODULE_ACCESS_MAP[accessLevel];
+          const levelChanged = currentPerm?.accessLevel !== accessLevel;
 
+          // Changing the access level resets the module flags to that level's
+          // defaults; editing modules alone keeps the existing tick marks. The
+          // defaults are always the base layer so keys added after a permission
+          // was saved resolve to a real boolean instead of `undefined`.
           const updatedModules: ModuleAccess = {
-            ...(currentPerm ? currentPerm.modules : defaultModules),
+            ...defaultModules,
+            ...(currentPerm && !levelChanged ? currentPerm.modules : {}),
             ...(modules || {}),
           };
 
