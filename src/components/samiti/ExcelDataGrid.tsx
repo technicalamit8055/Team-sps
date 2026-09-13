@@ -51,6 +51,22 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+/** "2026-09-13" → "13 सित॰" for the compact register column. */
+const formatEntryDay = (iso?: string) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('hi-IN', { day: '2-digit', month: 'short' });
+};
+
+/** Full "13 सितम्बर 2026" form, used for the column's hover tooltip. */
+const formatEntryDayLong = (iso?: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('hi-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+};
+
 interface ExcelDataGridProps {
   isCollectorMode?: boolean;
   collectorName?: string;
@@ -79,7 +95,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [balanceFilter, setBalanceFilter] = useState<'ALL' | 'DUE' | 'PAID'>('ALL');
   const [modeFilter, setModeFilter] = useState<'ALL' | 'CASH' | 'ONL'>('ALL');
-  const [sortField, setSortField] = useState<'serialNumber' | 'name' | 'acceptedAmount' | 'balanceAmount'>('serialNumber');
+  const [sortField, setSortField] = useState<'serialNumber' | 'name' | 'acceptedAmount' | 'balanceAmount' | 'date'>('serialNumber');
   const [sortAsc, setSortAsc] = useState(true);
 
   // View Mode: cards vs grid
@@ -144,8 +160,10 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
         return true;
       })
       .sort((a, b) => {
-        let valA = a[sortField];
-        let valB = b[sortField];
+        // ISO YYYY-MM-DD sorts correctly as a plain string; the ?? keeps rows
+        // with no date (legacy/Excel-imported) from throwing in localeCompare.
+        const valA = sortField === 'date' ? a.date ?? '' : a[sortField];
+        const valB = sortField === 'date' ? b.date ?? '' : b[sortField];
         if (typeof valA === 'string') {
           return sortAsc
             ? (valA as string).localeCompare(valB as string)
@@ -209,24 +227,16 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
 
     setSendingReceiptId(donation.id);
     try {
-      let pdfBuffer: string | undefined = undefined;
-      try {
-        const pdfDataUrl = await generateReceiptPdfDataUrl(donation, currentEntity, currentEvent);
-        pdfBuffer = toBase64Pdf(pdfDataUrl);
-      } catch (pdfErr) {
-        console.warn('Direct send: failed to generate PDF, falling back to text:', pdfErr);
-      }
+      // The PDF is the whole receipt now, so a render failure has to surface
+      // rather than silently degrade to a text message.
+      const pdfDataUrl = await generateReceiptPdfDataUrl(donation, currentEntity, currentEvent);
 
       await sendWhatsAppReceipt({
         phone: donation.phone,
         ...toReceiptPayload(donation, currentEntity, currentEvent),
-        pdfBuffer,
+        pdfBuffer: toBase64Pdf(pdfDataUrl),
       });
-      toast.success(
-        pdfBuffer
-          ? `भव्य PDF रसीद ${donation.name} को भेज दी गई! ✅`
-          : `रसीद ${donation.name} को भेज दी गई! ✅`,
-      );
+      toast.success(`भव्य PDF रसीद ${donation.name} को भेज दी गई! ✅`);
     } catch (err) {
       toast.error((err as Error).message, { description: 'रसीद विंडो से दोबारा कोशिश करें।' });
       openReceiptModal(donation);
@@ -477,6 +487,14 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                         <span className="font-mono text-xs font-bold text-amber-900 bg-amber-100/70 px-2 py-0.5 rounded-lg border border-amber-200">
                           #{row.serialNumber}
                         </span>
+                        {formatEntryDay(row.date) && (
+                          <span
+                            className="font-mono text-[10px] text-slate-500 whitespace-nowrap"
+                            title={formatEntryDayLong(row.date)}
+                          >
+                            {formatEntryDay(row.date)}
+                          </span>
+                        )}
                         <Badge variant="outline" className={`text-[10px] font-mono font-bold ${cat.badgeColor}`}>
                           {cat.code} • {cat.labelHi.split('/')[0]}
                         </Badge>
@@ -722,7 +740,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
             </div>
           </div>
 
-          {/* The 13 Columns DataGrid */}
+          {/* The 14 Columns DataGrid */}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
@@ -737,6 +755,18 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                       <ArrowUpDown className="w-3 h-3 opacity-70" />
                     </div>
                     <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">S. NUM</div>
+                  </th>
+
+                  {/* DATE — दिनांक (auto-filled with the day the entry was made) */}
+                  <th
+                    onClick={() => handleSort('date')}
+                    className="p-3 border-r border-[#7e111f]/60 cursor-pointer hover:bg-[#720e1c] text-center align-bottom whitespace-nowrap min-w-[90px]"
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="font-serif normal-case text-[11px]">दिनांक</span>
+                      <ArrowUpDown className="w-3 h-3 opacity-70" />
+                    </div>
+                    <div className="font-mono text-[9px] text-amber-200/70 tracking-normal">DATE</div>
                   </th>
 
                   {/* VIL/EMP/SHO/OTH — सहयोगकर्ता की श्रेणी */}
@@ -833,7 +863,7 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
               <tbody className="divide-y divide-slate-100">
                 {filteredDonations.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="py-12 text-center text-slate-400">
+                    <td colSpan={14} className="py-12 text-center text-slate-400">
                       <p className="text-sm font-semibold text-slate-600 font-serif">कोई प्रविष्टि नहीं मिली</p>
                       <p className="text-xs text-slate-400 mt-1">
                         सर्च फिल्टर बदलें या नया चंदा जोड़ें।
@@ -856,6 +886,14 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                         {/* S.NUM */}
                         <td className="p-3 border-r border-slate-100 text-center font-mono font-bold text-amber-950 text-xs">
                           #{row.serialNumber}
+                        </td>
+
+                        {/* DATE — दिनांक */}
+                        <td
+                          className="p-3 border-r border-slate-100 text-center font-mono text-[11px] text-slate-600 whitespace-nowrap"
+                          title={formatEntryDayLong(row.date)}
+                        >
+                          {formatEntryDay(row.date) || <span className="text-slate-300">-</span>}
                         </td>
 
                         {/* VIL/EMP/SHO/OTH */}
@@ -1039,14 +1077,6 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                                   }
                                 />
 
-                                <DropdownMenuItem
-                                  onClick={() => toggleHandover(row)}
-                                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-amber-50"
-                                >
-                                  <HandCoins className="w-3.5 h-3.5 text-amber-600" />
-                                  <span>{row.isHandoverDone ? 'रोकड़ बाकी करें' : 'रोकड़ संदूक जमा ✓'}</span>
-                                </DropdownMenuItem>
-
                                 {!isCollector && (
                                   <DropdownMenuItem
                                     onClick={() => setDeletingId(row.id)}
@@ -1069,7 +1099,9 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
               {/* Sticky Auto-Sum Footer */}
               <tfoot>
                 <tr className="bg-[#fff9ec] text-slate-900 font-bold border-t-2 border-amber-300 text-xs">
-                  <td colSpan={7} className="p-3 text-right font-serif uppercase tracking-wider text-amber-950">
+                  {/* Spans S.NUM → ADDRESS.2 (9 cols) so the totals below line
+                      up with the ACCEPTED / RECEIVABLE / BALANCE columns. */}
+                  <td colSpan={9} className="p-3 text-right font-serif uppercase tracking-wider text-amber-950">
                     कुल योग ({filteredDonations.length} रिकॉर्ड):
                   </td>
                   <td className="p-3 text-right font-mono font-bold text-sm border-r border-amber-200 text-slate-900">

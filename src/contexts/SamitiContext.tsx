@@ -517,6 +517,8 @@ interface SamitiContextType {
   resetDurgaPujaUnitData: (mode?: 'wipe_clean' | 'restore_defaults') => Promise<void>;
   isCollectorMode: boolean;
   currentStaffMember: MasterStaff | null;
+  /** Effective module permissions of the logged-in user for the current workspace. */
+  currentModuleAccess: ModuleAccess;
   isCloudConnected: boolean;
   isSyncing: boolean;
   syncWithCloud: () => Promise<void>;
@@ -714,6 +716,23 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     return false;
   }, [auth?.isCollector, currentStaffMember, currentEntityId]);
+
+  // Effective per-module access of the logged-in staff member for the current
+  // workspace. Falls back to the defaults of their access level for modules the
+  // matrix has not explicitly configured, so a newly added module key never
+  // reads as `undefined`. Users with no staff record (e.g. the master admin
+  // account) keep full access.
+  const currentModuleAccess = useMemo<ModuleAccess>(() => {
+    if (!currentStaffMember) {
+      return { ...DEFAULT_MODULE_ACCESS_MAP[isCollectorMode ? 'collector' : 'full_control'] };
+    }
+    const perm = currentStaffMember.workspacePermissions?.[currentEntityId];
+    const level = perm?.accessLevel || 'no_access';
+    return {
+      ...DEFAULT_MODULE_ACCESS_MAP[level],
+      ...(perm?.modules || {}),
+    };
+  }, [currentStaffMember, currentEntityId, isCollectorMode]);
 
   // Auto-lock current entity for assigned collector
   useEffect(() => {
@@ -1821,6 +1840,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         resetDurgaPujaUnitData,
         isCollectorMode,
         currentStaffMember,
+        currentModuleAccess,
         isCloudConnected: db.isCloudConnected,
         isSyncing: db.isSyncing,
         syncWithCloud,

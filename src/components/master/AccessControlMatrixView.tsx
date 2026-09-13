@@ -26,6 +26,7 @@ import {
   Download,
   Vote,
   Flame,
+  Tent,
 } from 'lucide-react';
 
 interface AccessControlMatrixViewProps {
@@ -386,6 +387,12 @@ export const AccessControlMatrixView: React.FC<AccessControlMatrixViewProps> = (
                       label: 'Expense Manager',
                       desc: 'Expense vouchers, bills, and payment entries',
                       icon: <Receipt className="w-4 h-4 text-amber-600" />,
+                    },
+                    {
+                      key: 'pandalPujaKharcha' as keyof ModuleAccess,
+                      label: 'Pandal & Puja Kharcha (पंडाल एवं पूजा व्यय)',
+                      desc: 'Pandal construction, decoration, and puja expense section of the Durga Puja unit',
+                      icon: <Tent className="w-4 h-4 text-rose-600" />,
                     },
                     {
                       key: 'analytics' as keyof ModuleAccess,

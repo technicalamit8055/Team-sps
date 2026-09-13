@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSamiti } from '@/contexts/SamitiContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -65,12 +65,17 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
     donations,
     isCollectorMode: contextCollectorMode,
     currentStaffMember,
+    currentModuleAccess,
   } = useSamiti();
 
   const navigate = useNavigate();
   const { profile, signOut, role } = useAuth();
   const isCollector = propCollectorMode !== undefined ? propCollectorMode : contextCollectorMode;
   const workerName = profile?.full_name || currentStaffMember?.name || 'सुनील वर्मा';
+
+  // "पंडाल एवं पूजा व्यय" is granted per member from the Master OS access matrix.
+  // Collectors see it only when it has been explicitly ticked for them there.
+  const canSeeKharcha = !!currentModuleAccess.pandalPujaKharcha;
 
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -122,6 +127,12 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
   }, [myDonations]);
 
   const [activeTab, setActiveTab] = useState<'chanda' | 'kharcha' | 'analytics' | 'donors' | 'import_export'>('chanda');
+
+  // If the kharcha grant is revoked while that tab is open, fall back to चंदा
+  // rather than leaving the user on a blank pane.
+  useEffect(() => {
+    if (activeTab === 'kharcha' && !canSeeKharcha) setActiveTab('chanda');
+  }, [activeTab, canSeeKharcha]);
 
   // Modals state
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -307,6 +318,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             }}
             onOpenSeva={() => setIsCashierSheetOpen(true)}
             isCollector={isCollector}
+            canSeeKharcha={canSeeKharcha}
             workerName={workerName}
           />
         </div>
@@ -330,6 +342,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 }}
                 onOpenSeva={() => setIsCashierSheetOpen(true)}
                 isCollector={isCollector}
+                canSeeKharcha={canSeeKharcha}
                 workerName={workerName}
                 onCloseMobileDrawer={() => setIsMobileSidebarOpen(false)}
               />
@@ -504,34 +517,34 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 <span>चंदा रजिस्टर (11 कॉलम)</span>
               </button>
 
-              {!isCollector && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('kharcha')}
-                    className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 ${
-                      activeTab === 'kharcha'
-                        ? 'bg-[#7a121d] text-white shadow-md shadow-rose-950/30 ring-1 ring-amber-400/40'
-                        : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
-                    }`}
-                  >
-                    <Receipt className="w-3.5 h-3.5" />
-                    <span>पंडाल व पूजा व्यय</span>
-                  </button>
+              {canSeeKharcha && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('kharcha')}
+                  className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                    activeTab === 'kharcha'
+                      ? 'bg-[#7a121d] text-white shadow-md shadow-rose-950/30 ring-1 ring-amber-400/40'
+                      : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  <Receipt className="w-3.5 h-3.5" />
+                  <span>पंडाल व पूजा व्यय</span>
+                </button>
+              )}
 
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('analytics')}
-                    className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 ${
-                      activeTab === 'analytics'
-                        ? 'bg-[#7a121d] text-white shadow-md shadow-rose-950/30 ring-1 ring-amber-400/40'
-                        : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
-                    }`}
-                  >
-                    <BarChart3 className="w-3.5 h-3.5" />
-                    <span>वित्तीय लेखा-जोखा</span>
-                  </button>
-                </>
+              {!isCollector && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('analytics')}
+                  className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-serif font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                    activeTab === 'analytics'
+                      ? 'bg-[#7a121d] text-white shadow-md shadow-rose-950/30 ring-1 ring-amber-400/40'
+                      : 'bg-white hover:bg-amber-50 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>वित्तीय लेखा-जोखा</span>
+                </button>
               )}
 
               <button
@@ -575,7 +588,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
             />
           )}
 
-          {activeTab === 'kharcha' && !isCollector && (
+          {activeTab === 'kharcha' && canSeeKharcha && (
             <ExpenseManager />
           )}
 

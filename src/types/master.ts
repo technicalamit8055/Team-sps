@@ -6,6 +6,7 @@ export interface ModuleAccess {
   votersCRM: boolean;       // Election CRM, voter lists, surveys
   donationsLedger: boolean; // Chanda sheet, Excel data grid
   expenses: boolean;        // Kharcha manager, voucher entry
+  pandalPujaKharcha: boolean; // पंडाल एवं पूजा व्यय section of the Durga Puja unit
   analytics: boolean;       // Financial & demographic charts
   karyakartaMgmt: boolean;  // Manage volunteers in that workspace
   exportData: boolean;      // Excel/PDF download & export
@@ -16,6 +17,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     votersCRM: true,
     donationsLedger: true,
     expenses: true,
+    pandalPujaKharcha: true,
     analytics: true,
     karyakartaMgmt: true,
     exportData: true,
@@ -24,6 +26,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     votersCRM: true,
     donationsLedger: true,
     expenses: true,
+    pandalPujaKharcha: true,
     analytics: true,
     karyakartaMgmt: false,
     exportData: true,
@@ -32,6 +35,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     votersCRM: true,
     donationsLedger: true,
     expenses: true,
+    pandalPujaKharcha: true,
     analytics: true,
     karyakartaMgmt: false,
     exportData: false,
@@ -40,6 +44,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     votersCRM: false,
     donationsLedger: true,  // Can add donations and view entries made
     expenses: false,         // Strictly hidden
+    pandalPujaKharcha: false, // Hidden unless explicitly granted in the matrix
     analytics: false,        // Strictly hidden
     karyakartaMgmt: false,   // Strictly hidden
     exportData: false,       // Strictly hidden
@@ -48,6 +53,7 @@ export const DEFAULT_MODULE_ACCESS_MAP: Record<WorkspaceAccessLevel, ModuleAcces
     votersCRM: false,
     donationsLedger: false,
     expenses: false,
+    pandalPujaKharcha: false,
     analytics: false,
     karyakartaMgmt: false,
     exportData: false,

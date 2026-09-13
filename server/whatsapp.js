@@ -380,8 +380,9 @@ async function requireSocket() {
 }
 
 /**
- * Send a receipt over WhatsApp. When `pdfBuffer` is supplied the receipt
- * text rides along as the document caption instead of a separate message.
+ * Send a receipt over WhatsApp. When `pdfBuffer` is supplied the PDF is sent
+ * on its own with no caption; `message`/the default format is used only for
+ * text-only sends.
  *
  * @param {object} params
  * @param {string} [params.phone]            Recipient; falls back to WHATSAPP_DEFAULT_PHONE.
@@ -442,12 +443,14 @@ export async function sendReceipt({
 
     const recipient = found.jid || jid;
 
+    // The PDF is the receipt. When one is attached it goes out on its own,
+    // with no caption, so the donor gets a single document and no wall of
+    // duplicated text. Text-only sends (e.g. the setup test) still use it.
     const payload = pdf
       ? {
           document: pdf,
           mimetype: 'application/pdf',
           fileName: `receipt-${receiptNo || Date.now()}.pdf`,
-          caption: text,
         }
       : { text };
 

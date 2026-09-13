@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Plus,
   Sparkles,
   CheckCircle2,
   Smartphone,
@@ -31,7 +30,8 @@ import { CasteCombobox } from './CasteCombobox';
 import { LocalityCombobox } from './LocalityCombobox';
 import { VillageCombobox } from './VillageCombobox';
 import { toast } from 'sonner';
-import { sendWhatsAppReceipt } from '@/lib/whatsapp';
+import { sendWhatsAppReceipt, toBase64Pdf } from '@/lib/whatsapp';
+import { generateReceiptPdfDataUrl } from '@/lib/receiptPdfGenerator';
 import { toReceiptPayload } from '@/lib/samitiReceipt';
 
 interface QuickDonationDialogProps {
@@ -219,11 +219,16 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
 
     const toastId = toast.loading(`रसीद ${donation.name} को भेजी जा रही है…`);
     try {
+      // The PDF is the whole receipt now, so a render failure has to surface
+      // rather than silently degrade to a text message.
+      const pdfDataUrl = await generateReceiptPdfDataUrl(donation, currentEntity, currentEvent);
+
       await sendWhatsAppReceipt({
         phone: cleanPhone,
         ...toReceiptPayload(donation, currentEntity, currentEvent),
+        pdfBuffer: toBase64Pdf(pdfDataUrl),
       });
-      toast.success(`रसीद ${donation.name} को भेज दी गई! ✅`, { id: toastId });
+      toast.success(`भव्य PDF रसीद ${donation.name} को भेज दी गई! ✅`, { id: toastId });
     } catch (err) {
       toast.error((err as Error).message, {
         id: toastId,
@@ -298,14 +303,9 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          {triggerButton || (
-            <Button className="h-9 px-3.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-xl shadow-sm hover:shadow-md transition-all active:scale-95 flex items-center gap-1.5 border border-amber-400/40">
-              <Plus className="w-4 h-4 text-slate-950" />
-              <span>+ नया चंदा जोड़ें</span>
-            </Button>
-          )}
-        </DialogTrigger>
+        {triggerButton && (
+          <DialogTrigger asChild>{triggerButton}</DialogTrigger>
+        )}
 
         <DialogContent className="max-w-2xl w-[96vw] sm:w-full max-h-[92vh] flex flex-col p-0 overflow-hidden bg-gradient-to-b from-amber-50/30 via-white to-orange-50/20 border-amber-300/80 shadow-2xl rounded-3xl [&>button]:text-white/80 [&>button]:hover:text-white [&>button]:z-20 [&>button]:bg-white/10 [&>button]:hover:bg-white/20 [&>button]:p-1.5 [&>button]:rounded-full [&>button]:top-4 [&>button]:right-4">
           {/* ------------------------------------------------------------- */}
@@ -417,7 +417,6 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                     value={name}
                     onChange={e => setName(e.target.value)}
                     required
-                    placeholder="उदा. राहुल कुमार / अमित शर्मा"
                     className="h-10 text-sm font-semibold text-slate-900 border-slate-200 focus-visible:ring-amber-500 focus-visible:border-amber-500 rounded-xl bg-slate-50/40 hover:bg-white transition-colors"
                   />
                 </div>

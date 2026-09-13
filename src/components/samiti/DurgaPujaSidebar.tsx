@@ -21,6 +21,8 @@ interface DurgaPujaSidebarProps {
   onOpenSettings: () => void;
   onOpenSeva?: () => void;
   isCollector?: boolean;
+  /** Granted per member from the Master OS access matrix (पंडाल एवं पूजा व्यय). */
+  canSeeKharcha?: boolean;
   workerName?: string;
   onCloseMobileDrawer?: () => void;
 }
@@ -33,6 +35,7 @@ export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
   onOpenSettings,
   onOpenSeva,
   isCollector = false,
+  canSeeKharcha = true,
   workerName,
   onCloseMobileDrawer,
 }) => {
@@ -64,7 +67,7 @@ export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
       icon: FolderKanban,
       action: () => onSelectTab('kharcha'),
       isActive: activeTab === 'kharcha',
-      hideForCollector: true,
+      hidden: !canSeeKharcha,
     },
     {
       id: 'analytics',
@@ -149,7 +152,8 @@ export const DurgaPujaSidebar: React.FC<DurgaPujaSidebarProps> = ({
       {/* Navigation Menu List */}
       <nav className="flex-1 px-2.5 py-3 space-y-1 overflow-y-auto no-scrollbar">
         {navItems.map(item => {
-          if (isCollector && item.hideForCollector) return null;
+          if (isCollector && (item as any).hideForCollector) return null;
+          if ((item as any).hidden) return null;
 
           const active = item.isActive;
 

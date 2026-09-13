@@ -13,8 +13,6 @@ import {
   Send,
   Loader2,
   Download,
-  FileText,
-  Eye,
   ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -42,11 +40,9 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [phoneInput, setPhoneInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [activeTab, setActiveTab] = useState<'preview' | 'text'>('preview');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [generatingPreview, setGeneratingPreview] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [attachPdf, setAttachPdf] = useState(true);
 
   // Seed phone input each time the modal opens
   useEffect(() => {
@@ -98,15 +94,9 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
 
     setSending(true);
     try {
-      let pdfBase64: string | undefined = undefined;
-      if (attachPdf) {
-        try {
-          const pdfDataUrl = await generateReceiptPdfDataUrl(donation, currentEntity, currentEvent);
-          pdfBase64 = toBase64Pdf(pdfDataUrl);
-        } catch (pdfErr) {
-          console.warn('PDF generation failed, falling back to text:', pdfErr);
-        }
-      }
+      // The PDF is the whole receipt now, so a render failure has to surface
+      // rather than silently degrade to a text message.
+      const pdfDataUrl = await generateReceiptPdfDataUrl(donation, currentEntity, currentEvent);
 
       await sendWhatsAppReceipt({
         phone: cleanPhone,
@@ -117,14 +107,10 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
         date: donation.date || new Date().toISOString().split('T')[0],
         businessName: currentEntity.name,
         message: generateWhatsAppMessage(),
-        pdfBuffer: pdfBase64,
+        pdfBuffer: toBase64Pdf(pdfDataUrl),
       });
 
-      toast.success(
-        attachPdf
-          ? `भव्य PDF रसीद ${donation.name} को व्हाट्सएप पर भेज दी गई! ✅`
-          : `रसीद ${donation.name} को भेज दी गई! ✅`,
-      );
+      toast.success(`भव्य PDF रसीद ${donation.name} को व्हाट्सएप पर भेज दी गई! ✅`);
     } catch (err) {
       toast.error((err as Error).message, {
         description: 'आप "व्हाट्सएप खोलें" से मैन्युअल भी भेज सकते हैं।',
@@ -191,40 +177,12 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
             <span>डिजिटल चंदा रसीद (Official Receipt)</span>
           </DialogTitle>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-black/20 p-0.5 rounded-full border border-white/20 text-xs mr-6">
-            <button
-              type="button"
-              onClick={() => setActiveTab('preview')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-medium transition-all ${
-                activeTab === 'preview'
-                  ? 'bg-white text-rose-800 shadow-xs font-bold'
-                  : 'text-amber-100 hover:text-white'
-              }`}
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>भव्य रसीद (PDF)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('text')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full font-medium transition-all ${
-                activeTab === 'text'
-                  ? 'bg-white text-rose-800 shadow-xs font-bold'
-                  : 'text-amber-100 hover:text-white'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>विवरण (Text)</span>
-            </button>
-          </div>
         </DialogHeader>
 
         {/* Modal Body */}
         <div className="p-3 sm:p-5 space-y-3.5 max-h-[76vh] overflow-y-auto print:max-h-none print:p-8">
-          {activeTab === 'preview' ? (
-            /* Breathtaking Divine Festive Receipt Visual Preview */
-            <div className="flex flex-col items-center space-y-3">
+          {/* Breathtaking Divine Festive Receipt Visual Preview */}
+          <div className="flex flex-col items-center space-y-3">
               <div className="relative w-full max-w-md mx-auto bg-amber-50/50 rounded-2xl p-2 border-2 border-amber-300/80 shadow-md">
                 {generatingPreview ? (
                   <div className="w-full aspect-[1084/1451] flex flex-col items-center justify-center bg-amber-50/70 rounded-xl space-y-2 text-amber-800">
@@ -280,96 +238,6 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
                 </Button>
               </div>
             </div>
-          ) : (
-            /* Classic Detail Card view */
-            <div
-              className="relative border-4 border-double border-amber-500/80 rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-amber-50/40 via-white to-amber-50/20 shadow-inner"
-              id="printable-receipt"
-            >
-              <div className="absolute top-1.5 left-2 text-amber-700 text-xs font-serif font-bold">
-                🚩 ॐ
-              </div>
-              <div className="absolute top-1.5 right-2 text-amber-700 text-xs font-serif font-bold">
-                卐 🚩
-              </div>
-
-              <div className="text-center border-b-2 border-amber-400 pb-3 pt-1">
-                <h2 className="text-xl font-extrabold text-amber-950 tracking-wide font-serif">
-                  {currentEntity.name}
-                </h2>
-                <p className="text-xs font-semibold text-rose-700 mt-1">
-                  {currentEvent.title}
-                </p>
-                <div className="mt-2 inline-block bg-gradient-to-r from-amber-600 to-rose-600 text-white font-bold text-[11px] px-3.5 py-0.5 rounded-full shadow-xs">
-                  सहयोग / चंदा पावती (Donation Receipt)
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center text-xs mt-3 px-2 py-1 bg-amber-100/60 rounded-xl border border-amber-200">
-                <span className="font-bold text-amber-950 font-mono">
-                  रसीद सं० / S.No: #{String(donation.serialNumber).padStart(4, '0')}
-                </span>
-                <span className="text-amber-900 font-mono text-[11px]">
-                  दिनांक: <span className="font-bold">{donation.date}</span>
-                </span>
-              </div>
-
-              <div className="mt-3 space-y-2 text-xs border-b border-amber-200 pb-3">
-                <div>
-                  <p className="text-slate-500 text-[11px]">सहयोगकर्ता का नाम (Donor Name):</p>
-                  <p className="text-base font-bold text-slate-950">{donation.name}</p>
-                </div>
-              </div>
-
-              <div className="mt-3 bg-amber-50/70 rounded-xl p-3 border border-amber-300">
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-slate-500 text-[11px]">स्वीकृत राशि (Pledged):</span>
-                    <p className="text-sm font-bold text-slate-900 font-mono">
-                      ₹{donation.acceptedAmount.toLocaleString('hi-IN')}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 text-[11px]">भुगतान माध्यम (Mode):</span>
-                    <p className="text-sm font-bold text-amber-800 font-mono">
-                      {donation.paymentMode === 'ONL' ? '📲 ऑनलाइन (UPI/QR)' : '💵 नकद (Cash)'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs mt-2 pt-2 border-t border-amber-200">
-                  <div className="bg-emerald-50 p-2 rounded-lg border border-emerald-300">
-                    <span className="text-emerald-800 font-semibold text-[10px] uppercase block">
-                      प्राप्त राशि (Received)
-                    </span>
-                    <p className="text-base font-black text-emerald-800 font-mono">
-                      ₹{donation.receivedAmount.toLocaleString('hi-IN')}
-                    </p>
-                  </div>
-                  <div
-                    className={`p-2 rounded-lg border ${
-                      donation.balanceAmount > 0
-                        ? 'bg-rose-50 border-rose-300 text-rose-800'
-                        : 'bg-slate-50 border-slate-200 text-slate-600'
-                    }`}
-                  >
-                    <span className="font-semibold text-[10px] uppercase block">
-                      शेष बकाया (Balance Due)
-                    </span>
-                    <p className="text-base font-black font-mono">
-                      ₹{donation.balanceAmount.toLocaleString('hi-IN')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 text-center">
-                <p className="text-[11px] font-serif italic text-amber-950 font-medium">
-                  "{currentEntity.tagline || 'माँ दुर्गा की असीम कृपा आप और आपके परिवार पर सदा बनी रहे।'}"
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* Quick WhatsApp Phone override & PDF attach toggle */}
           <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
@@ -390,19 +258,6 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
                 </p>
               )}
             </div>
-
-            {/* Attach PDF Checkbox */}
-            <label className="flex items-center gap-2 pt-1 text-xs text-slate-700 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={attachPdf}
-                onChange={(e) => setAttachPdf(e.target.checked)}
-                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-              />
-              <span className="font-medium text-slate-800">
-                📎 साथ में भव्य PDF रसीद भेजें (Attach Official PDF Receipt)
-              </span>
-            </label>
           </div>
         </div>
 
@@ -457,11 +312,7 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
               ) : (
                 <Send className="w-4 h-4 mr-1.5" />
               )}
-              {sending
-                ? 'भेजा जा रहा है…'
-                : attachPdf
-                ? 'PDF रसीद भेजें (Auto)'
-                : 'सीधे भेजें (Auto)'}
+              {sending ? 'भेजा जा रहा है…' : 'PDF रसीद भेजें (Auto)'}
             </Button>
           </div>
         </div>
