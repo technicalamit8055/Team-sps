@@ -198,11 +198,15 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   const [address2, setAddress2] = useState(initialData?.address2 || '');
   const [phone, setPhone] = useState(initialData?.phone || '');
   const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
+  // `??` rather than a truthiness check: a saved amount of 0 is a real value
+  // (a pledge recorded with nothing collected yet) and must survive a reopen.
+  // Read as falsy it was replaced by the 2100 preset, so editing any other
+  // field on such a receipt wrote 2100 over the recorded 0.
   const [acceptedAmount, setAcceptedAmount] = useState<string>(
-    initialData?.acceptedAmount ? String(initialData.acceptedAmount) : '2100'
+    String(initialData?.acceptedAmount ?? '2100')
   );
   const [receivedAmount, setReceivedAmount] = useState<string>(
-    initialData?.receivedAmount ? String(initialData.receivedAmount) : '2100'
+    String(initialData?.receivedAmount ?? '2100')
   );
   const [paymentMode, setPaymentMode] = useState<PaymentMode>(initialData?.paymentMode || 'CASH');
   const [collectorName, setCollectorName] = useState(initialData?.collectorName || (lockCollector ? workerCollectorName : ''));
@@ -223,8 +227,10 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setAddress2(initialData.address2 || '');
       setPhone(initialData.phone || '');
       setDate(initialData.date || new Date().toISOString().split('T')[0]);
-      setAcceptedAmount(String(initialData.acceptedAmount || '2100'));
-      setReceivedAmount(String(initialData.receivedAmount || '2100'));
+      // See the `??` note on the useState initialisers above: a recorded 0 is
+      // a value to restore, not a missing amount to default.
+      setAcceptedAmount(String(initialData.acceptedAmount ?? '2100'));
+      setReceivedAmount(String(initialData.receivedAmount ?? '2100'));
       setPaymentMode(initialData.paymentMode || 'CASH');
       setCollectorName(initialData.collectorName || (lockCollector ? workerCollectorName : ''));
       setRemarks(initialData.remarks || '');
