@@ -1123,6 +1123,23 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                         <td className="p-3 border-r border-slate-100 text-center font-mono font-bold text-amber-950 text-xs">
                           <div className="flex flex-col items-center gap-0.5">
                             <span>#{row.serialNumber}</span>
+                            {/* Not yet on the server. Keyed on the sync flag
+                                rather than the provisional-number flag: what a
+                                collector needs to see is "this entry could
+                                still be lost", which is true of every unsynced
+                                row, not only the ones awaiting a number.
+                                `isSyncedToCloud` is absent on rows written by
+                                older builds, so the badge is shown only when it
+                                is explicitly false — no false alarms on rows
+                                that predate the flag. */}
+                            {row.isSyncedToCloud === false && (
+                              <span
+                                className="text-[10px] font-sans font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 rounded-full leading-4"
+                                title="यह प्रविष्टि अभी सर्वर पर सुरक्षित नहीं है — ऐप का डेटा साफ़ न करें। नेटवर्क आने पर अपने आप सुरक्षित हो जाएगी।"
+                              >
+                                असुरक्षित
+                              </span>
+                            )}
                             {isFresh && (
                               <span
                                 className="text-[10px] font-sans font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 rounded-full leading-4"

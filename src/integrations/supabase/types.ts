@@ -1070,6 +1070,10 @@ export type Database = {
       }
     }
     Functions: {
+      claim_donation_serial: {
+        Args: { p_donation: Json; p_event_id: string }
+        Returns: Database["public"]["Tables"]["samiti_donations"]["Row"]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

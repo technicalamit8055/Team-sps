@@ -87,6 +87,29 @@ export interface SamitiDonation {
   id: string;
   eventId: string;
   serialNumber: number; // S.NUM from Excel
+  /**
+   * True while this entry holds a locally-guessed receipt number because it was
+   * recorded offline. The server issues the real number when the entry syncs,
+   * at which point this is cleared. Never persisted to the cloud — a row that
+   * exists server-side has, by definition, a server-issued number.
+   */
+  isProvisionalSerial?: boolean;
+  /**
+   * True once this row has been seen on the server — either it came down from
+   * the cloud or the allocator confirmed writing it.
+   *
+   * This is what makes a sync safe to apply. A row absent from the server fetch
+   * is either (a) not yet uploaded or (b) deleted elsewhere, and the two demand
+   * opposite handling: keep it, or drop it. Without this flag the only way to
+   * tell them apart was `isProvisionalSerial`, which is set on exactly one
+   * failure path — so any entry that went unsynced by any other route was
+   * silently discarded on the next sync. That is how a collector lost five
+   * receipts they had already handed out.
+   *
+   * Absent on rows written by older builds; treated as "never confirmed", which
+   * errs toward keeping data rather than deleting it.
+   */
+  isSyncedToCloud?: boolean;
   category: DonationCategory; // VIL/EMP/SHO/OTH
   name: string; // NAME
   identity: string; // IDENTITY (Father/Firm/Mobile/Designation)

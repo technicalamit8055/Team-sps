@@ -10,6 +10,34 @@ import {
 import { MasterStaff } from '@/types/master';
 import { toast } from 'sonner';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { Database, Json } from '@/integrations/supabase/types';
+
+/**
+ * Outcome of asking the server for a receipt number.
+ *
+ * Three-way on purpose. Collapsing 'error' into 'offline' is what let a broken
+ * save masquerade as a successful one: the caller parked the entry locally,
+ * showed a success toast, and the collector only discovered the loss after
+ * closing the app. 'offline' is expected at a pandal and retried silently;
+ * 'error' means the write was refused and must be surfaced.
+ */
+export type ClaimResult =
+  | { status: 'ok'; donation: SamitiDonation }
+  | { status: 'offline' }
+  | { status: 'error'; message: string; code?: string };
+
+/**
+ * Best-effort read of a PostgREST/Supabase error code. Used only to turn the
+ * two failures an operator can act on into plain Hindi; everything else falls
+ * through to the raw message.
+ */
+function errorCodeOf(err: unknown): string | undefined {
+  if (err && typeof err === 'object' && 'code' in err) {
+    const code = (err as { code?: unknown }).code;
+    if (typeof code === 'string') return code;
+  }
+  return undefined;
+}
 
 export function useSamitiDatabase() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
@@ -183,12 +211,132 @@ export function useSamitiDatabase() {
         payments: Array.isArray((item as any).payments) ? ((item as any).payments as SamitiDonation["payments"]) : [],
         createdAt: item.created_at || new Date().toISOString(),
         updatedAt: item.updated_at || new Date().toISOString(),
+        // It came from the server, so it is on the server. This is what lets a
+        // later sync tell "deleted elsewhere" (drop it) apart from "not yet
+        // uploaded" (keep it).
+        isSyncedToCloud: true,
+        isProvisionalSerial: false,
       }));
     } catch (err) {
       console.warn('Network error fetching donations:', err);
       return null;
     }
   }, []);
+
+  /**
+   * Insert a brand-new donation and let the SERVER decide its receipt number.
+   *
+   * Several counters collect at the same time on separate tablets. Computing
+   * `max(serialNumber) + 1` on the device produced duplicate receipt numbers
+   * whenever two counters saved inside the same Realtime propagation window —
+   * both read the same maximum. `claim_donation_serial` allocates the number
+   * and writes the row inside one transaction, under a per-event advisory
+   * lock, so concurrent saves queue rather than collide.
+   *
+   * Returns the stored row with its authoritative `serialNumber` on success.
+   * A genuine loss of connectivity returns 'offline' and is retried on the next
+   * sync; anything the server actively refused returns 'error' so the caller
+   * can tell the operator instead of pretending the entry was saved.
+   */
+  const claimDonationInCloud = useCallback(
+    async (donation: SamitiDonation): Promise<ClaimResult> => {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        return { status: 'offline' };
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('claim_donation_serial', {
+          p_event_id: donation.eventId,
+          p_donation: {
+            id: donation.id,
+            category: donation.category,
+            name: donation.name,
+            identity: donation.identity || null,
+            caste: donation.caste || null,
+            village: donation.village || null,
+            address1: donation.address1 || null,
+            address2: donation.address2 || null,
+            phone: donation.phone || null,
+            accepted_amount: donation.acceptedAmount,
+            received_amount: donation.receivedAmount,
+            balance_amount: donation.balanceAmount,
+            payment_mode: donation.paymentMode,
+            collector_name: donation.collectorName || null,
+            is_handover_done: donation.isHandoverDone ?? false,
+            date: donation.date,
+            remarks: donation.remarks || null,
+            receipt_url: donation.receiptUrl || null,
+            payments: donation.payments ?? [],
+          } as unknown as Json,
+        });
+
+        if (error) throw error;
+
+        // PostgREST returns a table-returning function as a single row object,
+        // but tolerate a one-element array so a client/PostgREST upgrade that
+        // changes the shape does not silently drop the confirmed number.
+        type ClaimedRow = Database['public']['Tables']['samiti_donations']['Row'];
+        const row = (Array.isArray(data) ? data[0] : data) as ClaimedRow | undefined;
+
+        // The call succeeded but produced no row. That should not happen, and
+        // treating it as "offline" would park the entry as if the network were
+        // at fault, so it is reported as the anomaly it is.
+        if (!row) {
+          return {
+            status: 'error',
+            message: 'सर्वर ने रसीद क्रमांक नहीं लौटाया।',
+          };
+        }
+
+        return {
+          status: 'ok',
+          donation: {
+            ...donation,
+            id: row.id,
+            serialNumber: row.serial_number,
+            balanceAmount: Number(row.balance_amount) || 0,
+            createdAt: row.created_at || donation.createdAt,
+            updatedAt: row.updated_at || donation.updatedAt,
+            // The number is now server-issued, so it is no longer provisional —
+            // this matters when re-claiming an entry recorded offline.
+            isProvisionalSerial: false,
+            // The allocator wrote the row in the same transaction that issued
+            // the number, so it is definitively on the server.
+            isSyncedToCloud: true,
+          },
+        };
+      } catch (err) {
+        const code = errorCodeOf(err);
+        const raw = err instanceof Error ? err.message : String(err);
+
+        // A dropped connection mid-request throws rather than being caught by
+        // the navigator.onLine check above. Only this case is retryable.
+        const isNetworkFailure =
+          err instanceof TypeError ||
+          /failed to fetch|network ?error|load failed/i.test(raw);
+
+        if (isNetworkFailure) {
+          console.warn('Receipt number claim failed (network):', raw);
+          return { status: 'offline' };
+        }
+
+        // Everything below is the server actively refusing the write. These
+        // used to be reported as "offline", which is how a missing allocator
+        // (PGRST202) silently swallowed five receipts.
+        let message = raw;
+        if (code === 'PGRST202') {
+          message =
+            'डेटाबेस अपडेट बाकी है — रसीद क्रमांक देने वाला फ़ंक्शन मौजूद नहीं है। व्यवस्थापक से संपर्क करें।';
+        } else if (code === '42501' || /row-level security/i.test(raw)) {
+          message = 'इस इवेंट में प्रविष्टि दर्ज करने की अनुमति नहीं है।';
+        }
+
+        console.error('Receipt number claim rejected by server:', code, raw);
+        return { status: 'error', message, code };
+      }
+    },
+    []
+  );
 
   const saveDonationToCloud = useCallback(async (donation: SamitiDonation) => {
     try {
@@ -687,6 +835,7 @@ export function useSamitiDatabase() {
       fetchEventsFromCloud,
       saveEventToCloud,
       fetchDonationsFromCloud,
+      claimDonationInCloud,
       saveDonationToCloud,
       deleteDonationFromCloud,
       bulkSaveDonationsToCloud,
@@ -712,6 +861,7 @@ export function useSamitiDatabase() {
       fetchEventsFromCloud,
       saveEventToCloud,
       fetchDonationsFromCloud,
+      claimDonationInCloud,
       saveDonationToCloud,
       deleteDonationFromCloud,
       bulkSaveDonationsToCloud,

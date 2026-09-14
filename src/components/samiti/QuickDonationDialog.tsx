@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Sparkles,
   CheckCircle2,
+  Loader2,
   Smartphone,
   Calendar,
   User,
@@ -186,6 +187,8 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
   const setIsOpen = controlledOnOpenChange || setInternalOpen;
   const [createdDonation, setCreatedDonation] = useState<SamitiDonation | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  // True while the server is issuing the receipt number (~150–250ms online).
+  const [isSaving, setIsSaving] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   // Form states
@@ -319,7 +322,10 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
     setReceivedAmount(String(amount));
   };
 
-  // Next receipt number preview
+  // Preview only. The real number is issued by the server when the entry is
+  // saved, so if another counter saves first this estimate will be one behind
+  // — which is why the badge below labels it "संभावित" rather than showing it
+  // as the final receipt number.
   const nextReceiptNumber = donations && donations.length > 0
     ? Math.max(...donations.map(d => d.serialNumber || 0)) + 1
     : 1;
@@ -365,9 +371,12 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    // Saving now waits on the server for the receipt number, so an impatient
+    // second tap would otherwise record the donation twice.
+    if (isSaving) return;
 
     if (
       !Number.isFinite(parsedAccepted) ||
@@ -432,24 +441,34 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
       setIsOpen(false);
       onSuccess?.();
     } else {
-      const newDonation = addDonation({
-        eventId: currentEvent.id,
-        name: name.trim(),
-        category,
-        identity: identity.trim(),
-        caste: caste.trim(),
-        village: village.trim(),
-        address1: address1.trim(),
-        address2: address2.trim(),
-        phone: phone.trim(),
-        acceptedAmount: parsedAccepted,
-        receivedAmount: parsedReceived,
-        paymentMode,
-        collectorName: collectorName.trim(),
-        isHandoverDone: false,
-        date: date || new Date().toISOString().split('T')[0],
-        remarks: remarks.trim(),
-      });
+      // The receipt number comes back from the server, so the dialog closes and
+      // the receipt goes out only once the number is final. Without this await
+      // two counters saving at the same moment could each send a PDF carrying
+      // the same receipt number.
+      setIsSaving(true);
+      let newDonation: SamitiDonation;
+      try {
+        newDonation = await addDonation({
+          eventId: currentEvent.id,
+          name: name.trim(),
+          category,
+          identity: identity.trim(),
+          caste: caste.trim(),
+          village: village.trim(),
+          address1: address1.trim(),
+          address2: address2.trim(),
+          phone: phone.trim(),
+          acceptedAmount: parsedAccepted,
+          receivedAmount: parsedReceived,
+          paymentMode,
+          collectorName: collectorName.trim(),
+          isHandoverDone: false,
+          date: date || new Date().toISOString().split('T')[0],
+          remarks: remarks.trim(),
+        });
+      } finally {
+        setIsSaving(false);
+      }
 
       setIsOpen(false);
       onSuccess?.();
@@ -496,7 +515,7 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                 <Receipt className="w-4 h-4 text-amber-300 shrink-0" />
                 <div className="text-left">
                   <div className="text-[11px] uppercase tracking-wider text-amber-300/80 font-mono font-bold">
-                    रसीद क्रमांक
+                    {initialData ? 'रसीद क्रमांक' : 'संभावित क्रमांक'}
                   </div>
                   <div className="text-xs font-black font-mono text-amber-200">
                     #{String(initialData ? initialData.serialNumber : nextReceiptNumber).padStart(4, '0')}
@@ -1023,10 +1042,21 @@ export const QuickDonationDialog: React.FC<QuickDonationDialogProps> = ({
                 type="submit"
                 form="quick-donation-form"
                 size="sm"
-                className="h-10 px-5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-xl shadow-md shadow-amber-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-initial"
+                disabled={isSaving}
+                className="h-10 px-5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-xl shadow-md shadow-amber-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-initial disabled:opacity-80"
               >
-                <CheckCircle2 className="w-4 h-4 text-slate-950" />
-                <span>{initialData ? 'अपडेट सुरक्षित करें' : 'चंदा प्रविष्टि सुरक्षित करें'}</span>
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 text-slate-950 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 text-slate-950" />
+                )}
+                <span>
+                  {isSaving
+                    ? 'रसीद क्रमांक लिया जा रहा है…'
+                    : initialData
+                      ? 'अपडेट सुरक्षित करें'
+                      : 'चंदा प्रविष्टि सुरक्षित करें'}
+                </span>
               </Button>
             </div>
           </div>

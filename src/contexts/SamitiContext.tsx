@@ -493,7 +493,13 @@ interface SamitiContextType {
   setMainWorkspaceId: (id: string) => void;
   isMainWorkspace: (id: string) => boolean;
   mainWorkspace: MasterEntity;
-  addDonation: (donation: Omit<SamitiDonation, 'id' | 'serialNumber' | 'balanceAmount' | 'createdAt' | 'updatedAt'>) => SamitiDonation;
+  /**
+   * Records a donation and resolves with the saved receipt, including the
+   * receipt number the SERVER assigned. Awaiting it before printing or sending
+   * a receipt is what keeps two counters from issuing the same number; see the
+   * implementation for the offline fallback.
+   */
+  addDonation: (donation: Omit<SamitiDonation, 'id' | 'serialNumber' | 'balanceAmount' | 'createdAt' | 'updatedAt'>) => Promise<SamitiDonation>;
   updateDonation: (id: string, updates: Partial<SamitiDonation>) => void;
   recordDonationPayment: (id: string, payment: { amount: number; paymentMode: PaymentMode; date: string; collectorName?: string; note?: string }) => void;
   deleteDonation: (id: string) => void;
@@ -611,6 +617,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     fetchEventsFromCloud,
     saveEventToCloud,
     fetchDonationsFromCloud,
+    claimDonationInCloud,
     saveDonationToCloud,
     deleteDonationFromCloud,
     bulkSaveDonationsToCloud,
@@ -734,6 +741,12 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     return [];
   });
+
+  // Lets syncWithCloud read the latest donations (to find entries recorded
+  // offline) without taking `donations` as a dependency, which would rebuild
+  // the callback on every keystroke-level state change.
+  const donationsRef = useRef(donations);
+  donationsRef.current = donations;
 
   // Load Expenses safely
   const [expenses, setExpenses] = useState<SamitiExpense[]>(() => {
@@ -928,7 +941,67 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setEvents(cloudEvents);
       }
       if (cloudDonations !== null) {
-        setDonations(cloudDonations);
+        // Entries that never reached the server are absent from
+        // `cloudDonations`. Replacing state wholesale would discard them — and
+        // the collector would find a receipt they had handed out missing from
+        // the register. Re-submit each through the allocator so it lands with a
+        // real, non-colliding receipt number, then fall back to keeping it
+        // locally if the server is still unreachable.
+        //
+        // The test is "never confirmed by the server", NOT "flagged
+        // provisional". Those are not the same set, and the difference is the
+        // bug that lost five receipts: `isProvisionalSerial` is set on a single
+        // failure path, so an entry left unsynced by any other route — a save
+        // interrupted mid-flight, an app closed before the flag persisted, a
+        // row from a build that predates the flag — was silently deleted here.
+        //
+        // A row that IS marked synced but is missing from the fetch was deleted
+        // on another device; that one is correctly dropped rather than revived.
+        const cloudIds = new Set(cloudDonations.map(c => c.id));
+        const pending = donationsRef.current.filter(
+          d => !d.isSyncedToCloud && !cloudIds.has(d.id)
+        );
+
+        const reconciled: SamitiDonation[] = [];
+        let renumbered = 0;
+        let rejected = 0;
+        let lastRejection = '';
+        for (const entry of pending) {
+          const result = await claimDonationInCloud(entry);
+          if (result.status === 'ok') {
+            if (result.donation.serialNumber !== entry.serialNumber) renumbered++;
+            reconciled.push(result.donation);
+          } else {
+            // Keep it for the next sync to retry, and state explicitly that it
+            // is not on the server — a row carried over from a build that
+            // predates the flag would otherwise stay `undefined` and never show
+            // the "असुरक्षित" badge.
+            //
+            // Count the outright refusals separately: unlike a network drop,
+            // those will not resolve on their own, so the operator has to hear
+            // that these entries exist only on this device.
+            if (result.status === 'error') {
+              rejected++;
+              lastRejection = result.message;
+            }
+            reconciled.push({ ...entry, isSyncedToCloud: false });
+          }
+        }
+
+        setDonations([...cloudDonations, ...reconciled]);
+
+        if (renumbered > 0) {
+          toast.info(`${renumbered} अस्थायी रसीद क्रमांक अपडेट हुए।`, {
+            description: 'ऑफ़लाइन दर्ज प्रविष्टियों को अंतिम क्रमांक मिल गया है।',
+          });
+        }
+
+        if (rejected > 0) {
+          toast.error(`${rejected} प्रविष्टियाँ सर्वर पर सुरक्षित नहीं हो पाईं!`, {
+            description: `${lastRejection} — ये केवल इस डिवाइस पर हैं। ऐप का डेटा साफ़ न करें।`,
+            duration: 15000,
+          });
+        }
       }
       if (cloudExpenses !== null) {
         setExpenses(cloudExpenses);
@@ -948,7 +1021,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     fetchEventsFromCloud,
     saveEventToCloud,
     fetchDonationsFromCloud,
-    saveDonationToCloud,
+    claimDonationInCloud,
     fetchExpensesFromCloud,
     saveExpenseToCloud,
     fetchStaffFromCloud,
@@ -992,6 +1065,9 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               payments: Array.isArray(newRow.payments) ? newRow.payments : [],
               createdAt: newRow.created_at || new Date().toISOString(),
               updatedAt: newRow.updated_at || new Date().toISOString(),
+              // Arrived over Realtime, so the server already has it.
+              isSyncedToCloud: true,
+              isProvisionalSerial: false,
             }];
           });
         } else if (eventType === 'UPDATE' && newRow) {
@@ -1017,6 +1093,9 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             receiptUrl: newRow.receipt_url || undefined,
             payments: Array.isArray(newRow.payments) ? newRow.payments : [],
             updatedAt: newRow.updated_at || new Date().toISOString(),
+            // The server just broadcast this row, so it is stored there.
+            isSyncedToCloud: true,
+            isProvisionalSerial: false,
           } : d));
         } else if (eventType === 'DELETE' && oldRow) {
           setDonations(prev => prev.filter(d => d.id !== oldRow.id));
@@ -1250,10 +1329,29 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, [currentDonations, currentExpenses]);
 
-  // Add donation
+  /**
+   * Add a donation.
+   *
+   * The receipt number is issued by the server, not by this device. At a
+   * festival several counters collect at once on separate tablets; computing
+   * `max(serialNumber) + 1` locally handed the same number to two counters
+   * whenever both saved inside the same Realtime propagation window, which put
+   * duplicate numbers on printed slips and WhatsApp PDFs.
+   *
+   * `claimDonationInCloud` allocates the number and writes the row in a single
+   * transaction under a per-event lock, so the number this resolves with is
+   * final. Callers must await it before printing or sending a receipt.
+   *
+   * Offline, there is nobody to ask: the entry gets a provisional number
+   * (still the local maximum + 1, so the counter keeps working and the
+   * sequence looks sane on that device) and is queued for sync. The number is
+   * corrected on reconnect, so a provisional receipt is marked as such rather
+   * than presented as final.
+   */
   const addDonation = useCallback(
-    (donationData: Omit<SamitiDonation, 'id' | 'serialNumber' | 'balanceAmount' | 'createdAt' | 'updatedAt'>) => {
-      // Find highest serial number in the current event
+    async (donationData: Omit<SamitiDonation, 'id' | 'serialNumber' | 'balanceAmount' | 'createdAt' | 'updatedAt'>) => {
+      // Provisional number — used only until the server answers, and kept as
+      // the final one only when the device is offline.
       const maxSerial = currentDonations.reduce((max, d) => Math.max(max, d.serialNumber || 0), 0);
       const serialNumber = maxSerial + 1;
       const balanceAmount = Math.max(0, donationData.acceptedAmount - donationData.receivedAmount);
@@ -1285,14 +1383,59 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         payments,
         createdAt: now,
         updatedAt: now,
+        // Not on the server until the allocator says so. Set here rather than
+        // only on the failure path, so the entry is protected from a sync for
+        // the whole window between appearing on screen and being confirmed —
+        // including if the app is closed mid-save.
+        isSyncedToCloud: false,
       };
 
+      // Show the entry straight away so the counter never waits on the network
+      // to see its own work.
       setDonations(prev => [...prev, newDonation]);
-      saveDonationToCloud(newDonation);
-      toast.success(`दान प्रविष्टि क्रमांक #${serialNumber} सफलतापूर्वक दर्ज की गई!`);
-      return newDonation;
+
+      const result = await claimDonationInCloud(newDonation);
+
+      if (result.status === 'ok') {
+        const confirmed = result.donation;
+        // The server may have issued a different number than the provisional
+        // one (another counter got in first). Replace the row so every screen,
+        // print and PDF uses the authoritative number.
+        if (confirmed.serialNumber !== newDonation.serialNumber) {
+          setDonations(prev =>
+            prev.map(d => (d.id === newDonation.id ? { ...d, ...confirmed } : d))
+          );
+        }
+        toast.success(`दान प्रविष्टि क्रमांक #${confirmed.serialNumber} सफलतापूर्वक दर्ज की गई!`);
+        return confirmed;
+      }
+
+      // Not saved to the server. The row is deliberately NOT upserted with its
+      // provisional number — that would plant an unvetted number in the shared
+      // table and collide with whatever the online counters are issuing. It is
+      // flagged instead, and `syncWithCloud` re-submits it through the
+      // allocator once the server is reachable again.
+      const provisional: SamitiDonation = { ...newDonation, isProvisionalSerial: true };
+      setDonations(prev => prev.map(d => (d.id === provisional.id ? provisional : d)));
+
+      if (result.status === 'error') {
+        // The server refused the write. Saying "saved" here is what cost five
+        // receipts: the entry lives only on this device and will be lost if the
+        // app's data is cleared, so the operator has to know now.
+        toast.error(`प्रविष्टि सर्वर पर सुरक्षित नहीं हुई!`, {
+          description: `${result.message} — यह प्रविष्टि केवल इस डिवाइस पर है। ऐप का डेटा साफ़ न करें।`,
+          duration: 15000,
+        });
+      } else {
+        toast.warning(`दान प्रविष्टि #${serialNumber} केवल इस डिवाइस पर दर्ज हुई।`, {
+          description: 'नेटवर्क आने पर क्रमांक की पुष्टि होगी — तब तक रसीद अस्थायी है।',
+          duration: 8000,
+        });
+      }
+
+      return provisional;
     },
-    [currentDonations, saveDonationToCloud]
+    [currentDonations, claimDonationInCloud]
   );
 
   /**
