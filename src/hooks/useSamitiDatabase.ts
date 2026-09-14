@@ -39,12 +39,52 @@ function errorCodeOf(err: unknown): string | undefined {
   return undefined;
 }
 
+/**
+ * Health of the live link to the other counters.
+ *
+ * Distinct from `isCloudConnected`, which only says whether the browser thinks
+ * it has a network. A tablet can be online and still be receiving nothing --
+ * socket dropped on screen lock, JWT expired, table missing from the
+ * publication -- and 'disconnected' is what tells the operator their screen may
+ * be stale even though the wifi icon looks fine.
+ */
+export type RealtimeStatus = 'connected' | 'connecting' | 'disconnected';
+
+/**
+ * Tables mirrored to every device. Realtime only forwards a table that is both
+ * in the `supabase_realtime` publication and set to REPLICA IDENTITY FULL --
+ * see supabase/manual/APPLY_REALTIME_SYNC.sql. Module scope so the channel
+ * builder is not rebuilt on every render.
+ */
+const REALTIME_TABLES = [
+  'samiti_donations',
+  'samiti_expenses',
+  'samiti_events',
+  'samiti_entities',
+  'samiti_cash_handovers',
+  'master_staff',
+] as const;
+
+/** Payload relayed peer-to-peer ahead of the authoritative Postgres event. */
+export interface SamitiChangePayload {
+  table: string;
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  newRow?: unknown;
+  oldRow?: unknown;
+}
+
 export function useSamitiDatabase() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(
     () => (typeof navigator !== 'undefined' ? navigator.onLine : true)
   );
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('connecting');
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  // Read inside the visibilitychange handler, which is registered once and
+  // would otherwise close over the status as it was at subscription time.
+  const realtimeStatusRef = useRef<RealtimeStatus>('connecting');
+  realtimeStatusRef.current = realtimeStatus;
 
   useEffect(() => {
     const handleOnline = () => setIsCloudConnected(true);
@@ -685,63 +725,199 @@ export function useSamitiDatabase() {
   // -------------------------------------------------------------
   // REALTIME SUBSCRIPTION
   // -------------------------------------------------------------
-  const subscribeToSamitiRealtime = useCallback(
+  const buildChannel = useCallback(
     (onRemoteChange: (payload: { table: string; eventType: string; newRow: any; oldRow: any }) => void) => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
+      const channel = supabase.channel('samiti-realtime-sync', {
+        // `self: false` keeps the sending device from receiving its own
+        // broadcast back and re-applying a change it already has in state.
+        config: { broadcast: { self: false } },
+      });
 
-      const channel = supabase
-        .channel('samiti-realtime-sync')
-        .on(
+      // Layer 1: peer broadcast. A device that has just written a row relays it
+      // straight to the other counters, arriving well ahead of the WAL-driven
+      // postgres_changes event for the same row. The DB event still follows and
+      // is authoritative -- this only shortens the time the other screens are
+      // stale.
+      channel.on('broadcast', { event: 'samiti_change' }, ({ payload }) => {
+        const p = payload as { table?: string; eventType?: string; newRow?: unknown; oldRow?: unknown } | null;
+        if (!p?.table || !p?.eventType) return;
+        onRemoteChange({
+          table: p.table,
+          eventType: p.eventType,
+          newRow: p.newRow ?? null,
+          oldRow: p.oldRow ?? null,
+        });
+      });
+
+      // Layer 2: authoritative Postgres changes.
+      REALTIME_TABLES.forEach(table => {
+        channel.on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'samiti_donations' },
-          payload => onRemoteChange({ table: 'samiti_donations', eventType: payload.eventType, newRow: payload.new, oldRow: payload.old })
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'samiti_expenses' },
-          payload => onRemoteChange({ table: 'samiti_expenses', eventType: payload.eventType, newRow: payload.new, oldRow: payload.old })
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'samiti_events' },
-          payload => onRemoteChange({ table: 'samiti_events', eventType: payload.eventType, newRow: payload.new, oldRow: payload.old })
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'samiti_entities' },
-          payload => onRemoteChange({ table: 'samiti_entities', eventType: payload.eventType, newRow: payload.new, oldRow: payload.old })
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'samiti_cash_handovers' },
-          payload => onRemoteChange({ table: 'samiti_cash_handovers', eventType: payload.eventType, newRow: payload.new, oldRow: payload.old })
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'master_staff' },
-          payload => onRemoteChange({ table: 'master_staff', eventType: payload.eventType, newRow: payload.new, oldRow: payload.old })
-        )
-        .subscribe((status) => {
+          { event: '*', schema: 'public', table },
+          payload => onRemoteChange({
+            table,
+            eventType: payload.eventType,
+            newRow: payload.new,
+            oldRow: payload.old,
+          })
+        );
+      });
+
+      return channel;
+    },
+    []
+  );
+
+  // -------------------------------------------------------------
+  const subscribeToSamitiRealtime = useCallback(
+    (
+      onRemoteChange: (payload: { table: string; eventType: string; newRow: any; oldRow: any }) => void,
+      options?: { onCatchUp?: () => void }
+    ) => {
+      // Captured once per subscription so the teardown below can tell "this
+      // subscription was cancelled" from "a later subscription replaced it".
+      // Without that distinction a reconnect scheduled by an old attempt could
+      // tear down the channel a newer attempt had just opened.
+      let cancelled = false;
+      let attempt = 0;
+      let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+      const onCatchUp = options?.onCatchUp;
+
+      const clearReconnect = () => {
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+      };
+
+      const scheduleReconnect = () => {
+        if (cancelled || reconnectTimer) return;
+        // Exponential backoff capped at 15s. A pandal on a shared hotspot can
+        // flap for minutes; retrying every 200ms would burn battery and hammer
+        // the Realtime server without reconnecting any sooner.
+        const delay = Math.min(1000 * 2 ** attempt, 15000);
+        attempt += 1;
+        setRealtimeStatus('connecting');
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null;
+          if (!cancelled) connect();
+        }, delay);
+      };
+
+      function connect() {
+        if (cancelled) return;
+
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
+
+        setRealtimeStatus('connecting');
+
+        // Realtime authorises postgres_changes against the connecting user's
+        // RLS policies, and it reads the JWT from the socket, not from the
+        // REST client. Without this the socket keeps the anon key it was
+        // opened with, so a worker's channel subscribes successfully but
+        // receives nothing their policies would otherwise allow.
+        //
+        // Fire-and-forget on purpose: an expired or missing session must not
+        // block the subscription, it just means the anon key is used.
+        void supabase.auth.getSession().then(({ data }) => {
+          const token = data.session?.access_token;
+          if (token && !cancelled) supabase.realtime.setAuth(token);
+        });
+
+        const channel = buildChannel(onRemoteChange);
+
+        channel.subscribe((status) => {
+          if (cancelled) return;
           if (status === 'SUBSCRIBED') {
+            const wasDown = attempt > 0;
+            attempt = 0;
+            clearReconnect();
             setIsCloudConnected(true);
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            setRealtimeStatus('connected');
+            setLastSyncedAt(new Date().toISOString());
+            // Anything written while the socket was down was never broadcast to
+            // this device. Re-subscribing does not replay it -- Realtime has no
+            // backlog -- so the gap is closed with a full fetch instead.
+            if (wasDown && onCatchUp) onCatchUp();
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             setIsCloudConnected(false);
+            setRealtimeStatus('disconnected');
+            scheduleReconnect();
           }
         });
 
-      channelRef.current = channel;
+        channelRef.current = channel;
+      }
+
+      // A phone that locks its screen, or switches to WhatsApp to send a
+      // receipt, gets its WebSocket closed by the browser without any event
+      // the channel itself reports. Reconnect on the way back in, and catch up
+      // on whatever other counters recorded meanwhile.
+      const handleVisibility = () => {
+        if (document.visibilityState !== 'visible' || cancelled) return;
+        onCatchUp?.();
+        if (realtimeStatusRef.current !== 'connected') {
+          attempt = 0;
+          clearReconnect();
+          connect();
+        }
+      };
+
+      const handleOnline = () => {
+        if (cancelled) return;
+        attempt = 0;
+        clearReconnect();
+        connect();
+      };
+
+      const handleOffline = () => {
+        if (cancelled) return;
+        setRealtimeStatus('disconnected');
+      };
+
+      document.addEventListener('visibilitychange', handleVisibility);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
+
+      connect();
 
       return () => {
+        cancelled = true;
+        clearReconnect();
+        document.removeEventListener('visibilitychange', handleVisibility);
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        setRealtimeStatus('disconnected');
         if (channelRef.current) {
           supabase.removeChannel(channelRef.current);
           channelRef.current = null;
         }
       };
     },
-    []
+    [buildChannel]
   );
+
+  /**
+   * Relay a change this device just made to the other counters immediately,
+   * without waiting for the database round trip and WAL replication.
+   *
+   * Best effort by design. The authoritative `postgres_changes` event follows
+   * for every committed write, so a dropped broadcast costs latency, never
+   * correctness -- which is why a failure here is swallowed rather than
+   * surfaced to a collector mid-entry.
+   */
+  const broadcastSamitiChange = useCallback((payload: SamitiChangePayload) => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    try {
+      void channel.send({ type: 'broadcast', event: 'samiti_change', payload });
+    } catch (err) {
+      console.warn('Realtime broadcast failed (DB event will still sync):', err);
+    }
+  }, []);
 
   // -------------------------------------------------------------
   // RESET / PURGE DURGA PUJA UNIT DEMO DATA
@@ -829,6 +1005,9 @@ export function useSamitiDatabase() {
       isSyncing,
       setIsSyncing,
       isCloudConnected,
+      realtimeStatus,
+      lastSyncedAt,
+      broadcastSamitiChange,
       fetchEntitiesFromCloud,
       saveEntityToCloud,
       deleteEntityFromCloud,
@@ -855,6 +1034,9 @@ export function useSamitiDatabase() {
       isSyncing,
       setIsSyncing,
       isCloudConnected,
+      realtimeStatus,
+      lastSyncedAt,
+      broadcastSamitiChange,
       fetchEntitiesFromCloud,
       saveEntityToCloud,
       deleteEntityFromCloud,

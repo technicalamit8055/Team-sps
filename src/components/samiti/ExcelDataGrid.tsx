@@ -10,6 +10,7 @@ import { DuePaymentDialog } from './DuePaymentDialog';
 import { toast } from 'sonner';
 import { sendWhatsAppReceipt, toBase64Pdf } from '@/lib/whatsapp';
 import { toReceiptPayload } from '@/lib/samitiReceipt';
+import { useRealtimeRowFlash } from '@/hooks/useRealtimeRowFlash';
 import { generateReceiptPdfDataUrl } from '@/lib/receiptPdfGenerator';
 import {
   Search,
@@ -267,6 +268,10 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
     sortField,
     sortAsc,
   ]);
+
+  // Tracked against the unfiltered list on purpose: keyed off the filtered view
+  // instead, merely changing a filter would look like a burst of live arrivals.
+  const rowFlashes = useRealtimeRowFlash(donations);
 
   /**
    * Counts for the recency chips and the newest row for the "अंतिम प्रविष्टि"
@@ -691,11 +696,14 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                 const isDue = row.balanceAmount > 0;
                 const isVip = row.acceptedAmount >= 10000;
                 const isFresh = registeredAt(row) >= startOfTodayMs;
+                const flash = rowFlashes.get(row.id);
 
                 return (
                   <div
                     key={row.id}
-                    className={`bg-white border rounded-2xl p-4 shadow-xs transition-all flex flex-col justify-between gap-3 relative hover:shadow-md ${isVip ? 'border-amber-400/90 ring-1 ring-amber-400/30' : 'border-slate-200'
+                    className={`bg-white border rounded-2xl p-4 shadow-xs transition-all flex flex-col justify-between gap-3 relative hover:shadow-md ${
+                      flash === 'new' ? 'animate-realtime-new' : flash === 'edit' ? 'animate-realtime-edit' : ''
+                    } ${isVip ? 'border-amber-400/90 ring-1 ring-amber-400/30' : 'border-slate-200'
                       }`}
                   >
                     {/* Top Row: S.NUM, Category & Mode */}
@@ -1105,12 +1113,17 @@ export const ExcelDataGrid: React.FC<ExcelDataGridProps> = ({
                     const isDue = row.balanceAmount > 0;
                     const isVip = row.acceptedAmount >= 10000;
                     const isFresh = registeredAt(row) >= startOfTodayMs;
+                    const flash = rowFlashes.get(row.id);
 
                     return (
                       <tr
                         key={row.id}
                         className={`hover:bg-amber-50/50 transition-colors ${
-                          isFresh
+                          flash === 'new'
+                            ? 'animate-realtime-new'
+                            : flash === 'edit'
+                            ? 'animate-realtime-edit'
+                            : isFresh
                             ? 'bg-emerald-50/50'
                             : isVip
                             ? 'bg-amber-50/20'

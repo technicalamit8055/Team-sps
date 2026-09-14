@@ -10,6 +10,7 @@ import { ChandaQRCodeModal } from './ChandaQRCodeModal';
 import { DailyCashierSheetModal } from './DailyCashierSheetModal';
 import { QuickDonationDialog } from './QuickDonationDialog';
 import { DurgaPujaSettingsModal } from './DurgaPujaSettingsModal';
+import { PandalRealtimeIndicator } from './PandalRealtimeIndicator';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -259,6 +260,10 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               </Button>
             )}
 
+            {/* Live-sync state, so a counter can tell a quiet evening from a
+                dead socket before it has written receipts nobody else sees. */}
+            <PandalRealtimeIndicator variant="header" className="hidden md:inline-flex" />
+
             {/* Total Collection Pill with Glowing Lotus Badge */}
             <div className="hidden sm:flex items-center gap-2 bg-[#250308] border border-[#6b1420] px-3 py-1 rounded-xl shadow-inner">
               <div className="text-right">
@@ -350,6 +355,12 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Narrow screens do not get the header badge, so surface the live
+              state here, beside the totals it vouches for. */}
+          <div className="flex md:hidden justify-center">
+            <PandalRealtimeIndicator />
           </div>
 
           {/* ----------------------------------------------------------- */}

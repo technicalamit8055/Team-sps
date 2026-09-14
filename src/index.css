@@ -332,6 +332,36 @@
     animation: float 3s ease-in-out infinite;
   }
 
+  /* Marks a row that just arrived from another counter over Realtime. The
+     colour fades back to the row's own background so the grid does not end an
+     evening striped with every entry anyone made. */
+  @keyframes realtimeFlashNew {
+    0%   { background-color: rgb(167 243 208); }
+    100% { background-color: transparent; }
+  }
+
+  @keyframes realtimeFlashEdit {
+    0%   { background-color: rgb(253 230 138); }
+    100% { background-color: transparent; }
+  }
+
+  .animate-realtime-new {
+    animation: realtimeFlashNew 2s ease-out forwards;
+  }
+
+  .animate-realtime-edit {
+    animation: realtimeFlashEdit 2s ease-out forwards;
+  }
+
+  /* A collector reading a receipt aloud should not have the row pulsing under
+     their finger. */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-realtime-new,
+    .animate-realtime-edit {
+      animation: none;
+    }
+  }
+
   .stagger-1 {
     animation-delay: 0.1s;
   }

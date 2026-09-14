@@ -4,6 +4,7 @@ import {
   MasterEntity,
   SamitiEvent,
   SamitiDonation,
+  CashHandoverRecord,
   DonationPayment,
   SamitiExpense,
   ExpensePayment,
@@ -20,9 +21,20 @@ import {
   DEFAULT_MODULE_ACCESS_MAP,
 } from '@/types/master';
 import { toast } from 'sonner';
-import { useSamitiDatabase } from '@/hooks/useSamitiDatabase';
+import { useSamitiDatabase, type RealtimeStatus } from '@/hooks/useSamitiDatabase';
 import { supabase } from '@/integrations/supabase/client';
 import { extractFunctionErrorMessage } from '@/integrations/supabase/functionError';
+import {
+  mapDonationRow,
+  mapExpenseRow,
+  mapEntityRow,
+  mapEventRow,
+  mapStaffRow,
+  mapHandoverRow,
+  upsertById,
+  donationToRow,
+  expenseToRow,
+} from '@/lib/samitiRealtimeRows';
 
 // Maps the samiti-specific MasterRole taxonomy onto the app-wide auth role
 // used by user_roles / the create-user edge function's own authorization checks.
@@ -553,6 +565,17 @@ interface SamitiContextType {
   isCloudConnected: boolean;
   isSyncing: boolean;
   syncWithCloud: () => Promise<void>;
+  /**
+   * Health of the live link to the other counters. Distinct from
+   * `isCloudConnected`, which only reports the browser's network state -- a
+   * device can be online while its Realtime socket is dead, and then its screen
+   * is silently stale.
+   */
+  realtimeStatus: RealtimeStatus;
+  /** ISO timestamp of the last successful Realtime (re)connection. */
+  lastSyncedAt: string | null;
+  /** Cash handed from collectors to the treasurer, live across devices. */
+  cashHandovers: CashHandoverRecord[];
 }
 
 const SamitiContext = createContext<SamitiContextType | undefined>(undefined);
@@ -624,6 +647,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     fetchExpensesFromCloud,
     saveExpenseToCloud,
     deleteExpenseFromCloud,
+    fetchHandoversFromCloud,
     fetchStaffFromCloud,
     saveStaffToCloud,
     // deleteStaffFromCloud is deliberately not used: deleting staff goes
@@ -631,6 +655,9 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     purgeDemoEntitiesFromCloud,
     resetDurgaPujaDataInCloud,
     subscribeToSamitiRealtime,
+    broadcastSamitiChange,
+    realtimeStatus,
+    lastSyncedAt,
   } = db;
   // Load Entities safely
   const [entities, setEntities] = useState<MasterEntity[]>(() => {
@@ -761,6 +788,16 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     return [];
   });
+
+  /**
+   * Cash handed from collectors to the treasurer.
+   *
+   * Not persisted to localStorage: unlike donations, a handover is never
+   * recorded offline -- it is an acknowledgement between two people who are
+   * both at the desk -- so the cloud copy is always authoritative and a stale
+   * cached list would only ever mislead about who has settled up.
+   */
+  const [cashHandovers, setCashHandovers] = useState<CashHandoverRecord[]>([]);
 
   // Load Staff safely
   const [staffList, setStaffList] = useState<MasterStaff[]>(() => {
@@ -914,12 +951,13 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const syncWithCloud = useCallback(async () => {
     setIsSyncing(true);
     try {
-      const [cloudEntities, cloudEvents, cloudDonations, cloudExpenses, cloudStaff] = await Promise.all([
+      const [cloudEntities, cloudEvents, cloudDonations, cloudExpenses, cloudStaff, cloudHandovers] = await Promise.all([
         fetchEntitiesFromCloud(),
         fetchEventsFromCloud(),
         fetchDonationsFromCloud(),
         fetchExpensesFromCloud(),
         fetchStaffFromCloud(),
+        fetchHandoversFromCloud(),
       ]);
 
       if (cloudEntities && cloudEntities.length > 0) {
@@ -1009,6 +1047,9 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (cloudStaff && cloudStaff.length > 0) {
         setStaffList(cloudStaff.map(migrateTabletStaff));
       }
+      if (cloudHandovers !== null) {
+        setCashHandovers(cloudHandovers);
+      }
     } catch (e) {
       console.warn('Sync with cloud failed:', e);
     } finally {
@@ -1024,6 +1065,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     claimDonationInCloud,
     fetchExpensesFromCloud,
     saveExpenseToCloud,
+    fetchHandoversFromCloud,
     fetchStaffFromCloud,
     saveStaffToCloud,
   ]);
@@ -1036,218 +1078,89 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // Initial sync with cloud on mount
     syncWithCloudRef.current();
 
-    const unsubscribe = subscribeToSamitiRealtime((payload) => {
-      const { table, eventType, newRow, oldRow } = payload;
-      if (table === 'samiti_donations') {
-        if (eventType === 'INSERT' && newRow) {
-          setDonations(prev => {
-            if (prev.some(d => d.id === newRow.id)) return prev;
-            return [...prev, {
-              id: newRow.id,
-              eventId: newRow.event_id,
-              serialNumber: newRow.serial_number,
-              category: newRow.category,
-              name: newRow.name,
-              identity: newRow.identity || '',
-              caste: newRow.caste || '',
-              address1: newRow.address1 || '',
-              address2: newRow.address2 || '',
-              phone: newRow.phone || '',
-              acceptedAmount: Number(newRow.accepted_amount) || 0,
-              receivedAmount: Number(newRow.received_amount) || 0,
-              balanceAmount: Number(newRow.balance_amount) || 0,
-              paymentMode: newRow.payment_mode,
-              collectorName: newRow.collector_name || undefined,
-              isHandoverDone: newRow.is_handover_done ?? false,
-              date: newRow.date,
-              remarks: newRow.remarks || undefined,
-              receiptUrl: newRow.receipt_url || undefined,
-              payments: Array.isArray(newRow.payments) ? newRow.payments : [],
-              createdAt: newRow.created_at || new Date().toISOString(),
-              updatedAt: newRow.updated_at || new Date().toISOString(),
-              // Arrived over Realtime, so the server already has it.
-              isSyncedToCloud: true,
-              isProvisionalSerial: false,
-            }];
-          });
-        } else if (eventType === 'UPDATE' && newRow) {
-          setDonations(prev => prev.map(d => d.id === newRow.id ? {
-            ...d,
-            eventId: newRow.event_id,
-            serialNumber: newRow.serial_number,
-            category: newRow.category,
-            name: newRow.name,
-            identity: newRow.identity || '',
-            caste: newRow.caste || '',
-            address1: newRow.address1 || '',
-            address2: newRow.address2 || '',
-            phone: newRow.phone || '',
-            acceptedAmount: Number(newRow.accepted_amount) || 0,
-            receivedAmount: Number(newRow.received_amount) || 0,
-            balanceAmount: Number(newRow.balance_amount) || 0,
-            paymentMode: newRow.payment_mode,
-            collectorName: newRow.collector_name || undefined,
-            isHandoverDone: newRow.is_handover_done ?? false,
-            date: newRow.date,
-            remarks: newRow.remarks || undefined,
-            receiptUrl: newRow.receipt_url || undefined,
-            payments: Array.isArray(newRow.payments) ? newRow.payments : [],
-            updatedAt: newRow.updated_at || new Date().toISOString(),
-            // The server just broadcast this row, so it is stored there.
-            isSyncedToCloud: true,
-            isProvisionalSerial: false,
-          } : d));
-        } else if (eventType === 'DELETE' && oldRow) {
-          setDonations(prev => prev.filter(d => d.id !== oldRow.id));
+    const unsubscribe = subscribeToSamitiRealtime(
+      (payload) => {
+        const { table, eventType, newRow, oldRow } = payload;
+
+        // DELETE carries the removed row in `oldRow`; every other event
+        // describes the row in `newRow`. With REPLICA IDENTITY FULL the delete
+        // payload is a whole row, but a peer broadcast may send only an id, so
+        // fall back across both.
+        const deletedId = oldRow?.id ?? newRow?.id;
+
+        switch (table) {
+          case 'samiti_donations':
+            if (eventType === 'DELETE') {
+              if (deletedId) setDonations(prev => prev.filter(d => d.id !== deletedId));
+            } else if (newRow?.id) {
+              // INSERT and UPDATE are handled identically. An INSERT for a row
+              // this device already holds is the echo of its own save, which
+              // merges the server-issued serial number onto the local entry; an
+              // UPDATE for a row it has never seen is one it missed while the
+              // socket was down, which is appended rather than dropped.
+              setDonations(prev => upsertById(prev, newRow, mapDonationRow));
+            }
+            break;
+
+          case 'samiti_expenses':
+            if (eventType === 'DELETE') {
+              if (deletedId) setExpenses(prev => prev.filter(e => e.id !== deletedId));
+            } else if (newRow?.id) {
+              setExpenses(prev => upsertById(prev, newRow, mapExpenseRow));
+            }
+            break;
+
+          case 'samiti_entities':
+            if (eventType === 'DELETE') {
+              if (deletedId) setEntities(prev => prev.filter(e => e.id !== deletedId));
+            } else if (newRow?.id) {
+              setEntities(prev => upsertById(prev, newRow, mapEntityRow));
+            }
+            break;
+
+          case 'samiti_events':
+            if (eventType === 'DELETE') {
+              if (deletedId) setEvents(prev => prev.filter(e => e.id !== deletedId));
+            } else if (newRow?.id) {
+              setEvents(prev => upsertById(prev, newRow, mapEventRow));
+            }
+            break;
+
+          case 'samiti_cash_handovers':
+            if (eventType === 'DELETE') {
+              if (deletedId) setCashHandovers(prev => prev.filter(h => h.id !== deletedId));
+            } else if (newRow?.id) {
+              setCashHandovers(prev => upsertById(prev, newRow, mapHandoverRow));
+            }
+            break;
+
+          case 'master_staff':
+            if (eventType === 'DELETE') {
+              if (deletedId) setStaffList(prev => prev.filter(s => s.id !== deletedId));
+            } else if (newRow?.id) {
+              setStaffList(prev => upsertById(prev, newRow, mapStaffRow).map(migrateTabletStaff));
+            }
+            break;
         }
-      } else if (table === 'samiti_expenses') {
-        if (eventType === 'INSERT' && newRow) {
-          setExpenses(prev => {
-            if (prev.some(e => e.id === newRow.id)) return prev;
-            return [...prev, {
-              id: newRow.id,
-              eventId: newRow.event_id,
-              voucherNo: newRow.voucher_no,
-              category: newRow.category,
-              vendorName: newRow.vendor_name,
-              vendorPhone: newRow.vendor_phone || undefined,
-              totalAmount: Number(newRow.total_amount) || 0,
-              amountPaid: Number(newRow.amount_paid) || 0,
-              balanceDue: Number(newRow.balance_due) || 0,
-              paymentMode: newRow.payment_mode,
-              expenseDate: newRow.expense_date,
-              paidBy: newRow.paid_by || undefined,
-              billReceiptUrl: newRow.bill_receipt_url || undefined,
-              notes: newRow.notes || undefined,
-              payments: Array.isArray(newRow.payments) ? newRow.payments : [],
-              createdAt: newRow.created_at || new Date().toISOString(),
-              updatedAt: newRow.updated_at || newRow.created_at || new Date().toISOString(),
-            }];
-          });
-        } else if (eventType === 'UPDATE' && newRow) {
-          setExpenses(prev => prev.map(e => e.id === newRow.id ? {
-            ...e,
-            eventId: newRow.event_id,
-            voucherNo: newRow.voucher_no,
-            category: newRow.category,
-            vendorName: newRow.vendor_name,
-            vendorPhone: newRow.vendor_phone || undefined,
-            totalAmount: Number(newRow.total_amount) || 0,
-            amountPaid: Number(newRow.amount_paid) || 0,
-            balanceDue: Number(newRow.balance_due) || 0,
-            paymentMode: newRow.payment_mode,
-            expenseDate: newRow.expense_date,
-            paidBy: newRow.paid_by || undefined,
-            billReceiptUrl: newRow.bill_receipt_url || undefined,
-            notes: newRow.notes || undefined,
-            payments: Array.isArray(newRow.payments) ? newRow.payments : e.payments,
-            updatedAt: newRow.updated_at || e.updatedAt,
-          } : e));
-        } else if (eventType === 'DELETE' && oldRow) {
-          setExpenses(prev => prev.filter(e => e.id !== oldRow.id));
-        }
-      } else if (table === 'samiti_entities') {
-        if (eventType === 'INSERT' && newRow) {
-          setEntities(prev => {
-            if (prev.some(e => e.id === newRow.id)) return prev;
-            return [...prev, {
-              id: newRow.id,
-              name: newRow.name,
-              type: newRow.type as any,
-              upiId: newRow.upi_id || undefined,
-              tagline: newRow.tagline || undefined,
-              location: newRow.location || undefined,
-              establishedYear: newRow.established_year || undefined,
-            }];
-          });
-        } else if (eventType === 'UPDATE' && newRow) {
-          setEntities(prev => prev.map(e => e.id === newRow.id ? {
-            ...e,
-            name: newRow.name,
-            type: newRow.type as any,
-            upiId: newRow.upi_id || undefined,
-            tagline: newRow.tagline || undefined,
-            location: newRow.location || undefined,
-            establishedYear: newRow.established_year || undefined,
-          } : e));
-        } else if (eventType === 'DELETE' && oldRow) {
-          setEntities(prev => prev.filter(e => e.id !== oldRow.id));
-        }
-      } else if (table === 'samiti_events') {
-        if (eventType === 'INSERT' && newRow) {
-          setEvents(prev => {
-            if (prev.some(e => e.id === newRow.id)) return prev;
-            return [...prev, {
-              id: newRow.id,
-              entityId: newRow.entity_id,
-              title: newRow.title,
-              fiscalYear: newRow.fiscal_year,
-              targetBudget: Number(newRow.target_budget) || 0,
-              startDate: newRow.start_date || undefined,
-              endDate: newRow.end_date || undefined,
-              isActive: newRow.is_active ?? true,
-            }];
-          });
-        } else if (eventType === 'UPDATE' && newRow) {
-          setEvents(prev => prev.map(e => e.id === newRow.id ? {
-            ...e,
-            entityId: newRow.entity_id,
-            title: newRow.title,
-            fiscalYear: newRow.fiscal_year,
-            targetBudget: Number(newRow.target_budget) || 0,
-            startDate: newRow.start_date || undefined,
-            endDate: newRow.end_date || undefined,
-            isActive: newRow.is_active ?? true,
-          } : e));
-        } else if (eventType === 'DELETE' && oldRow) {
-          setEvents(prev => prev.filter(e => e.id !== oldRow.id));
-        }
-      } else if (table === 'master_staff') {
-        if (eventType === 'INSERT' && newRow) {
-          setStaffList(prev => {
-            if (prev.some(s => s.id === newRow.id)) return prev;
-            return [...prev, {
-              id: newRow.id,
-              name: newRow.name,
-              phone: newRow.phone,
-              email: newRow.email || undefined,
-              username: newRow.username,
-              password: newRow.password_hash || undefined,
-              upiId: newRow.upi_id || undefined,
-              primaryRole: newRow.primary_role as any,
-              designation: newRow.designation || '',
-              status: newRow.status as any,
-              joinedDate: newRow.joined_date,
-              avatarColor: newRow.avatar_color || undefined,
-              workspacePermissions: (newRow.workspace_permissions as any) || {},
-            }];
-          });
-        } else if (eventType === 'UPDATE' && newRow) {
-          setStaffList(prev => prev.map(s => s.id === newRow.id ? {
-            ...s,
-            name: newRow.name,
-            phone: newRow.phone,
-            email: newRow.email || undefined,
-            username: newRow.username,
-            password: newRow.password_hash || undefined,
-            upiId: newRow.upi_id || undefined,
-            primaryRole: newRow.primary_role as any,
-            designation: newRow.designation || '',
-            status: newRow.status as any,
-            joinedDate: newRow.joined_date,
-            avatarColor: newRow.avatar_color || undefined,
-            workspacePermissions: (newRow.workspace_permissions as any) || {},
-          } : s));
-        } else if (eventType === 'DELETE' && oldRow) {
-          setStaffList(prev => prev.filter(s => s.id !== oldRow.id));
-        }
+      },
+      {
+        // Realtime keeps no backlog, so anything written while this device's
+        // socket was closed -- screen locked, app backgrounded to send a
+        // receipt on WhatsApp, hotspot dropped -- is never replayed. A full
+        // fetch on the way back is what closes that gap.
+        onCatchUp: () => { void syncWithCloudRef.current(); },
       }
-    });
+    );
 
     return () => {
       unsubscribe();
     };
-  }, [subscribeToSamitiRealtime]);
+    // Re-subscribing when the signed-in user changes is deliberate: Realtime
+    // authorises the channel with the JWT held at connect time, so a channel
+    // opened before login (or by the previous user on a shared pandal device)
+    // would keep evaluating another account's RLS policies and quietly deliver
+    // the wrong set of rows.
+  }, [subscribeToSamitiRealtime, auth.user?.id]);
 
   // Donations filtered for the active event safely
   const currentDonations = useMemo(() => {
@@ -1406,7 +1319,11 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             prev.map(d => (d.id === newDonation.id ? { ...d, ...confirmed } : d))
           );
         }
-        toast.success(`दान प्रविष्टि क्रमांक #${confirmed.serialNumber} सफलतापूर्वक दर्ज की गई!`);
+        // Relay to the other counters now rather than waiting for the WAL
+        // round trip, so a busy pandal desk sees the receipt appear as it is
+        // handed over. The postgres_changes event still follows and wins.
+        broadcastSamitiChange({ table: 'samiti_donations', eventType: 'INSERT', newRow: donationToRow(confirmed) });
+        toast.success(`दान प्रविष्टि क्रमांक # सफलतापूर्वक दर्ज की गई!`);
         return confirmed;
       }
 
@@ -1435,7 +1352,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       return provisional;
     },
-    [currentDonations, claimDonationInCloud]
+    [currentDonations, claimDonationInCloud, broadcastSamitiChange]
   );
 
   /**
@@ -1550,6 +1467,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     );
     if (updatedItem) {
       saveDonationToCloud(updatedItem);
+      broadcastSamitiChange({ table: 'samiti_donations', eventType: 'UPDATE', newRow: donationToRow(updatedItem) });
     }
 
     if (blockedAccepted || blockedReceived) {
@@ -1565,7 +1483,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     toast.success('दान प्रविष्टि सफलतापूर्वक अपडेट की गई!');
-  }, [saveDonationToCloud, canEditFinalizedAmounts]);
+  }, [saveDonationToCloud, canEditFinalizedAmounts, broadcastSamitiChange]);
 
   /**
    * Record a follow-up instalment (बकाया जमा) against an existing pledge.
@@ -1653,6 +1571,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       saveDonationToCloud(updatedItem);
+      broadcastSamitiChange({ table: 'samiti_donations', eventType: 'UPDATE', newRow: donationToRow(updatedItem as SamitiDonation) });
       const settled = (updatedItem as SamitiDonation).balanceAmount === 0;
       toast.success(
         settled
@@ -1660,7 +1579,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           : `₹${amount.toLocaleString('hi-IN')} जमा — शेष बकाया ₹${(updatedItem as SamitiDonation).balanceAmount.toLocaleString('hi-IN')}`
       );
     },
-    [saveDonationToCloud]
+    [saveDonationToCloud, broadcastSamitiChange]
   );
 
   // Delete donation
@@ -1672,9 +1591,10 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       setDonations(prev => prev.filter(item => item.id !== id));
       deleteDonationFromCloud(id);
+      broadcastSamitiChange({ table: 'samiti_donations', eventType: 'DELETE', oldRow: { id } });
       toast.info('दान प्रविष्टि हटा दी गई!');
     },
-    [isCollectorMode, deleteDonationFromCloud]
+    [isCollectorMode, deleteDonationFromCloud, broadcastSamitiChange]
   );
 
   // Add expense
@@ -1715,10 +1635,11 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setExpenses(prev => [...prev, newExpense]);
       saveExpenseToCloud(newExpense);
+      broadcastSamitiChange({ table: 'samiti_expenses', eventType: 'INSERT', newRow: expenseToRow(newExpense) });
       toast.success(`खर्चा वाउचर #${voucherNo} सफलतापूर्वक दर्ज हुआ!`);
       return newExpense;
     },
-    [currentExpenses.length, saveExpenseToCloud]
+    [currentExpenses.length, saveExpenseToCloud, broadcastSamitiChange]
   );
 
   /**
@@ -1816,6 +1737,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     );
     if (updatedExp) {
       saveExpenseToCloud(updatedExp);
+      broadcastSamitiChange({ table: 'samiti_expenses', eventType: 'UPDATE', newRow: expenseToRow(updatedExp) });
     }
 
     if (blockedTotal || blockedPaid) {
@@ -1831,7 +1753,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     toast.success('खर्चा वाउचर अपडेट किया गया!');
-  }, [saveExpenseToCloud, canEditFinalizedAmounts]);
+  }, [saveExpenseToCloud, canEditFinalizedAmounts, broadcastSamitiChange]);
 
   /**
    * Record a follow-up payment (बकाया जमा) against a vendor's outstanding
@@ -1918,6 +1840,7 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       saveExpenseToCloud(updatedExp);
+      broadcastSamitiChange({ table: 'samiti_expenses', eventType: 'UPDATE', newRow: expenseToRow(updatedExp) });
       const settled = (updatedExp as SamitiExpense).balanceDue === 0;
       toast.success(
         settled
@@ -1925,15 +1848,16 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           : `₹${amount.toLocaleString('hi-IN')} भुगतान — शेष देनदारी ₹${(updatedExp as SamitiExpense).balanceDue.toLocaleString('hi-IN')}`
       );
     },
-    [saveExpenseToCloud]
+    [saveExpenseToCloud, broadcastSamitiChange]
   );
 
   // Delete expense
   const deleteExpense = useCallback((id: string) => {
     setExpenses(prev => prev.filter(item => item.id !== id));
     deleteExpenseFromCloud(id);
+    broadcastSamitiChange({ table: 'samiti_expenses', eventType: 'DELETE', oldRow: { id } });
     toast.info('खर्चा वाउचर हटा दिया गया!');
-  }, [deleteExpenseFromCloud]);
+  }, [deleteExpenseFromCloud, broadcastSamitiChange]);
 
   // Import donations from CSV/Excel
   const importDonations = useCallback(
@@ -2516,6 +2440,9 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         isCloudConnected: db.isCloudConnected,
         isSyncing: db.isSyncing,
         syncWithCloud,
+        realtimeStatus,
+        lastSyncedAt,
+        cashHandovers,
       }}
     >
       {children}
