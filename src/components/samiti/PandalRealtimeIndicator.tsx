@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSamiti } from '@/contexts/SamitiContext';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { RefreshCw, WifiOff, Loader2 } from 'lucide-react';
 
 /**
  * Live-link status for the pandal counters.
@@ -36,9 +36,9 @@ export const PandalRealtimeIndicator: React.FC<PandalRealtimeIndicatorProps> = (
 }) => {
   const { realtimeStatus, lastSyncedAt, syncWithCloud, isSyncing } = useSamiti();
 
-  // `lastSyncedAt` only changes on reconnect, so the relative label would
-  // otherwise sit at "अभी-अभी" for an entire evening. A minute tick is enough
-  // resolution for a label measured in minutes.
+  // Keeps the relative age current: it is read by the offline label and by the
+  // connected state's tooltip, neither of which re-renders on its own. A minute
+  // tick is enough resolution for a label measured in minutes.
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60000);
@@ -62,13 +62,14 @@ export const PandalRealtimeIndicator: React.FC<PandalRealtimeIndicatorProps> = (
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
         </span>
-        <Wifi className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        <span className="text-[12px] font-bold whitespace-nowrap">लाइव सिंक</span>
-        {since && (
-          <span className={`hidden sm:inline text-[11px] font-medium ${isHeader ? 'text-emerald-200/80' : 'text-emerald-700'}`}>
-            · {since}
-          </span>
-        )}
+        {/* No Wifi icon here: the pulsing dot already says "live", and at this
+            size the two together just crowd a two-word badge. */}
+        {/* No age shown while connected. `lastSyncedAt` marks the last
+            reconnect, not the last donation, so a healthy socket would climb
+            all evening -- and beside a green badge that reads as "nothing has
+            arrived in 20 minutes", the exact doubt the badge exists to remove.
+            It stays in the tooltip, where it is unambiguous. */}
+        <span className="text-[12px] font-bold whitespace-nowrap">लाइव</span>
       </div>
     );
   }
@@ -83,7 +84,7 @@ export const PandalRealtimeIndicator: React.FC<PandalRealtimeIndicatorProps> = (
         } ${className}`}
       >
         <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
-        <span className="text-[12px] font-bold whitespace-nowrap">पुनः कनेक्ट हो रहा है...</span>
+        <span className="text-[12px] font-bold whitespace-nowrap">कनेक्ट...</span>
       </div>
     );
   }
@@ -97,7 +98,12 @@ export const PandalRealtimeIndicator: React.FC<PandalRealtimeIndicatorProps> = (
       } ${className}`}
     >
       <WifiOff className="h-3.5 w-3.5 shrink-0" aria-hidden />
-      <span className="text-[12px] font-bold whitespace-nowrap">ऑफ़लाइन मोड</span>
+      {/* Age is kept here, unlike the connected state: once the socket is
+          down, how long ago the screen was last current is the whole
+          question. */}
+      <span className="text-[12px] font-bold whitespace-nowrap">
+        ऑफ़लाइन{since ? ` · ${since}` : ''}
+      </span>
       <Button
         type="button"
         size="sm"
@@ -111,7 +117,7 @@ export const PandalRealtimeIndicator: React.FC<PandalRealtimeIndicatorProps> = (
         }`}
       >
         <RefreshCw className={`mr-1 h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} aria-hidden />
-        अभी सिंक करें
+        सिंक
       </Button>
     </div>
   );
