@@ -518,7 +518,11 @@ export function useSamitiDatabase() {
       });
       if (error) throw error;
     } catch (err: any) {
+      // Surface it, the way saveDonationToCloud does. A silent warn here is
+      // what made a blocked expense look saved: the row sat in local state
+      // behind a success toast and only vanished on the next reload.
       console.warn('Failed to upsert expense to Supabase:', err.message);
+      toast.error(`खर्चा प्रविष्टि सेव नहीं हो सकी: ${err.message}`);
     }
   }, []);
 

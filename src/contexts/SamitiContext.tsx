@@ -1075,6 +1075,12 @@ export const SamitiProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   syncWithCloudRef.current = syncWithCloud;
 
   useEffect(() => {
+    // Every samiti table is behind RLS, so with no signed-in user this sync
+    // could only ever return 401s. The provider wraps the whole app, so before
+    // this guard a visitor to the public landing page still paid for a full
+    // table sync plus a realtime WebSocket that could never receive a row.
+    if (!auth.user?.id) return;
+
     // Initial sync with cloud on mount
     syncWithCloudRef.current();
 

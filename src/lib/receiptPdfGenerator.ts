@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import type { SamitiDonation } from '@/types/samiti';
 
 const ONES: string[] = [
@@ -54,6 +53,41 @@ export function numberToHindiWords(num: number): string {
   return result.trim() + ' रुपये मात्र';
 }
 
+/**
+ * Formats a date string into standard dd-mm-yyyy order (e.g. "14-09-2026").
+ */
+export function formatReceiptDate(dateStr?: string | null): string {
+  if (!dateStr) {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  }
+  const trimmed = dateStr.trim();
+  if (/^\d{2}-\d{2}-\d{4}$/.test(trimmed)) {
+    return trimmed;
+  }
+  const ymdMatch = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (ymdMatch) {
+    const [, y, m, d] = ymdMatch;
+    return `${d.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
+  }
+  const dmyMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (dmyMatch) {
+    const [, d, m, y] = dmyMatch;
+    return `${d.padStart(2, '0')}-${m.padStart(2, '0')}-${y}`;
+  }
+  const parsed = new Date(trimmed);
+  if (!isNaN(parsed.getTime())) {
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const yyyy = parsed.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  }
+  return trimmed;
+}
+
 const TEMPLATE_URL = '/receipt_clean_v3.png';
 const CANVAS_WIDTH = 1084;
 const CANVAS_HEIGHT = 1451;
@@ -98,24 +132,24 @@ export async function generateReceiptCanvas(
   // 1. Draw base high-resolution festive template
   ctx.drawImage(template, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-  // 2. Receipt Number inside Left Meta Pill (Centered in number box: x = 309, y = 742)
+  // 2. Receipt Number inside Left Meta Pill (Centered in number box: x = 329, y = 742)
   const serialNo = `#${String(donation.serialNumber).padStart(4, '0')}`;
   ctx.save();
   ctx.font = '900 26px "Noto Sans Devanagari", "Segoe UI", sans-serif';
   ctx.fillStyle = '#dc2626'; // Vivid red
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(serialNo, 309, 742);
+  ctx.fillText(serialNo, 329, 742);
   ctx.restore();
 
-  // 3. Date inside Right Meta Pill (Centered in date box: x = 840, y = 742)
-  const dateStr = donation.date || new Date().toISOString().split('T')[0];
+  // 3. Date inside Right Meta Pill (Centered in date box: x = 879, y = 742, dd-mm-yyyy order)
+  const dateStr = formatReceiptDate(donation.date);
   ctx.save();
   ctx.font = 'bold 24px "Noto Sans Devanagari", "Segoe UI", sans-serif';
   ctx.fillStyle = '#1c1917'; // Rich slate dark
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(dateStr, 840, 742);
+  ctx.fillText(dateStr, 879, 742);
   ctx.restore();
 
   // 4. Donor Information (Centered in donor name box: x = 650, y = 822)
@@ -206,7 +240,13 @@ export async function generateReceiptPdfDataUrl(
   entity?: { name?: string; location?: string; tagline?: string },
   event?: { title?: string },
 ): Promise<string> {
-  const imgData = await generateReceiptImageDataUrl(donation, entity, event);
+  // jsPDF (and the html2canvas it drags in) is ~650KB and is only needed the
+  // moment someone actually exports a receipt, so it is pulled in on demand
+  // rather than shipped to every user who opens the donations grid.
+  const [{ jsPDF }, imgData] = await Promise.all([
+    import('jspdf'),
+    generateReceiptImageDataUrl(donation, entity, event),
+  ]);
 
   // A4 Portrait standard proportions: 210 x 297 mm
   const pdf = new jsPDF({

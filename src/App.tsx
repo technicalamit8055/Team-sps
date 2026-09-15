@@ -1,21 +1,24 @@
-import { Suspense } from "react";
-import { Toaster } from "@/components/ui/toaster";
+import { Suspense, lazy } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SamitiProvider } from "@/contexts/SamitiContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ReloadPrompt } from "@/components/pwa/ReloadPrompt";
 
-// Static page imports for rock-solid reliability across HMR, dev servers, and PWA
+// Login stays eager: it is the PWA start_url and the redirect target for every
+// unauthenticated visit, so splitting it would only add a round-trip.
 import Login from "./pages/Login";
-import JantaPortal from "./pages/JantaPortal";
-import LandingPage from "./pages/LandingPage";
-import MasterOS from "./pages/MasterOS";
-import DurgaPujaUnitPage from "./pages/DurgaPujaUnitPage";
-import NotFound from "./pages/NotFound";
+
+// Every other page is split out. A collector signing in no longer downloads
+// the Master OS console, and a visitor on the landing page no longer downloads
+// either console. <Suspense> below already provides the fallback.
+const JantaPortal = lazy(() => import("./pages/JantaPortal"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const MasterOS = lazy(() => import("./pages/MasterOS"));
+const DurgaPujaUnitPage = lazy(() => import("./pages/DurgaPujaUnitPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -24,7 +27,6 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient();
 
 // Protected route wrapper for Admin & Manager (Master OS)
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -212,22 +214,23 @@ const AppRoutes = () => (
   </Suspense>
 );
 
+// react-query was mounted here but no component ever called useQuery, so the
+// provider and the library it pulled in were pure bundle weight.
 const App = () => (
   <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner position="top-center" richColors />
-        <BrowserRouter>
-          <AuthProvider>
-            <SamitiProvider>
-              <AppRoutes />
-            </SamitiProvider>
-          </AuthProvider>
-        </BrowserRouter>
-        <ReloadPrompt />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <TooltipProvider>
+      {/* Only sonner is used for notifications; the shadcn toaster was mounted
+          alongside it but nothing ever called its useToast(). */}
+      <Sonner position="top-center" richColors />
+      <BrowserRouter>
+        <AuthProvider>
+          <SamitiProvider>
+            <AppRoutes />
+          </SamitiProvider>
+        </AuthProvider>
+      </BrowserRouter>
+      <ReloadPrompt />
+    </TooltipProvider>
   </ErrorBoundary>
 );
 

@@ -122,11 +122,34 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html}", "pwa-*.png", "favicon.ico"],
         // Never precache both bundle variants: a device uses one or the other.
         // Legacy chunks are fetched on demand by the browsers that need them.
-        globIgnores: ["**/*-legacy-*.js", "**/polyfills-legacy-*.js"],
+        globIgnores: [
+          "**/*-legacy-*.js",
+          "**/polyfills-legacy-*.js",
+          // Heavy, rarely-used chunks. Precaching these would undo the code
+          // splitting above by re-downloading them on the first launch anyway;
+          // runtime caching still stores them the first time they are used.
+          "**/pdf-vendor-*.js",
+          "**/charts-vendor-*.js",
+          // Recharts only loads with the analytics tab, which collectors
+          // (the majority of users) cannot even open.
+          "**/FinancialOverview-*.js",
+          "**/receipt_clean_v3.png",
+        ],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
+          {
+            // The chunks deliberately left out of the precache above. Cached
+            // on first use so a second visit (and offline use) is instant.
+            urlPattern: /\/assets\/(pdf-vendor|charts-vendor|FinancialOverview)-[^/]+\.js$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "lazy-chunk-cache",
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             urlPattern: /^https:\/\/ylbczxvtiyzughykhbtj\.supabase\.co\/rest\/v1\/.*/i,
             handler: "NetworkFirst",
@@ -199,6 +222,52 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: "es2015",
     cssTarget: "chrome61",
+    // terser squeezes noticeably more out of these bundles than esbuild, and
+    // strips the console/debugger noise that used to ship to production.
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        passes: 2,
+      },
+    },
+    cssCodeSplit: true,
+    sourcemap: false,
+    // Gzip-sizing every chunk is pure build-time cost; nothing reads it here.
+    reportCompressedSize: false,
+    // pdf-vendor (jspdf + html2canvas) is legitimately large but is fetched
+    // only when a receipt is exported, so it should not trip the warning.
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        // Split shared vendor code away from route code only some users open.
+        // Without this everything landed in one ~2MB chunk that had to be
+        // downloaded and parsed before the first paint on every route.
+        // Only split out chunks that are genuinely independent of React's
+        // module-init order. Grouping arbitrary React-dependent libraries into
+        // a separate "vendor" chunk let it evaluate before react-vendor and
+        // blew up on `React.createContext` at startup, so anything not listed
+        // here deliberately stays with the entry chunk.
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return undefined;
+          const m = (id.split("node_modules/").pop() ?? "").replace(/\\/g, "/");
+
+          // Leaf libraries with no React dependency: safe to isolate, and each
+          // is only pulled in by a feature many users never reach.
+          if (/^(jspdf|html2canvas|dompurify|canvg|raf|rgbcolor)([/]|$)/.test(m)) {
+            return "pdf-vendor";
+          }
+          if (/^(papaparse|qrcode)([/]|$)/.test(m)) return "data-vendor";
+          if (/^(d3-|internmap|delaunator|robust-predicates|victory-vendor)/.test(m)) {
+            return "charts-vendor";
+          }
+          if (m.startsWith("@supabase")) return "supabase-vendor";
+
+          return undefined;
+        },
+      },
+    },
   },
   resolve: {
     alias: {

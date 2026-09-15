@@ -1,4 +1,5 @@
 import type { SamitiDonation } from '@/types/samiti';
+import { formatReceiptDate } from '@/lib/receiptPdfGenerator';
 
 /**
  * Builds the official Samiti donation receipt text.
@@ -26,7 +27,7 @@ export function buildSamitiReceiptMessage(
 📜 सहयोग रसीद
 
 🔢 रसीद सं०: #${String(donation.serialNumber).padStart(4, '0')}
-📅 दिनांक: ${donation.date || new Date().toISOString().split('T')[0]}
+📅 दिनांक: ${formatReceiptDate(donation.date)}
 👤 सहयोगकर्ता: ${donation.name}
 
 💰 स्वीकृत राशि: ₹${donation.acceptedAmount.toLocaleString('hi-IN')}
@@ -47,7 +48,7 @@ export function toReceiptPayload(
     amount: donation.receivedAmount,
     receiptNo: String(donation.serialNumber).padStart(4, '0'),
     itemName: 'सहयोग / चंदा (Donation)',
-    date: donation.date || new Date().toISOString().split('T')[0],
+    date: formatReceiptDate(donation.date),
     businessName: entity.name,
     message: buildSamitiReceiptMessage(donation, entity, event),
   };

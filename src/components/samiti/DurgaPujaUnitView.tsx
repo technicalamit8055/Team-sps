@@ -1,15 +1,31 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSamiti } from '@/contexts/SamitiContext';
 import { useAuth } from '@/hooks/useAuth';
 import { ExcelDataGrid } from './ExcelDataGrid';
-import { ExpenseManager } from './ExpenseManager';
-import { FinancialOverview } from './FinancialOverview';
-import { ExcelImportExport } from './ExcelImportExport';
-import { ChandaQRCodeModal } from './ChandaQRCodeModal';
-import { DailyCashierSheetModal } from './DailyCashierSheetModal';
+
+// These are rendered behind a tab or a modal trigger, so they are split out.
+// FinancialOverview in particular pulls in the whole recharts/d3 stack, which
+// a collector who only records donations never needs to download.
+const ExpenseManager = lazy(() =>
+  import('./ExpenseManager').then((m) => ({ default: m.ExpenseManager }))
+);
+const FinancialOverview = lazy(() =>
+  import('./FinancialOverview').then((m) => ({ default: m.FinancialOverview }))
+);
+const ChandaQRCodeModal = lazy(() =>
+  import('./ChandaQRCodeModal').then((m) => ({ default: m.ChandaQRCodeModal }))
+);
+const DailyCashierSheetModal = lazy(() =>
+  import('./DailyCashierSheetModal').then((m) => ({ default: m.DailyCashierSheetModal }))
+);
+const DurgaPujaSettingsModal = lazy(() =>
+  import('./DurgaPujaSettingsModal').then((m) => ({ default: m.DurgaPujaSettingsModal }))
+);
+// Kept static: ExcelDataGrid (always rendered on this screen) imports it too,
+// so a lazy wrapper here would only duplicate the module, not defer it.
 import { QuickDonationDialog } from './QuickDonationDialog';
-import { DurgaPujaSettingsModal } from './DurgaPujaSettingsModal';
+import { ExcelImportExport } from './ExcelImportExport';
 import { PandalRealtimeIndicator } from './PandalRealtimeIndicator';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +63,13 @@ interface DurgaPujaUnitViewProps {
   onBackToMaster?: () => void;
   isCollectorMode?: boolean;
 }
+
+// Shown for the moment a lazily-loaded tab panel is being fetched.
+const TabLoader = () => (
+  <div className="flex items-center justify-center py-16">
+    <div className="w-7 h-7 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
   onBackToMaster,
@@ -568,11 +591,15 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
           )}
 
           {activeTab === 'kharcha' && canSeeKharcha && (
-            <ExpenseManager />
+            <Suspense fallback={<TabLoader />}>
+              <ExpenseManager />
+            </Suspense>
           )}
 
           {activeTab === 'analytics' && !isCollector && (
-            <FinancialOverview />
+            <Suspense fallback={<TabLoader />}>
+              <FinancialOverview />
+            </Suspense>
           )}
 
           {activeTab === 'donors' && (
@@ -683,36 +710,43 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
       {/* ------------------------------------------------------------- */}
       {/* 4. MODALS (Quick Donation, QR, Cashier Sheet, Settings)        */}
       {/* ------------------------------------------------------------- */}
-      {/* Quick Donation Modal */}
-      <QuickDonationDialog
-        isCollectorMode={isCollector}
-        defaultCollectorName={workerName}
-        open={isQuickDonationOpen}
-        onOpenChange={setIsQuickDonationOpen}
-      />
-
-      {/* Instant QR Modal */}
-      <ChandaQRCodeModal
-        isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-      />
-
-      {/* Daily Cashier Sheet Modal */}
-      {!isCollector && (
-        <DailyCashierSheetModal
-          isOpen={isCashierSheetOpen}
-          onClose={() => setIsCashierSheetOpen(false)}
+      {/* Each modal is mounted only once it is actually opened. Keeping them
+          permanently mounted meant their (lazy) chunks were fetched on every
+          visit even though most sessions never open them. */}
+      <Suspense fallback={null}>
+        {/* Quick Donation Modal */}
+        <QuickDonationDialog
+          isCollectorMode={isCollector}
+          defaultCollectorName={workerName}
+          open={isQuickDonationOpen}
+          onOpenChange={setIsQuickDonationOpen}
         />
-      )}
 
-      {/* Durga Puja Settings Modal */}
-      {!isCollector && (
-        <DurgaPujaSettingsModal
-          isOpen={isSettingsModalOpen}
-          onClose={() => setIsSettingsModalOpen(false)}
-          defaultTab={settingsDefaultTab}
-        />
-      )}
+        {/* Instant QR Modal */}
+        {isQRModalOpen && (
+          <ChandaQRCodeModal
+            isOpen={isQRModalOpen}
+            onClose={() => setIsQRModalOpen(false)}
+          />
+        )}
+
+        {/* Daily Cashier Sheet Modal */}
+        {!isCollector && isCashierSheetOpen && (
+          <DailyCashierSheetModal
+            isOpen={isCashierSheetOpen}
+            onClose={() => setIsCashierSheetOpen(false)}
+          />
+        )}
+
+        {/* Durga Puja Settings Modal */}
+        {!isCollector && isSettingsModalOpen && (
+          <DurgaPujaSettingsModal
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
+            defaultTab={settingsDefaultTab}
+          />
+        )}
+      </Suspense>
 
       {/* लॉगआउट पुष्टि संवाद (केवल हिंदी में) */}
       <AlertDialog open={isLogoutConfirmOpen} onOpenChange={setIsLogoutConfirmOpen}>

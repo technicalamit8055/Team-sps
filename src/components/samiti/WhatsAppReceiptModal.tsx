@@ -23,6 +23,7 @@ import {
   generateReceiptPdfDataUrl,
   downloadReceiptPdf,
   downloadReceiptImage,
+  formatReceiptDate,
 } from '@/lib/receiptPdfGenerator';
 
 interface WhatsAppReceiptModalProps {
@@ -104,7 +105,7 @@ export const WhatsAppReceiptModal: React.FC<WhatsAppReceiptModalProps> = ({
         amount: donation.receivedAmount,
         receiptNo: String(donation.serialNumber).padStart(4, '0'),
         itemName: 'सहयोग / चंदा (Donation)',
-        date: donation.date || new Date().toISOString().split('T')[0],
+        date: formatReceiptDate(donation.date),
         businessName: currentEntity.name,
         message: generateWhatsAppMessage(),
         pdfBuffer: toBase64Pdf(pdfDataUrl),

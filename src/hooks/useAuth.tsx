@@ -254,24 +254,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     canChooseCollectorName: boolean;
   }> => {
     try {
-      // Fetch role
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
+      // Role and profile are independent lookups, so they go out together.
+      // Run in sequence they added a full round-trip to every page load that
+      // sits behind a protected route.
+      const [{ data: roleData }, { data: profileData }] = await Promise.all([
+        supabase.from('user_roles').select('role').eq('user_id', userId).single(),
+        supabase
+          .from('profiles')
+          .select('username, full_name, ward_number, phone')
+          .eq('id', userId)
+          .single(),
+      ]);
 
       const fetchedRole = (roleData?.role as AppRole) ?? null;
       if (fetchedRole) {
         setRole(fetchedRole);
       }
-
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('username, full_name, ward_number, phone')
-        .eq('id', userId)
-        .single();
 
       const username = profileData?.username || overrideUsername || '';
       // Authoritative lookup against Supabase, so a member signing in on a

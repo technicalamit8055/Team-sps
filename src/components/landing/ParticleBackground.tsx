@@ -32,8 +32,22 @@ export const ParticleBackground: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    // Honour the OS "reduce motion" setting: render nothing and burn no frames.
+    // The gradient mesh below the canvas still carries the visual.
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+    // `alpha` is required (the canvas sits over a gradient), but opting out of
+    // read-back lets the browser keep the surface on the GPU.
+    const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
     if (!ctx) return;
+
+    // Phones do the least well with this effect and show it on the smallest
+    // screen, so they get fewer particles and no O(n^2) link pass.
+    const isSmallScreen = window.innerWidth < 768;
+    const isLowPower =
+      isSmallScreen ||
+      (navigator.hardwareConcurrency ?? 8) <= 4 ||
+      ((navigator as unknown as { deviceMemory?: number }).deviceMemory ?? 8) <= 4;
 
     let animationFrameId: number;
     let width = (canvas.width = canvas.parentElement?.clientWidth || window.innerWidth);
@@ -70,7 +84,11 @@ export const ParticleBackground: React.FC = () => {
 
     // Particles array
     const particles: Particle[] = [];
-    const particleCount = Math.min(Math.floor((width * height) / 14000) + 35, 95);
+    // 95 particles plus the link pass meant ~4.5k distance checks per frame.
+    // Low-power devices get a much lighter field.
+    const particleCount = isLowPower
+      ? Math.min(Math.floor((width * height) / 26000) + 14, 34)
+      : Math.min(Math.floor((width * height) / 18000) + 24, 60);
 
     for (let i = 0; i < particleCount; i++) {
       const colorObj = colors[Math.floor(Math.random() * colors.length)];
@@ -112,6 +130,12 @@ export const ParticleBackground: React.FC = () => {
     document.addEventListener('mouseleave', handleMouseLeave);
 
     const fov = 400;
+    const LINK_DIST = 130;
+    const LINK_DIST_SQ = LINK_DIST * LINK_DIST;
+
+    // Drive the loop only while the canvas is both visible and on screen.
+    let running = false;
+    let isOnScreen = true;
 
     // Animation Loop
     const render = () => {
@@ -198,37 +222,75 @@ export const ParticleBackground: React.FC = () => {
         ctx.fill();
         ctx.restore();
 
-        // 4. Connect nearby particles with glowing gradient lines
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const distLinks = Math.hypot(p.x - p2.x, p.y - p2.y);
+        // 4. Connect nearby particles. Skipped entirely on low-power devices —
+        // this pass is O(n^2) and was the most expensive part of the frame.
+        if (!isLowPower) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            // Compare squared distances: avoids a sqrt per pair, and only the
+            // pairs that actually link need the real distance.
+            const dxl = p.x - p2.x;
+            const dyl = p.y - p2.y;
+            const distSq = dxl * dxl + dyl * dyl;
 
-          if (distLinks < 130) {
-            const lineAlpha = (1 - distLinks / 130) * 0.35 * Math.min(p.alpha, p2.alpha);
-            const lineGrad = ctx.createLinearGradient(p.x, p.y, p2.x, p2.y);
-            lineGrad.addColorStop(0, p.glowColor);
-            lineGrad.addColorStop(1, p2.glowColor);
-
-            ctx.save();
-            ctx.strokeStyle = lineGrad;
-            ctx.globalAlpha = lineAlpha;
-            ctx.lineWidth = 1.2 * scale;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-            ctx.restore();
+            if (distSq < LINK_DIST_SQ) {
+              const distLinks = Math.sqrt(distSq);
+              const lineAlpha = (1 - distLinks / LINK_DIST) * 0.35 * Math.min(p.alpha, p2.alpha);
+              // A flat stroke replaces a per-line gradient object; at these
+              // lengths and alphas the two are visually indistinguishable.
+              ctx.strokeStyle = p.glowColor;
+              ctx.globalAlpha = lineAlpha;
+              ctx.lineWidth = 1.2 * scale;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
+            }
           }
+          ctx.globalAlpha = 1;
         }
       }
 
-      animationFrameId = requestAnimationFrame(render);
+      if (running) animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
+    // The loop previously ran forever — in a background tab, and while the
+    // hero was scrolled out of view — draining battery for nothing.
+    const start = () => {
+      if (running) return;
+      running = true;
+      animationFrameId = requestAnimationFrame(render);
+    };
+    const stop = () => {
+      running = false;
+      cancelAnimationFrame(animationFrameId);
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) stop();
+      else if (isOnScreen) start();
+    };
+
+    const observer =
+      typeof IntersectionObserver !== 'undefined'
+        ? new IntersectionObserver(
+            ([entry]) => {
+              isOnScreen = entry.isIntersecting;
+              if (isOnScreen && !document.hidden) start();
+              else stop();
+            },
+            { threshold: 0 }
+          )
+        : null;
+    observer?.observe(canvas);
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    start();
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      stop();
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', handleMouseLeave);
