@@ -247,11 +247,11 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
               size="sm"
               onClick={() => setIsQRModalOpen(true)}
               className="h-9 xs:h-8 text-xs bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-2.5 sm:px-3 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1.5"
-              title="त्वरित QR कोड खोलें"
-              aria-label="त्वरित QR कोड खोलें"
+              title="QR कोड खोलें"
+              aria-label="QR कोड खोलें"
             >
               <QrCode className="w-4 h-4 xs:w-3.5 xs:h-3.5 text-slate-950 shrink-0" />
-              <span className="hidden sm:inline font-serif">त्वरित QR कोड</span>
+              <span className="hidden sm:inline font-serif">QR कोड</span>
             </Button>
 
             {/* Daily Cashier Receipt Button */}
@@ -514,8 +514,7 @@ export const DurgaPujaUnitView: React.FC<DurgaPujaUnitViewProps> = ({
                 }`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
-                <span className="sm:hidden">चंदा रजिस्टर</span>
-                <span className="hidden sm:inline">चंदा रजिस्टर (11 कॉलम)</span>
+                <span>चंदा रजिस्टर</span>
               </button>
 
               {canSeeKharcha && (

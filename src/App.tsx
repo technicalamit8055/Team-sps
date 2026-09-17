@@ -20,7 +20,9 @@ const MasterOS = lazy(() => import("./pages/MasterOS"));
 const DurgaPujaUnitPage = lazy(() => import("./pages/DurgaPujaUnitPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-// Loading fallback component
+// Loading fallback component. Shared by <Suspense> and every route guard so a
+// chunk load handing off to an auth check does not visibly swap one spinner
+// for another in a different colour.
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -33,11 +35,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, role, isCollector, assignedWorkspaceId, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!user) {
@@ -62,11 +60,7 @@ function SamitiRoute({ children }: { children: React.ReactNode }) {
   const { user, role, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!user) {
@@ -85,11 +79,7 @@ function CitizenRoute({ children }: { children: React.ReactNode }) {
   const { user, role, isCollector, assignedWorkspaceId, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-victory-green border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!user) {
@@ -117,11 +107,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, role, isCollector, assignedWorkspaceId, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-victory-saffron border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (user) {

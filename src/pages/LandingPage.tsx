@@ -29,9 +29,14 @@ interface SocialLink {
 export default function LandingPage() {
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
   const [links, setLinks] = useState<SocialLink[]>([]);
-  const [loading, setLoading] = useState(true);
 
+  // The page never blocks on this fetch. Every field below has a hard-coded
+  // fallback, so the landing page paints on the first frame and the Supabase
+  // values swap in when they arrive (stale-while-revalidate). Waiting on a
+  // cold Supabase instance here was the whole of the first-load delay.
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchData() {
       try {
         const { data: profileData } = await supabase
@@ -40,7 +45,7 @@ export default function LandingPage() {
           .eq("is_active", true)
           .maybeSingle();
 
-        if (profileData) {
+        if (profileData && !cancelled) {
           setProfile(profileData);
 
           const { data: linksData } = await supabase
@@ -50,18 +55,20 @@ export default function LandingPage() {
             .eq("is_active", true)
             .order("display_order", { ascending: true });
 
-          if (linksData) {
+          if (linksData && !cancelled) {
             setLinks(linksData);
           }
         }
       } catch (error) {
         console.error("Error fetching candidate data:", error);
-      } finally {
-        setLoading(false);
       }
     }
 
     fetchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Graceful defaults for Suraj Pratap
@@ -69,19 +76,6 @@ export default function LandingPage() {
   const displayTitle = profile?.title || "संस्थापक एवं मुख्य मार्गदर्शक - Team SPS";
   const displayPhone = profile?.phone || "+91 9430588888";
   const displayEmail = profile?.email || "teamsurajpratap@gmail.com";
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 border-4 border-victory-saffron border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-semibold text-muted-foreground animate-pulse">
-            Team SPS पोर्टल लोड हो रहा है...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-victory-saffron selection:text-white">
