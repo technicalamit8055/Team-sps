@@ -1,5 +1,5 @@
 // Caste / Samaj options used by the donation entry forms.
-// Free text is still allowed everywhere — this list is only a typing aid.
+// This is the fixed list the dropdown offers — selection only, no free text.
 
 export interface CasteOption {
   /** Value stored on the donation record. */
@@ -32,12 +32,3 @@ export const CASTE_OPTIONS: CasteOption[] = [
   { value: 'मुसहर', aliases: ['musahar', 'manjhi'] },
   { value: 'लागू नहीं (N/A)', aliases: ['na', 'n/a', 'not applicable', 'lagu nahi', 'none'] },
 ];
-
-/** Filter the list by a free-text query (Hindi value or English alias). */
-export function filterCasteOptions(query: string): CasteOption[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return CASTE_OPTIONS;
-  return CASTE_OPTIONS.filter(
-    o => o.value.toLowerCase().includes(q) || o.aliases.some(a => a.includes(q))
-  );
-}
