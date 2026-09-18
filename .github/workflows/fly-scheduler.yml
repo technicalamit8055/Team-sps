@@ -1,4 +1,4 @@
-﻿name: Scheduled Fly.io Machine Control
+name: Scheduled Fly.io Machine Control
 
 on:
   schedule:
@@ -38,6 +38,11 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
           APP_NAME: 'team-sps-whatsapp'
         run: |
+          # Ensure both 'fly' and 'flyctl' work in the runner environment
+          if command -v flyctl &> /dev/null && ! command -v fly &> /dev/null; then
+            sudo ln -s "$(which flyctl)" /usr/local/bin/fly
+          fi
+
           # Determine action based on trigger type
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             ACTION="${{ github.event.inputs.action }}"
@@ -54,7 +59,7 @@ jobs:
           echo "Action: $ACTION"
 
           # Get machine ID dynamically or fall back to known ID
-          MACHINE_ID=$(fly machines list -a "$APP_NAME" --json | jq -r '.[0].id // empty')
+          MACHINE_ID=$(flyctl machines list -a "$APP_NAME" --json | jq -r '.[0].id // empty')
           if [ -z "$MACHINE_ID" ]; then
             MACHINE_ID="e8207e7a257748"
           fi
@@ -63,15 +68,15 @@ jobs:
           case "$ACTION" in
             start)
               echo "Starting Fly machine $MACHINE_ID..."
-              fly machine start "$MACHINE_ID" -a "$APP_NAME" || true
+              flyctl machine start "$MACHINE_ID" -a "$APP_NAME" || true
               ;;
             stop)
               echo "Stopping Fly machine $MACHINE_ID..."
-              fly machine stop "$MACHINE_ID" -a "$APP_NAME" || true
+              flyctl machine stop "$MACHINE_ID" -a "$APP_NAME" || true
               ;;
             restart)
               echo "Restarting Fly machine $MACHINE_ID..."
-              fly machine restart "$MACHINE_ID" -a "$APP_NAME"
+              flyctl machine restart "$MACHINE_ID" -a "$APP_NAME"
               ;;
             status)
               echo "Checking machine status..."
@@ -83,4 +88,4 @@ jobs:
           esac
 
           echo "--- Current Machine State ---"
-          fly machine status "$MACHINE_ID" -a "$APP_NAME"
+          flyctl machine status "$MACHINE_ID" -a "$APP_NAME"
