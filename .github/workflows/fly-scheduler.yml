@@ -1,0 +1,86 @@
+﻿name: Scheduled Fly.io Machine Control
+
+on:
+  schedule:
+    # GitHub Actions cron schedules run in UTC time.
+    # Note: IST is UTC + 5:30.
+    #
+    # 08:00 AM IST (02:30 UTC) -> START machine for the day
+    - cron: '30 2 * * *'
+
+    # 11:00 PM IST (17:30 UTC) -> STOP machine for the night (saves compute cost)
+    - cron: '30 17 * * *'
+
+  # Allows manual triggering from GitHub web UI / GitHub Mobile anytime
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        default: 'status'
+        options:
+          - start
+          - stop
+          - restart
+          - status
+
+jobs:
+  control-fly-machine:
+    name: Fly.io Machine Control
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Run Fly Machine Action
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          APP_NAME: 'team-sps-whatsapp'
+        run: |
+          # Determine action based on trigger type
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ACTION="${{ github.event.inputs.action }}"
+          elif [ "${{ github.event.schedule }}" = "30 2 * * *" ]; then
+            ACTION="start"
+          elif [ "${{ github.event.schedule }}" = "30 17 * * *" ]; then
+            ACTION="stop"
+          else
+            ACTION="status"
+          fi
+
+          echo "Target App: $APP_NAME"
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Action: $ACTION"
+
+          # Get machine ID dynamically or fall back to known ID
+          MACHINE_ID=$(fly machines list -a "$APP_NAME" --json | jq -r '.[0].id // empty')
+          if [ -z "$MACHINE_ID" ]; then
+            MACHINE_ID="e8207e7a257748"
+          fi
+          echo "Machine ID: $MACHINE_ID"
+
+          case "$ACTION" in
+            start)
+              echo "Starting Fly machine $MACHINE_ID..."
+              fly machine start "$MACHINE_ID" -a "$APP_NAME" || true
+              ;;
+            stop)
+              echo "Stopping Fly machine $MACHINE_ID..."
+              fly machine stop "$MACHINE_ID" -a "$APP_NAME" || true
+              ;;
+            restart)
+              echo "Restarting Fly machine $MACHINE_ID..."
+              fly machine restart "$MACHINE_ID" -a "$APP_NAME"
+              ;;
+            status)
+              echo "Checking machine status..."
+              ;;
+            *)
+              echo "Unknown action: $ACTION"
+              exit 1
+              ;;
+          esac
+
+          echo "--- Current Machine State ---"
+          fly machine status "$MACHINE_ID" -a "$APP_NAME"
