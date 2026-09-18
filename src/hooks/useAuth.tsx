@@ -30,6 +30,15 @@ interface AuthContextType {
    */
   canChooseCollectorName: boolean;
   isLoading: boolean;
+  /**
+   * True once role + unit scoping have actually been resolved from Supabase
+   * for the signed-in user (or there is no user to resolve). Distinct from
+   * `isLoading`, which the AUTH_INIT_TIMEOUT_MS failsafe can release early on
+   * a slow connection — route guards that gate Master OS must wait on this
+   * flag instead, so a slow mobile fetch never renders the admin console for
+   * an account whose role has not actually been confirmed yet.
+   */
+  roleResolved: boolean;
   signIn: (username: string, password: string) => Promise<{
     error: string | null;
     role?: AppRole | null;
@@ -358,6 +367,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isCollector, setIsCollector] = useState<boolean>(false);
   const [canChooseCollectorName, setCanChooseCollectorName] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [roleResolved, setRoleResolved] = useState(false);
 
   // Resolves role, profile and collector assignment for a signed-in user.
   // Returns both the role and the resolved collector info so callers (signIn)
@@ -419,6 +429,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAssignedWorkspaceId(null);
       }
 
+      setRoleResolved(true);
+
       return {
         role: fetchedRole,
         assignedWorkspaceId: collectorInfo.assignedWorkspaceId,
@@ -427,6 +439,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
     } catch (error) {
       console.error('Error fetching user data:', error);
+      // Resolution failed outright (not merely slow) — nothing further will
+      // arrive for this attempt, so the guards must stop waiting. They still
+      // see role=null/isCollector=false, which fails closed everywhere.
+      setRoleResolved(true);
       return { role: null, assignedWorkspaceId: null, isCollector: false, canChooseCollectorName: false };
     }
   };
@@ -443,6 +459,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAssignedWorkspaceId(null);
     setIsCollector(false);
     setCanChooseCollectorName(false);
+    setRoleResolved(true);
   };
 
   // Guards against the two startup paths (onAuthStateChange's replayed INITIAL
@@ -550,6 +567,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAssignedWorkspaceId(null);
           setIsCollector(false);
           setCanChooseCollectorName(false);
+          setRoleResolved(true);
         }
         finishLoading();
       }
@@ -562,6 +580,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session) {
         await initializeSession(session);
+      } else {
+        setRoleResolved(true);
       }
       finishLoading();
     });
@@ -656,6 +676,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isCollector,
         canChooseCollectorName,
         isLoading,
+        roleResolved,
         signIn,
         signOut,
       }}

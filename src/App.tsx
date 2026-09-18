@@ -32,9 +32,14 @@ const PageLoader = () => (
 
 // Protected route wrapper for Admin & Manager (Master OS)
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, role, isCollector, assignedWorkspaceId, isLoading } = useAuth();
+  const { user, role, isCollector, assignedWorkspaceId, isLoading, roleResolved } = useAuth();
 
-  if (isLoading) {
+  // isLoading alone is not enough to gate this route: a slow mobile
+  // connection can release it (AUTH_INIT_TIMEOUT_MS failsafe) before the
+  // role/unit lookup has actually returned. Wait for roleResolved too, so an
+  // account whose privileges are still unknown never sees Master OS just
+  // because the generic spinner timed out.
+  if (isLoading || !roleResolved) {
     return <PageLoader />;
   }
 
@@ -42,14 +47,16 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Citizens go to Janta Portal
-  if (role === 'citizen') {
-    return <Navigate to="/janta" replace />;
-  }
-
   // Collectors are restricted from Master OS central command and redirected to their unit
   if (isCollector || assignedWorkspaceId) {
     return <Navigate to="/durga-puja-unit" replace />;
+  }
+
+  // Fail closed: only a confirmed admin/manager role reaches Master OS.
+  // Citizens, workers, and any account whose role failed to resolve all land
+  // on the least-privileged destination instead of falling through here.
+  if (role !== 'admin' && role !== 'manager') {
+    return <Navigate to={role === 'citizen' ? '/janta' : '/durga-puja-unit'} replace />;
   }
 
   return <>{children}</>;
@@ -57,9 +64,9 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 // Protected route for Samiti & Festival Units (accessible to Admin, Manager, and Collectors)
 function SamitiRoute({ children }: { children: React.ReactNode }) {
-  const { user, role, isLoading } = useAuth();
+  const { user, role, isLoading, roleResolved } = useAuth();
 
-  if (isLoading) {
+  if (isLoading || !roleResolved) {
     return <PageLoader />;
   }
 

@@ -1,57 +1,61 @@
 <!doctype html>
 <html lang="hi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#000080" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    
-    <!-- Favicon and Touch Icons -->
-    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="Team SPS" />
-    <meta name="application-name" content="Team SPS" />
-    <meta name="msapplication-TileColor" content="#000080" />
-    <meta name="msapplication-TileImage" content="/pwa-192x192.png" />
 
-    <!-- Preconnect to critical origins -->
-    <link rel="preconnect" href="https://ylbczxvtiyzughykhbtj.supabase.co" crossorigin />
-    <link rel="dns-prefetch" href="https://ylbczxvtiyzughykhbtj.supabase.co" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Loaded non-blocking: the stylesheet is fetched at low priority and
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000080" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Favicon and Touch Icons -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Team SPS" />
+  <meta name="application-name" content="Team SPS" />
+  <meta name="msapplication-TileColor" content="#000080" />
+  <meta name="msapplication-TileImage" content="/pwa-192x192.png" />
+
+  <!-- Preconnect to critical origins -->
+  <link rel="preconnect" href="https://ylbczxvtiyzughykhbtj.supabase.co" crossorigin />
+  <link rel="dns-prefetch" href="https://ylbczxvtiyzughykhbtj.supabase.co" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Loaded non-blocking: the stylesheet is fetched at low priority and
          applied once ready, so it no longer holds up the first paint.
          `display=swap` means text is visible in a fallback face meanwhile. -->
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800;900&display=swap"
-      media="print"
-      onload="this.media='all';this.onload=null"
-    />
-    <noscript>
-      <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    </noscript>
-    
-    <title>सुरज प्रताप | आधिकारिक वेबसाइट - Team SPS (Building the Future of Politics)</title>
-    <meta name="description" content="सुरज प्रताप एवं Team SPS की आधिकारिक वेबसाइट। तकनीक, पारदर्शिता और जनसेवा का नया युग। जनता पोर्टल, शिकायत निवारण, युवा रोजगार एवं विकास कार्यों की विस्तृत जानकारी।">
-    <meta name="author" content="Team Suraj Pratap (SPS)" />
-    <meta name="keywords" content="Suraj Pratap, Team SPS, Building the Future of Politics, Janta Portal, Panchayat, Bihar, Bihar Politics, Youth Leadership, Citizen Service">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800;900&display=swap"
+    media="print" onload="this.media='all';this.onload=null" />
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet" />
+  </noscript>
 
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="सुरज प्रताप | आधिकारिक वेबसाइट - Team SPS">
-    <meta property="og:description" content="सुरज प्रताप एवं Team SPS की आधिकारिक वेबसाइट। तकनीक, पारदर्शिता और जनसेवा का नया युग।">
-    <meta property="og:image" content="/team-logo.png" />
+  <title>सुरज प्रताप | आधिकारिक वेबसाइट - Team SPS (Building the Future of Politics)</title>
+  <meta name="description"
+    content="सुरज प्रताप एवं Team SPS की आधिकारिक वेबसाइट। तकनीक, पारदर्शिता और जनसेवा का नया युग। जनता पोर्टल, शिकायत निवारण, युवा रोजगार एवं विकास कार्यों की विस्तृत जानकारी।">
+  <meta name="author" content="Team Suraj Pratap (SPS)" />
+  <meta name="keywords"
+    content="Suraj Pratap, Team SPS, Building the Future of Politics, Janta Portal, Panchayat, Bihar, Bihar Politics, Youth Leadership, Citizen Service">
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="सुरज प्रताप | आधिकारिक वेबसाइट - Team SPS">
-    <meta name="twitter:description" content="सुरज प्रताप एवं Team SPS की आधिकारिक वेबसाइट। तकनीक, पारदर्शिता और जनसेवा का नया युग।">
-    <meta name="twitter:image" content="/team-logo.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="सुरज प्रताप | आधिकारिक वेबसाइट - Team SPS">
+  <meta property="og:description"
+    content="सुरज प्रताप एवं Team SPS की आधिकारिक वेबसाइट। तकनीक, पारदर्शिता और जनसेवा का नया युग।">
+  <meta property="og:image" content="/team-logo.png" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="सुरज प्रताप | आधिकारिक वेबसाइट - Team SPS">
+  <meta name="twitter:description"
+    content="सुरज प्रताप एवं Team SPS की आधिकारिक वेबसाइट। तकनीक, पारदर्शिता और जनसेवा का नया युग।">
+  <meta name="twitter:image" content="/team-logo.png" />
 </head>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

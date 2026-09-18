@@ -118,6 +118,7 @@
      phone every tap into a field jumped the viewport. Restore the 16px floor on
      coarse-pointer (touch) devices only, leaving desktop typography untouched. */
   @media (pointer: coarse) {
+
     input:not([type='checkbox']):not([type='radio']),
     select,
     textarea {
@@ -336,13 +337,23 @@
      colour fades back to the row's own background so the grid does not end an
      evening striped with every entry anyone made. */
   @keyframes realtimeFlashNew {
-    0%   { background-color: rgb(167 243 208); }
-    100% { background-color: transparent; }
+    0% {
+      background-color: rgb(167 243 208);
+    }
+
+    100% {
+      background-color: transparent;
+    }
   }
 
   @keyframes realtimeFlashEdit {
-    0%   { background-color: rgb(253 230 138); }
-    100% { background-color: transparent; }
+    0% {
+      background-color: rgb(253 230 138);
+    }
+
+    100% {
+      background-color: transparent;
+    }
   }
 
   .animate-realtime-new {
@@ -356,6 +367,7 @@
   /* A collector reading a receipt aloud should not have the row pulsing under
      their finger. */
   @media (prefers-reduced-motion: reduce) {
+
     .animate-realtime-new,
     .animate-realtime-edit {
       animation: none;

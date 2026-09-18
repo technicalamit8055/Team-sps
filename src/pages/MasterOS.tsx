@@ -22,17 +22,24 @@ export const MasterOS: React.FC = () => {
     mainWorkspaceId,
   } = useSamiti();
 
-  const { isCollector, assignedWorkspaceId } = useAuth();
+  const { role, isCollector, assignedWorkspaceId, roleResolved } = useAuth();
 
   // null = Master Hub overview; string = active dedicated workspace view (for in-memory custom units)
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
 
-  // Redirect assigned collectors directly to their dedicated unit portal
+  // Defense in depth: AdminRoute already gates this page on a confirmed
+  // admin/manager role, but this page must never render VIEW 3 on its own
+  // say-so either. Redirect assigned collectors to their unit, and anyone
+  // whose role is not (yet, or ever) admin/manager away from the hub.
   useEffect(() => {
     if (isCollector || assignedWorkspaceId) {
       navigate('/durga-puja-unit', { replace: true });
+      return;
     }
-  }, [isCollector, assignedWorkspaceId, navigate]);
+    if (roleResolved && role !== 'admin' && role !== 'manager') {
+      navigate('/durga-puja-unit', { replace: true });
+    }
+  }, [isCollector, assignedWorkspaceId, roleResolved, role, navigate]);
 
 
   // Master OS Navigation & Modal States
@@ -63,6 +70,10 @@ export const MasterOS: React.FC = () => {
   // VIEW 2: DEDICATED FESTIVAL / BUSINESS / SAMITI WORKSPACE
   // -------------------------------------------------------------
   if (isCollector || assignedWorkspaceId) {
+    return <DurgaPujaUnitView isCollectorMode={true} />;
+  }
+
+  if (roleResolved && role !== 'admin' && role !== 'manager') {
     return <DurgaPujaUnitView isCollectorMode={true} />;
   }
 
