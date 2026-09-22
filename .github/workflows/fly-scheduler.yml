@@ -1,16 +1,6 @@
-name: Scheduled Fly.io Machine Control
+name: Fly.io Machine Control (Manual)
 
 on:
-  schedule:
-    # GitHub Actions cron schedules run in UTC time.
-    # Note: IST is UTC + 5:30.
-    #
-    # 08:00 AM IST (02:30 UTC) -> START machine for the day
-    - cron: '30 2 * * *'
-
-    # 11:00 PM IST (17:30 UTC) -> STOP machine for the night (saves compute cost)
-    - cron: '30 17 * * *'
-
   # Allows manual triggering from GitHub web UI / GitHub Mobile anytime
   workflow_dispatch:
     inputs:
@@ -43,16 +33,7 @@ jobs:
             sudo ln -s "$(which flyctl)" /usr/local/bin/fly
           fi
 
-          # Determine action based on trigger type
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            ACTION="${{ github.event.inputs.action }}"
-          elif [ "${{ github.event.schedule }}" = "30 2 * * *" ]; then
-            ACTION="start"
-          elif [ "${{ github.event.schedule }}" = "30 17 * * *" ]; then
-            ACTION="stop"
-          else
-            ACTION="status"
-          fi
+          ACTION="${{ github.event.inputs.action || 'status' }}"
 
           echo "Target App: $APP_NAME"
           echo "Trigger: ${{ github.event_name }}"
