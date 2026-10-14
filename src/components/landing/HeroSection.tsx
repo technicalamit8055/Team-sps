@@ -1,25 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Sparkles,
-  MessageCircle,
-  ArrowRight,
-  Shield,
-  Users,
-  Award,
-  Zap,
-  CheckCircle2,
-  HeartHandshake,
-  Laptop,
-  Flame,
-  Star,
-  Activity,
-  MapPin,
-  Clock,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Users, MessageCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
 import teamLogo from '@/assets/team-logo.png';
-import ParticleBackground from '@/components/landing/ParticleBackground';
+import { scrollToSection, toWhatsAppUrl } from '@/components/landing/landingUtils';
 
 interface HeroSectionProps {
   name?: string;
@@ -27,367 +10,175 @@ interface HeroSectionProps {
   phone?: string | null;
 }
 
+const HIGHLIGHTS = ['24x7 जन-शिकायत प्रणाली', 'युवा रोजगार मार्गदर्शन', 'पारदर्शी व जवाबदेह राजनीति'];
+
+const STATS = [
+  { value: '50+', label: 'ग्राम एवं वार्ड क्षेत्र', note: 'सक्रिय जनसंपर्क नेटवर्क' },
+  { value: '15,000+', label: 'नागरिक संवाद', note: 'सीधा जन-जुड़ाव एवं समाधान' },
+  { value: '24x7', label: 'डिजिटल सहायता', note: 'WhatsApp एवं पोर्टल हेल्पलाइन' },
+  { value: '1,000+', label: 'युवा कार्यकर्ता', note: 'Team SPS संगठनात्मक शक्ति' },
+];
+
+/** The leader's official logo set in a sun-ray seal — "Suraj" is the sun. */
+const SunSeal: React.FC<{ name: string; title: string }> = ({ name, title }) => (
+  <div className="relative mx-auto h-[280px] w-[280px] xs:h-[340px] xs:w-[340px] sm:h-[410px] sm:w-[410px]">
+    <div aria-hidden="true" className="sun-rays absolute -inset-[22%] animate-spin-slow motion-reduce:animate-none" />
+
+    {/* Rotating seal text */}
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 200 200"
+      className="absolute inset-0 h-full w-full animate-spin-slow-reverse motion-reduce:animate-none"
+    >
+      <defs>
+        <path id="hero-seal-ring" d="M100,100 m-86,0 a86,86 0 1,1 172,0 a86,86 0 1,1 -172,0" />
+      </defs>
+      <circle cx="100" cy="100" r="97" fill="none" stroke="#E8601C" strokeOpacity="0.35" strokeDasharray="1 3" />
+      <text fill="#0F1E3D" fontSize="9" fontWeight="700" letterSpacing="1" style={{ fontFamily: 'Mukta, Poppins, sans-serif' }}>
+        <textPath href="#hero-seal-ring" xlinkHref="#hero-seal-ring" textLength="536" lengthAdjust="spacing">
+          TEAM SURAJ PRATAP ✦ BUILDING THE FUTURE OF POLITICS ✦
+        </textPath>
+      </text>
+    </svg>
+
+    {/* Portrait disc */}
+    <div className="absolute inset-[14%] overflow-hidden rounded-full bg-white shadow-[0_30px_60px_-20px_rgba(201,74,8,0.45)] ring-[6px] ring-marigold/80">
+      <img
+        src={teamLogo}
+        alt={`${name} — Team SPS`}
+        className="h-full w-full object-contain p-1"
+        width={512}
+        height={512}
+      />
+    </div>
+
+    {/* Name plate */}
+    <div className="absolute -bottom-6 left-1/2 w-max max-w-[95%] -translate-x-1/2 rounded-2xl bg-ink px-5 py-3 text-center shadow-[0_18px_40px_-16px_rgba(15,30,61,0.7)]">
+      <div className="font-display text-2xl leading-tight text-white">{name}</div>
+      <div className="mt-0.5 text-[13px] font-semibold leading-snug text-marigold">{title}</div>
+    </div>
+  </div>
+);
+
 export const HeroSection: React.FC<HeroSectionProps> = ({
   name = 'सुरज प्रताप',
   title = 'संस्थापक एवं मुख्य मार्गदर्शक - Team SPS',
   phone,
 }) => {
-  // 3D Card Tilt Interaction State
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-
-  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width;
-    const py = (e.clientY - rect.top) / rect.height;
-    setTilt({
-      x: (py - 0.5) * -14, // rotateX degrees
-      y: (px - 0.5) * 14,  // rotateY degrees
-    });
-    setIsHovered(true);
-  };
-
-  const handleCardMouseLeave = () => {
-    setTilt({ x: 0, y: 0 });
-    setIsHovered(false);
-  };
-
-  const whatsappUrl = phone
-    ? `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-        'नमस्ते सुरज प्रताप जी, मैं Team SPS के साथ जुड़ना चाहता/चाहती हूँ।'
-      )}`
-    : 'https://wa.me/919430588888?text=नमस्ते';
-
-  const scrollToJoin = () => {
-    const el = document.getElementById('join-team-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  const whatsappUrl = toWhatsAppUrl(phone, 'नमस्ते सुरज प्रताप जी, मैं Team SPS के साथ जुड़ना चाहता/चाहती हूँ।');
 
   return (
-    <section className="relative pt-28 pb-20 lg:pt-36 lg:pb-28 overflow-hidden" id="hero-section">
-      {/* 3D Interactive Canvas & Colorful Particle Mesh */}
-      <ParticleBackground />
+    <section className="relative overflow-hidden bg-paper pb-16 pt-28 lg:pb-24 lg:pt-36" id="hero-section">
+      {/* Morning light */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-48 -top-48 h-[720px] w-[720px] rounded-full bg-[radial-gradient(circle,rgba(244,165,28,0.32),rgba(232,96,28,0.10)_45%,transparent_70%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-40 -left-40 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(18,128,58,0.10),transparent_70%)]"
+      />
 
-      {/* Radiant Multicolored Ambient Spotlights */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[700px] pointer-events-none overflow-hidden -z-10">
-        <div className="absolute -top-10 left-1/4 w-[420px] h-[420px] bg-gradient-to-br from-orange-500/25 via-amber-400/20 to-transparent rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-36 right-1/4 w-[450px] h-[450px] bg-gradient-to-bl from-emerald-500/25 via-teal-400/15 to-transparent rounded-full blur-3xl animate-pulse stagger-2" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[350px] bg-gradient-to-r from-blue-600/15 via-indigo-500/10 to-purple-600/15 rounded-full blur-3xl" />
-      </div>
-
-      <div className="container mx-auto px-4 lg:px-8">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-10 items-center">
-          
-          {/* Left Column: Heading, Badges, Features & CTAs */}
-          <div className="lg:col-span-7 text-center lg:text-left space-y-6">
-            
-            {/* Colorful Tricolor Movement Badge */}
-            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/15 via-amber-500/10 to-emerald-500/15 border border-orange-500/40 text-foreground text-xs sm:text-sm font-semibold shadow-lg shadow-orange-500/10 backdrop-blur-md">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-80"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-gradient-to-r from-orange-500 to-amber-500"></span>
+      <div className="container relative mx-auto px-4 lg:px-8">
+        <div className="grid items-center gap-16 lg:grid-cols-12 lg:gap-10">
+          {/* Copy */}
+          <div className="text-center lg:col-span-7 lg:text-left">
+            <p className="hero-rise inline-flex items-center gap-2 rounded-full border border-kesar/30 bg-white/70 px-4 py-1.5 text-sm font-bold text-kesar-deep">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-leaf opacity-70 motion-reduce:animate-none" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-leaf" />
               </span>
-              <span className="bg-gradient-to-r from-orange-600 via-amber-600 to-emerald-700 dark:from-orange-400 dark:via-amber-300 dark:to-emerald-400 bg-clip-text text-transparent font-bold">
-                🇮🇳 जनसेवा, शुचिता एवं तकनीक का संगम | Team SPS
-              </span>
-              <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" style={{ animationDuration: '6s' }} />
-            </div>
+              जनसेवा • शुचिता • तकनीक
+            </p>
 
-            {/* Main Punchy Title */}
-            <h1 className="text-3xl sm:text-5xl xl:text-6xl font-black tracking-tight text-foreground leading-[1.14]">
-              राजनीति में शुचिता, <br />
-              <span className="bg-gradient-to-r from-orange-500 via-amber-500 via-yellow-400 via-teal-400 to-emerald-500 bg-clip-text text-transparent drop-shadow-sm">
+            <h1
+              className="hero-rise mt-6 font-display text-[2.6rem] leading-[1.22] text-ink xs:text-5xl sm:text-6xl xl:text-[4.6rem]"
+              style={{ animationDelay: '80ms' }}
+            >
+              राजनीति में शुचिता,
+              <br />
+              <span className="relative inline-block text-kesar-deep">
                 तकनीक से जनक्रांति
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 300 12"
+                  preserveAspectRatio="none"
+                  className="absolute -bottom-1 left-0 h-3 w-full text-marigold"
+                >
+                  <path d="M2 9 C 60 2, 140 2, 298 7" stroke="currentColor" strokeWidth="5" strokeLinecap="round" fill="none" />
+                </svg>
               </span>
             </h1>
 
-            {/* Statement / Description */}
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              <strong className="text-foreground font-bold">{name}</strong> के नेतृत्व में{' '}
-              <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600 dark:from-orange-400 dark:to-amber-300">
-                Team SPS
-              </span>{' '}
-              का एक ही संकल्प — हर नागरिक की समस्या का त्वरित डिजिटल निवारण, पारदर्शी स्थानीय शासन, और समर्पित युवा नेतृत्व।
+            <p
+              className="hero-rise mx-auto mt-7 max-w-xl text-lg leading-relaxed text-ink/70 lg:mx-0"
+              style={{ animationDelay: '160ms' }}
+            >
+              <strong className="font-bold text-ink">{name}</strong> के नेतृत्व में Team SPS का एक ही संकल्प — हर नागरिक की
+              समस्या का त्वरित डिजिटल निवारण, पारदर्शी स्थानीय शासन, और समर्पित युवा नेतृत्व।
             </p>
 
-            {/* Colorful Feature Chips Grid */}
-            <div className="grid sm:grid-cols-2 gap-3 pt-2 text-sm max-w-xl mx-auto lg:mx-0">
-              
-              {/* Feature 1 - Saffron */}
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-orange-500/10 border border-orange-500/25 hover:border-orange-500/50 hover:bg-orange-500/15 transition-all text-left shadow-sm">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-orange-500/30">
-                  <Zap className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-foreground text-sm">24x7 जन-शिकायत प्रणाली</div>
-                  <div className="text-[13px] text-muted-foreground">त्वरित डिजिटल सुनवाई व ट्रैकिंग</div>
-                </div>
-              </div>
-
-              {/* Feature 2 - Emerald */}
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 hover:border-emerald-500/50 hover:bg-emerald-500/15 transition-all text-left shadow-sm">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-emerald-500/30">
-                  <Award className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-foreground text-sm">युवा रोजगार व कौशल विकास</div>
-                  <div className="text-[13px] text-muted-foreground">आत्मनिर्भर युवा, सशक्त भविष्य</div>
-                </div>
-              </div>
-
-              {/* Feature 3 - Blue / Navy */}
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/25 hover:border-blue-500/50 hover:bg-blue-500/15 transition-all text-left shadow-sm">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-blue-500/30">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-foreground text-sm">ग्राम-वार्ड बुनियादी सशक्तिकरण</div>
-                  <div className="text-[13px] text-muted-foreground">सड़क, प्रकाश, जल व स्वच्छता</div>
-                </div>
-              </div>
-
-              {/* Feature 4 - Violet / Purple */}
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-500/10 border border-purple-500/25 hover:border-purple-500/50 hover:bg-purple-500/15 transition-all text-left shadow-sm">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-purple-500/30">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-foreground text-sm">पारदर्शी व जवाबदेह राजनीति</div>
-                  <div className="text-[13px] text-muted-foreground">ईमानदारी और जनता का विश्वास</div>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Vibrant Call To Action Buttons */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-4">
-              {/* Primary Glowing Saffron Button */}
-              <Button
-                onClick={scrollToJoin}
-                size="lg"
+            <div
+              className="hero-rise mt-9 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap lg:justify-start sm:justify-center"
+              style={{ animationDelay: '240ms' }}
+            >
+              <button
+                onClick={() => scrollToSection('join-team-section')}
                 id="hero-join-btn"
-                className="relative group overflow-hidden bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-7 py-6 rounded-2xl shadow-xl shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/40 hover:scale-[1.03] transition-all duration-300"
+                className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-kesar-deep px-8 text-base font-bold text-white shadow-[0_14px_30px_-12px_rgba(201,74,8,0.8)] transition-all hover:-translate-y-0.5 hover:bg-[#B43F05] sm:w-auto"
               >
-                <span className="absolute inset-0 w-full h-full bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                <Users className="w-5 h-5 mr-2.5" />
-                <span>टीम SPS से जुड़ें (Join Movement)</span>
-              </Button>
-
-              {/* Glowing WhatsApp Button */}
+                <Users className="h-5 w-5" />
+                Team SPS से जुड़ें
+              </button>
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 id="hero-whatsapp-btn"
-                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-xl shadow-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-500/35 hover:scale-[1.03] transition-all duration-300"
+                className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-ink/15 bg-white px-7 text-base font-bold text-ink transition-all hover:-translate-y-0.5 hover:border-leaf hover:text-leaf sm:w-auto"
               >
-                <MessageCircle className="w-5 h-5" />
-                <span>सीधा WhatsApp संवाद</span>
+                <MessageCircle className="h-5 w-5 text-leaf" />
+                WhatsApp पर संवाद
               </a>
-
-              {/* Janta Portal Glass Button */}
-              <Link to="/janta" id="hero-portal-link">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="rounded-2xl py-6 px-6 border-2 border-orange-500/30 hover:border-orange-500/70 bg-card/80 backdrop-blur-md font-semibold text-foreground hover:bg-orange-500/5 hover:scale-[1.02] transition-all"
-                >
-                  <span>जनता पोर्टल देखें</span>
-                  <ArrowRight className="w-4 h-4 ml-2 text-orange-500" />
-                </Button>
+              <Link
+                to="/janta"
+                id="hero-portal-link"
+                className="group inline-flex h-14 items-center gap-2 px-3 text-base font-bold text-ink underline decoration-kesar/40 decoration-2 underline-offset-8 hover:decoration-kesar"
+              >
+                जनता पोर्टल देखें
+                <ArrowRight className="h-4 w-4 text-kesar transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
 
-            {/* Slogan Pill */}
-            <div className="pt-2 text-xs text-muted-foreground font-medium flex items-center justify-center lg:justify-start gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
-              <span>&ldquo;Building the Future of Politics — जन-जन का सम्मान, हर वर्ग का उत्थान&rdquo;</span>
-            </div>
-          </div>
-
-          {/* Right Column: 3D Interactive Tilt Card with Floating Holographic Badges */}
-          <div className="lg:col-span-5 flex justify-center">
-            <div
-              className="relative w-full max-w-md cursor-pointer select-none"
-              onMouseMove={handleCardMouseMove}
-              onMouseLeave={handleCardMouseLeave}
-              style={{
-                perspective: '1000px',
-              }}
+            <ul
+              className="hero-rise mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[15px] font-medium text-ink/70 lg:justify-start"
+              style={{ animationDelay: '320ms' }}
             >
-              {/* Vibrant Multi-layer Rainbow Glowing Aura */}
-              <div className="absolute -inset-3 rounded-3xl bg-gradient-to-tr from-orange-500 via-amber-400 via-teal-400 to-emerald-500 opacity-60 blur-2xl animate-pulse pointer-events-none" />
-
-              {/* Floating Holographic Badge 1: Top Right */}
-              <div className="absolute -top-5 -right-4 z-30 flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-amber-500/50 shadow-xl shadow-amber-500/25 animate-float pointer-events-none">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-sm">
-                  <Star className="w-4 h-4 fill-white" />
-                </div>
-                <div className="text-left">
-                  <div className="text-[12px] text-muted-foreground uppercase font-bold tracking-wider">संकल्प</div>
-                  <div className="text-xs font-black text-foreground">100% पारदर्शी नेतृत्व</div>
-                </div>
-              </div>
-
-              {/* Floating Holographic Badge 2: Bottom Left */}
-              <div className="absolute -bottom-5 -left-4 z-30 flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-emerald-500/50 shadow-xl shadow-emerald-500/25 animate-float stagger-2 pointer-events-none">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-80" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                </span>
-                <div className="text-left">
-                  <div className="text-[12px] text-muted-foreground uppercase font-bold tracking-wider">डिजिटल सहायता</div>
-                  <div className="text-xs font-black text-emerald-600 dark:text-emerald-400">24x7 जनसंवाद केंद्र</div>
-                </div>
-              </div>
-
-              {/* Floating Holographic Badge 3: Left Center */}
-              <div className="absolute top-1/2 -left-6 -translate-y-1/2 z-30 hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-blue-500/40 shadow-lg shadow-blue-500/20 animate-float stagger-3 pointer-events-none">
-                <Shield className="w-4 h-4 text-blue-500" />
-                <span className="text-xs font-bold text-foreground">सशक्त युवा शक्ति</span>
-              </div>
-
-              {/* Interactive 3D Card Body */}
-              <div
-                className="relative rounded-3xl bg-card/90 backdrop-blur-2xl border-2 border-white/60 dark:border-white/15 shadow-2xl p-6 overflow-hidden transition-transform duration-200 ease-out"
-                style={{
-                  transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(${
-                    isHovered ? 1.02 : 1
-                  }, ${isHovered ? 1.02 : 1}, 1)`,
-                  transformStyle: 'preserve-3d',
-                }}
-              >
-                {/* Dynamic Specular Glare Reflection on Hover */}
-                <div
-                  className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity duration-300"
-                  style={{
-                    background: isHovered
-                      ? `radial-gradient(circle at ${50 + tilt.y * 3}% ${
-                          50 - tilt.x * 3
-                        }%, rgba(255,255,255,0.25) 0%, transparent 60%)`
-                      : 'none',
-                  }}
-                />
-
-                {/* Top Tricolor Accent Bar */}
-                <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-orange-500 via-white to-emerald-500 mb-5 shadow-sm" />
-
-                {/* Portrait Display Area */}
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-orange-500/15 via-amber-500/5 to-transparent border border-orange-500/20 p-5 flex flex-col items-center">
-                  
-                  {/* Glowing Spotlight Behind Portrait */}
-                  <div className="absolute top-8 w-44 h-44 rounded-full bg-gradient-to-tr from-orange-500/30 to-amber-300/30 blur-2xl pointer-events-none" />
-
-                  {/* Official Logo / Portrait */}
-                  <div className="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center">
-                    <img
-                      src={teamLogo}
-                      alt="सुरज प्रताप - Team SPS"
-                      className="w-full h-full object-contain filter drop-shadow-2xl hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-
-                  {/* Leader Info Tag */}
-                  <div className="mt-3 text-center">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-bold mb-1">
-                      <Sparkles className="w-3 h-3" />
-                      <span>Team SPS संस्थापक</span>
-                    </div>
-                    <h3 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-                      {name}
-                    </h3>
-                    <p className="text-xs sm:text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600 dark:from-orange-400 dark:to-amber-300">
-                      {title}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1 font-medium">
-                      जनसेवक • मार्गदर्शक • युवा नेतृत्व
-                    </p>
-                  </div>
-                </div>
-
-                {/* Quick Badges inside Card */}
-                <div className="grid grid-cols-2 gap-2.5 mt-4">
-                  <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-center">
-                    <span className="block text-[13px] text-muted-foreground">आदर्श वाक्य</span>
-                    <span className="text-xs font-bold text-foreground">सेवा, समर्पण, तकनीक</span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                    <span className="block text-[13px] text-muted-foreground">कार्यक्षेत्र</span>
-                    <span className="text-xs font-bold text-foreground">सर्व समाज उत्थान</span>
-                  </div>
-                </div>
-
-                {/* Quote Banner */}
-                <div className="mt-4 p-3 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-emerald-500/10 border border-orange-500/20 text-center">
-                  <p className="text-xs italic text-foreground/90 font-medium">
-                    &ldquo;जब तकनीक और निष्ठा मिलती है, तब हर नागरिक की आवाज सीधे सुनी जाती है।&rdquo;
-                  </p>
-                </div>
-              </div>
-            </div>
+              {HIGHLIGHTS.map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-leaf" />
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
 
+          {/* Seal */}
+          <div className="hero-rise lg:col-span-5" style={{ animationDelay: '200ms' }}>
+            <SunSeal name={name} title={title} />
+          </div>
         </div>
 
-        {/* Colorful Stats & Impact Counters Strip */}
-        <div className="mt-16 lg:mt-24 grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
-          
-          {/* Stat 1: Saffron Theme */}
-          <div className="relative group p-6 rounded-2xl bg-card/90 backdrop-blur-xl border border-orange-500/30 shadow-lg hover:shadow-xl hover:shadow-orange-500/10 hover:-translate-y-1 transition-all duration-300 text-center overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-500 to-amber-500" />
-            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-orange-500/15 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
-              <MapPin className="w-5 h-5" />
+        {/* Impact stats */}
+        <div className="mt-20 grid grid-cols-2 gap-px overflow-hidden rounded-[28px] bg-white/10 shadow-[0_30px_60px_-30px_rgba(15,30,61,0.6)] lg:mt-24 lg:grid-cols-4">
+          {STATS.map((stat) => (
+            <div key={stat.label} className="bg-ink px-5 py-7 text-center sm:px-8 sm:py-9 lg:text-left">
+              <div className="font-display text-4xl leading-none text-marigold sm:text-5xl">{stat.value}</div>
+              <div className="mt-3 text-base font-bold text-white">{stat.label}</div>
+              <div className="mt-0.5 text-sm text-white/60">{stat.note}</div>
             </div>
-            <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
-              50+
-            </div>
-            <div className="text-xs sm:text-sm font-bold text-foreground mt-1">ग्राम एवं वार्ड क्षेत्र</div>
-            <div className="text-[13px] text-muted-foreground mt-0.5">सक्रिय जनसंपर्क नेटवर्क</div>
-          </div>
-
-          {/* Stat 2: Royal Blue / Cyan Theme */}
-          <div className="relative group p-6 rounded-2xl bg-card/90 backdrop-blur-xl border border-blue-500/30 shadow-lg hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 text-center overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-500 to-cyan-500" />
-            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-              <Users className="w-5 h-5" />
-            </div>
-            <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-              15,000+
-            </div>
-            <div className="text-xs sm:text-sm font-bold text-foreground mt-1">नागरिक संवाद</div>
-            <div className="text-[13px] text-muted-foreground mt-0.5">सीधा जन-जुड़ाव एवं समाधान</div>
-          </div>
-
-          {/* Stat 3: Emerald Green Theme */}
-          <div className="relative group p-6 rounded-2xl bg-card/90 backdrop-blur-xl border border-emerald-500/30 shadow-lg hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 text-center overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
-            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
-              24x7
-            </div>
-            <div className="text-xs sm:text-sm font-bold text-foreground mt-1">डिजिटल सहायता</div>
-            <div className="text-[13px] text-muted-foreground mt-0.5">WhatsApp एवं पोर्टल हेल्पलाइन</div>
-          </div>
-
-          {/* Stat 4: Ruby / Amber Theme */}
-          <div className="relative group p-6 rounded-2xl bg-card/90 backdrop-blur-xl border border-amber-500/30 shadow-lg hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 text-center overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 to-rose-500" />
-            <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
-              <Flame className="w-5 h-5" />
-            </div>
-            <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 bg-clip-text text-transparent">
-              1,000+
-            </div>
-            <div className="text-xs sm:text-sm font-bold text-foreground mt-1">युवा कार्यकर्ता</div>
-            <div className="text-[13px] text-muted-foreground mt-0.5">Team SPS संगठनात्मक शक्ति</div>
-          </div>
-
+          ))}
         </div>
-
       </div>
     </section>
   );

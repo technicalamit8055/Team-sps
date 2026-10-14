@@ -4,6 +4,8 @@ import { Navbar } from "@/components/landing/Navbar";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { AboutSection } from "@/components/landing/AboutSection";
 import { InitiativesSection } from "@/components/landing/InitiativesSection";
+import { PortalSection } from "@/components/landing/PortalSection";
+import { SloganMarquee } from "@/components/landing/SloganMarquee";
 import { JoinTeamSection } from "@/components/landing/JoinTeamSection";
 import { ConnectSection } from "@/components/landing/ConnectSection";
 import { Footer } from "@/components/landing/Footer";
@@ -78,18 +80,21 @@ export default function LandingPage() {
   const displayEmail = profile?.email || "teamsurajpratap@gmail.com";
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-victory-saffron selection:text-white">
+    <div className="flex min-h-screen flex-col bg-paper font-hindi text-ink selection:bg-kesar selection:text-white">
       {/* Sticky Navigation Bar */}
       <Navbar phone={displayPhone} />
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {/* Hero Section with Suraj Pratap's portrait, statement, CTAs, and impact stats */}
+        {/* Hero: headline, CTAs, sun-ray seal around the official logo, impact stats */}
         <HeroSection
           name={displayName}
           title={displayTitle}
           phone={displayPhone}
         />
+
+        {/* Scrolling slogan band */}
+        <SloganMarquee />
 
         {/* About Section: Story, Vision, Core Pillars */}
         <AboutSection
@@ -98,9 +103,10 @@ export default function LandingPage() {
         />
 
         {/* Initiatives & Public Programs: Janta Portal, Youth Cell, Health, Infra, Samiti */}
-        <div id="vision-section">
-          <InitiativesSection />
-        </div>
+        <InitiativesSection />
+
+        {/* How the Janta Portal works: complaint -> tracking -> resolution */}
+        <PortalSection />
 
         {/* Join Team SPS Volunteer Form */}
         <JoinTeamSection phone={displayPhone} />

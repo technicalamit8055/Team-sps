@@ -24,6 +24,10 @@ export default {
       },
       fontFamily: {
         sans: ['Poppins', 'sans-serif'],
+        // Public landing page only: a poster-style Devanagari display face for
+        // headlines and Mukta for running Hindi text (Poppins has no Devanagari).
+        display: ['"Rozha One"', '"Noto Sans Devanagari"', 'serif'],
+        hindi: ['Mukta', '"Noto Sans Devanagari"', 'Poppins', 'sans-serif'],
       },
       // The default Tailwind type scale read too small on phones, where most of
       // this app is actually used. Every step is bumped, with the largest lift
@@ -94,6 +98,19 @@ export default {
           dark: "hsl(var(--navy-dark))",
         },
         "victory-gold": "#F59E0B",
+        // Landing page campaign palette. kesar-deep and leaf are the shades that
+        // clear 4.5:1 behind white text; plain kesar is for large type and art.
+        kesar: {
+          DEFAULT: "#E8601C",
+          deep: "#C94A08",
+        },
+        marigold: "#F4A51C",
+        ink: {
+          DEFAULT: "#0F1E3D",
+          soft: "#1B2D57",
+        },
+        paper: "#FBF6EC",
+        leaf: "#12803A",
         "indian-green": {
           DEFAULT: "hsl(var(--indian-green))",
           light: "hsl(var(--indian-green-light))",
@@ -143,6 +160,10 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "marquee": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -152,6 +173,9 @@ export default {
         "fade-in": "fade-in 0.3s ease-out forwards",
         "pulse-ring": "pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite",
         "float": "float 3s ease-in-out infinite",
+        "marquee": "marquee 45s linear infinite",
+        "spin-slow": "spin 90s linear infinite",
+        "spin-slow-reverse": "spin 140s linear infinite reverse",
       },
     },
   },

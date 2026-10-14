@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShieldCheck, Users, Calendar, ArrowUp } from 'lucide-react';
+import { ShieldCheck, Users, Calendar, ArrowUp, Phone, Mail, MapPin } from 'lucide-react';
 import teamLogo from '@/assets/team-logo.png';
+import { SunGlyph } from '@/components/landing/shared';
+import { scrollToSection } from '@/components/landing/landingUtils';
 
 interface FooterProps {
   name?: string;
@@ -9,170 +11,135 @@ interface FooterProps {
   email?: string | null;
 }
 
+const SECTION_LINKS = [
+  { id: 'about-section', label: 'परिचय एवं नेतृत्व' },
+  { id: 'initiatives-section', label: 'प्रमुख पहल एवं विज़न' },
+  { id: 'portal-section', label: 'जनता पोर्टल कैसे काम करता है' },
+  { id: 'join-team-section', label: 'टीम से जुड़ें' },
+  { id: 'connect-section', label: 'डिजिटल संवाद एवं संपर्क' },
+];
+
+const PORTAL_LINKS = [
+  { to: '/janta', label: 'जनता पोर्टल', icon: Users },
+  { to: '/durga-puja-unit', label: 'समिति एवं इवेंट डैशबोर्ड', icon: Calendar },
+  { to: '/login', label: 'कार्यकर्ता लॉगिन', icon: ShieldCheck },
+];
+
 export const Footer: React.FC<FooterProps> = ({
   name = 'सुरज प्रताप',
   phone = '+91 9430588888',
-  email = 'teamsurajpratap@gmail.com'
+  email = 'teamsurajpratap@gmail.com',
 }) => {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-950 text-slate-300 border-t border-slate-800 relative pt-16 pb-12 overflow-hidden">
-      <div className="container mx-auto px-4 lg:px-8">
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-12 border-b border-slate-800">
-          
-          {/* Brand Col */}
-          <div className="lg:col-span-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-victory-saffron bg-white p-0.5">
-                <img
-                  src={teamLogo}
-                  alt="Team Suraj Pratap Logo"
-                  className="w-full h-full object-cover object-top"
-                />
-              </div>
-              <div>
-                <span className="font-extrabold text-xl text-white tracking-tight">
-                  सुरज प्रताप
-                </span>
-                <span className="block text-xs text-victory-saffron font-semibold">
-                  Team SPS | Building the Future of Politics
-                </span>
+    <footer className="relative bg-ink text-white/70">
+      <div aria-hidden="true" className="flex h-1.5">
+        <span className="flex-1 bg-kesar" />
+        <span className="flex-1 bg-white" />
+        <span className="flex-1 bg-leaf" />
+      </div>
+
+      <div className="container mx-auto px-4 pb-10 pt-16 lg:px-8">
+        {/* Wordmark + CTA */}
+        <div className="flex flex-col gap-8 border-b border-white/10 pb-12 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <span className="block h-16 w-16 flex-shrink-0 overflow-hidden rounded-full bg-white ring-2 ring-marigold">
+              <img src={teamLogo} alt="" loading="lazy" className="h-full w-full object-cover object-top" width={64} height={64} />
+            </span>
+            <div>
+              <div className="font-display text-4xl leading-tight text-white sm:text-5xl">{name}</div>
+              <div className="mt-1 text-sm font-semibold uppercase tracking-[0.2em] text-marigold">
+                Team SPS · Building the Future of Politics
               </div>
             </div>
+          </div>
+          <button
+            onClick={() => scrollToSection('join-team-section')}
+            className="inline-flex h-12 items-center justify-center gap-2 self-start rounded-full bg-kesar-deep px-6 font-bold text-white transition-colors hover:bg-[#B43F05] md:self-auto"
+          >
+            <Users className="h-4 w-4" />
+            आंदोलन से जुड़ें
+          </button>
+        </div>
 
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm">
+        {/* Columns */}
+        <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-12">
+          <div className="lg:col-span-5">
+            <p className="max-w-sm leading-relaxed">
               तकनीक, पारदर्शिता और शुचिता के माध्यम से राजनीति को जनता के सशक्तिकरण का सबसे प्रभावी साधन बनाना ही हमारा मिशन है।
             </p>
-
-            <div className="pt-2 text-xs text-slate-400">
-              <p>📍 जनसेवा कार्यालय: मुख्य संपर्क केंद्र</p>
-              {phone && <p className="mt-1">📞 हेल्पलाइन: <a href={`tel:${phone}`} className="text-white hover:underline">{phone}</a></p>}
-              {email && <p className="mt-1">✉️ ईमेल: <a href={`mailto:${email}`} className="text-white hover:underline">{email}</a></p>}
-            </div>
-          </div>
-
-          {/* Navigation Links */}
-          <div className="lg:col-span-3 space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              नेविगेशन (Navigation)
-            </h4>
-            <ul className="space-y-2 text-xs sm:text-sm">
-              <li>
-                <button
-                  onClick={() => {
-                    const el = document.getElementById('about-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="hover:text-victory-saffron transition-colors"
-                >
-                  परिचय एवं नेतृत्व (About)
-                </button>
+            <ul className="mt-6 space-y-2.5 text-[15px]">
+              <li className="flex items-center gap-2.5">
+                <MapPin className="h-4 w-4 text-marigold" />
+                जनसेवा कार्यालय: मुख्य संपर्क केंद्र
               </li>
-              <li>
-                <button
-                  onClick={() => {
-                    const el = document.getElementById('initiatives-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="hover:text-victory-saffron transition-colors"
-                >
-                  प्रमुख पहल एवं विज़न (Initiatives)
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => {
-                    const el = document.getElementById('join-team-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="hover:text-victory-saffron transition-colors"
-                >
-                  टीम से जुड़ें (Join Team SPS)
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => {
-                    const el = document.getElementById('connect-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="hover:text-victory-saffron transition-colors"
-                >
-                  डिजिटल संवाद एवं संपर्क (Connect)
-                </button>
-              </li>
+              {phone && (
+                <li>
+                  <a href={`tel:${phone}`} className="flex items-center gap-2.5 hover:text-white">
+                    <Phone className="h-4 w-4 text-marigold" />
+                    {phone}
+                  </a>
+                </li>
+              )}
+              {email && (
+                <li>
+                  <a href={`mailto:${email}`} className="flex items-center gap-2.5 break-all hover:text-white">
+                    <Mail className="h-4 w-4 flex-shrink-0 text-marigold" />
+                    {email}
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
 
-          {/* Citizen & Team Portals */}
-          <div className="lg:col-span-3 space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-              नागरिक एवं कार्यकर्ता पोर्टल
-            </h4>
-            <ul className="space-y-2 text-xs sm:text-sm">
-              <li>
-                <Link
-                  to="/janta"
-                  className="inline-flex items-center gap-2 text-slate-300 hover:text-victory-saffron transition-colors"
-                >
-                  <Users className="w-4 h-4 text-victory-saffron" />
-                  <span>जनता पोर्टल (Janta Portal)</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/durga-puja-unit"
-                  className="inline-flex items-center gap-2 text-slate-300 hover:text-victory-saffron transition-colors"
-                >
-                  <Calendar className="w-4 h-4 text-amber-400" />
-                  <span>समिति एवं इवेंट डैशबोर्ड</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-2 text-slate-300 hover:text-victory-saffron transition-colors"
-                >
-                  <ShieldCheck className="w-4 h-4 text-indian-green" />
-                  <span>कार्यकर्ता लॉगिन (Team Login)</span>
-                </Link>
-              </li>
+          <nav className="lg:col-span-4" aria-label="फुटर नेविगेशन">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-white">नेविगेशन</h4>
+            <ul className="mt-4 space-y-2.5 text-[15px]">
+              {SECTION_LINKS.map((link) => (
+                <li key={link.id}>
+                  <button onClick={() => scrollToSection(link.id)} className="text-left transition-colors hover:text-marigold">
+                    {link.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="lg:col-span-3">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-white">नागरिक एवं कार्यकर्ता पोर्टल</h4>
+            <ul className="mt-4 space-y-2.5 text-[15px]">
+              {PORTAL_LINKS.map(({ to, label, icon: Icon }) => (
+                <li key={to}>
+                  <Link to={to} className="inline-flex items-center gap-2.5 transition-colors hover:text-marigold">
+                    <Icon className="h-4 w-4 text-marigold" />
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
-
-          {/* Back to top action */}
-          <div className="lg:col-span-2 flex flex-col justify-between items-start lg:items-end">
-            <button
-              onClick={scrollToTop}
-              className="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-victory-saffron transition-all group flex items-center gap-2 text-xs"
-            >
-              <span>ऊपर जाएं</span>
-              <ArrowUp className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform text-victory-saffron" />
-            </button>
-            <div className="pt-4 text-[13px] text-slate-500 lg:text-right">
-              जय हिंद • जय भारत 🇮🇳
-            </div>
-          </div>
-
         </div>
 
-        {/* Bottom copyright */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>
-            © {currentYear} Team Suraj Pratap (SPS). सर्वाधिकार सुरक्षित।
+        {/* Bottom bar */}
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-sm text-white/50 sm:flex-row">
+          <p>© {currentYear} Team Suraj Pratap (SPS). सर्वाधिकार सुरक्षित।</p>
+          <p className="flex items-center gap-2 font-semibold text-white/70">
+            जय हिंद <SunGlyph className="h-3.5 w-3.5 text-marigold" /> जय भारत
           </p>
-          <div className="flex items-center gap-1 text-slate-400">
-            <span>Powered by</span>
-            <span className="font-semibold text-victory-saffron">Victory OS v26</span>
+          <div className="flex items-center gap-4">
+            <span>
+              Powered by <span className="font-semibold text-marigold">Victory OS v26</span>
+            </span>
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:border-marigold hover:text-marigold"
+              aria-label="ऊपर जाएं"
+            >
+              <ArrowUp className="h-4 w-4" />
+            </button>
           </div>
         </div>
-
       </div>
     </footer>
   );

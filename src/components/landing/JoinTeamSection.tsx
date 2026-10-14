@@ -1,30 +1,46 @@
 import React, { useState } from 'react';
-import { Users, Send, CheckCircle2, MessageCircle, Sparkles, Shield, UserPlus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Users, Send, CheckCircle2, MessageCircle, HandHeart, BadgeCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Reveal, SectionKicker } from '@/components/landing/shared';
+import { toWhatsAppUrl } from '@/components/landing/landingUtils';
 
 interface JoinTeamSectionProps {
   phone?: string | null;
 }
 
+const WINGS = [
+  { value: 'youth', label: 'युवा विंग' },
+  { value: 'digital', label: 'आईटी एवं सोशल मीडिया' },
+  { value: 'ground', label: 'जनसंवाद एवं फील्ड टीम' },
+  { value: 'women', label: 'महिला सशक्तिकरण' },
+  { value: 'events', label: 'सांस्कृतिक एवं सेवा कार्य' },
+];
+
+const REASONS = [
+  {
+    icon: HandHeart,
+    title: 'प्रत्यक्ष समाजसेवा का अवसर',
+    text: 'वार्ड और पंचायतों के जरूरतमंद परिवारों की सीधी मदद और योजनाओं का लाभ दिलाना।',
+  },
+  {
+    icon: Users,
+    title: 'युवा नेतृत्व एवं नेटवर्किंग',
+    text: 'हजारों कर्मठ युवाओं के साथ मिलकर काम करने और नेतृत्व क्षमता निखारने का मंच।',
+  },
+  {
+    icon: BadgeCheck,
+    title: 'सम्मान एवं आधिकारिक सदस्यता',
+    text: 'सक्रिय कार्यकर्ताओं को Team SPS की ओर से पहचान पत्र एवं विशेष उत्तरदायित्व।',
+  },
+];
+
+const EMPTY_FORM = { fullName: '', phone: '', wardOrPanchayat: '', wing: 'youth', message: '' };
+
 export const JoinTeamSection: React.FC<JoinTeamSectionProps> = ({ phone }) => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
-    wardOrPanchayat: '',
-    wing: 'youth',
-    message: ''
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -49,220 +65,170 @@ export const JoinTeamSection: React.FC<JoinTeamSectionProps> = ({ phone }) => {
     }, 600);
   };
 
-  const helplineNumber = phone ? phone.replace(/[^0-9]/g, '') : '919430588888';
-  const whatsappJoinUrl = `https://wa.me/${helplineNumber}?text=${encodeURIComponent(
-    `जय हिंद! मैं Team SPS में शामिल होना चाहता/चाहती हूँ।\n\nनाम: ${formData.fullName || 'शुभचिंतक'}\nफोन: ${formData.phone || ''}\nक्षेत्र/वार्ड: ${formData.wardOrPanchayat || 'स्थानीय'}\nरुचि विंग: ${formData.wing}`
-  )}`;
+  const wingLabel = WINGS.find((w) => w.value === formData.wing)?.label ?? formData.wing;
+  const whatsappJoinUrl = toWhatsAppUrl(
+    phone,
+    `जय हिंद! मैं Team SPS में शामिल होना चाहता/चाहती हूँ।\n\nनाम: ${formData.fullName || 'शुभचिंतक'}\nफोन: ${formData.phone || ''}\nक्षेत्र/वार्ड: ${formData.wardOrPanchayat || 'स्थानीय'}\nरुचि विंग: ${wingLabel}`
+  );
 
   return (
-    <section className="py-20 lg:py-28 bg-gradient-to-b from-background via-muted/40 to-background relative overflow-hidden" id="join-team-section">
-      {/* Subtle Background Elements */}
-      <div className="absolute top-1/2 left-0 w-80 h-80 bg-victory-saffron/10 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-0 right-0 w-80 h-80 bg-indian-green/10 rounded-full blur-3xl -z-10" />
+    <section className="relative overflow-hidden bg-paper py-20 lg:py-28" id="join-team-section">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-40 top-20 h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(244,165,28,0.22),transparent_70%)]"
+      />
 
-      <div className="container mx-auto px-4 lg:px-8">
-        
-        {/* Section Heading */}
-        <div className="max-w-3xl mx-auto text-center space-y-3 mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-victory-saffron/10 text-victory-saffron text-xs font-semibold uppercase tracking-wider">
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>जन-आंदोलन का हिस्सा बनें | Join Movement</span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-            Team SPS के साथ जुड़ें, नए नेतृत्व का निर्माण करें
+      <div className="container relative mx-auto grid gap-12 px-4 lg:grid-cols-12 lg:gap-14 lg:px-8">
+        {/* Pitch */}
+        <Reveal className="lg:col-span-5">
+          <SectionKicker>जन-आंदोलन का हिस्सा बनें</SectionKicker>
+          <h2 className="mt-4 text-balance font-display text-4xl leading-[1.25] text-ink sm:text-5xl">
+            Team SPS से जुड़ें, <span className="text-kesar-deep">नए नेतृत्व</span> का निर्माण करें
           </h2>
-          <p className="text-muted-foreground text-base sm:text-lg">
-            यदि आप भी समाज में सकारात्मक बदलाव, पारदर्शी विकास और युवाओं की भागीदारी के पक्षधर हैं, तो आज ही हमारे स्वयंसेवक परिवार से जुड़ें।
+          <p className="mt-5 text-lg leading-relaxed text-ink/65">
+            यदि आप भी समाज में सकारात्मक बदलाव, पारदर्शी विकास और युवाओं की भागीदारी के पक्षधर हैं, तो आज ही हमारे स्वयंसेवक
+            परिवार से जुड़ें।
           </p>
-        </div>
 
-        <div className="grid lg:grid-cols-12 gap-10 items-center max-w-5xl mx-auto">
-          
-          {/* Left Info Column */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="rounded-3xl bg-card border border-border/70 p-6 lg:p-8 shadow-lg space-y-6">
-              <h3 className="text-xl font-bold text-foreground">
-                Team SPS से क्यों जुड़ें?
-              </h3>
-
-              <div className="space-y-4 text-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-victory-saffron/15 text-victory-saffron flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground">प्रत्यक्ष समाजसेवा का अवसर</h5>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      वार्ड और पंचायतों के जरूरतमंद परिवारों की सीधी मदद और योजनाओं का लाभ दिलाना।
-                    </p>
-                  </div>
+          <ul className="mt-8 space-y-5">
+            {REASONS.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="flex gap-4">
+                <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-white text-kesar-deep shadow-sm ring-1 ring-ink/10">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="text-lg font-bold text-ink">{title}</h3>
+                  <p className="mt-0.5 text-[15px] leading-snug text-ink/65">{text}</p>
                 </div>
+              </li>
+            ))}
+          </ul>
 
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-victory-navy/15 text-victory-navy dark:text-blue-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground">युवा नेतृत्व एवं नेटवर्किंग</h5>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      हजारों कर्मठ युवाओं के साथ मिलकर काम करने और नेतृत्व क्षमता निखारने का मंच।
-                    </p>
-                  </div>
-                </div>
+          <a
+            href={whatsappJoinUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-leaf px-6 font-bold text-white transition-colors hover:bg-[#0E6B30]"
+          >
+            <MessageCircle className="h-5 w-5" />
+            WhatsApp पर तुरंत जुड़ें
+          </a>
+        </Reveal>
 
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-indian-green/15 text-indian-green flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Shield className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-foreground">सम्मान एवं आधिकारिक सदस्यता</h5>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      सक्रिय कार्यकर्ताओं को Team SPS की ओर से पहचान पत्र एवं विशेष उत्तरदायित्व।
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Direct WhatsApp Callout */}
-              <div className="pt-4 border-t border-border/60">
-                <p className="text-xs text-muted-foreground mb-2">
-                  त्वरित जुड़ाव के लिए सीधे WhatsApp पर संदेश भेजें:
-                </p>
-                <a
-                  href={whatsappJoinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl font-semibold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  WhatsApp पर तुरंत जुड़ें
-                </a>
-              </div>
+        {/* Form */}
+        <Reveal className="lg:col-span-7" delay={120}>
+          <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_40px_80px_-40px_rgba(15,30,61,0.45)] ring-1 ring-ink/10">
+            <div aria-hidden="true" className="flex h-1.5">
+              <span className="flex-1 bg-kesar" />
+              <span className="flex-1 bg-white" />
+              <span className="flex-1 bg-leaf" />
             </div>
-          </div>
 
-          {/* Right Form Column */}
-          <div className="lg:col-span-7">
-            <div className="rounded-3xl bg-card border border-border/70 p-6 lg:p-8 shadow-xl relative">
+            <div className="p-6 sm:p-10">
               {isSubmitted ? (
-                <div className="py-12 text-center space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-8 h-8" />
+                <div className="py-10 text-center duration-300 animate-in fade-in zoom-in-95">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-leaf/10 text-leaf">
+                    <CheckCircle2 className="h-8 w-8" />
                   </div>
-                  <h3 className="text-2xl font-bold text-foreground">
-                    पंजीकरण सफल रहा!
-                  </h3>
-                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                    स्वागत है <strong className="text-foreground">{formData.fullName}</strong>! Team SPS के संयोजक जल्द आपसे संपर्क करेंगे।
+                  <h3 className="mt-5 font-display text-3xl text-ink">पंजीकरण सफल रहा!</h3>
+                  <p className="mx-auto mt-2 max-w-md text-ink/65">
+                    स्वागत है <strong className="text-ink">{formData.fullName}</strong>! Team SPS के संयोजक जल्द आपसे संपर्क करेंगे।
                   </p>
-                  <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
                     <a
                       href={whatsappJoinUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md"
+                      className="inline-flex h-12 items-center gap-2 rounded-full bg-leaf px-6 font-bold text-white hover:bg-[#0E6B30]"
                     >
-                      <MessageCircle className="w-4 h-4" />
+                      <MessageCircle className="h-4 w-4" />
                       WhatsApp ग्रुप से जुड़ें
                     </a>
-                    <Button
-                      variant="outline"
+                    <button
                       onClick={() => {
                         setIsSubmitted(false);
-                        setFormData({
-                          fullName: '',
-                          phone: '',
-                          wardOrPanchayat: '',
-                          wing: 'youth',
-                          message: ''
-                        });
+                        setFormData(EMPTY_FORM);
                       }}
-                      className="rounded-xl text-xs"
+                      className="inline-flex h-12 items-center rounded-full border border-ink/15 px-6 font-semibold text-ink hover:border-ink/40"
                     >
                       दूसरा फॉर्म भरें
-                    </Button>
+                    </button>
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4" id="join-team-form">
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-bold text-foreground">
-                      स्वयंसेवक पंजीकरण फॉर्म (Volunteer Form)
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      नीचे दी गई जानकारी भरें, हम आपसे 24 घंटे में संपर्क करेंगे।
-                    </p>
+                <form onSubmit={handleSubmit} className="space-y-5" id="join-team-form">
+                  <div>
+                    <h3 className="font-display text-3xl text-ink">स्वयंसेवक पंजीकरण</h3>
+                    <p className="mt-1 text-[15px] text-ink/60">नीचे दी गई जानकारी भरें, हम आपसे 24 घंटे में संपर्क करेंगे।</p>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="grid gap-5 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <Label htmlFor="fullName" className="text-xs font-semibold">
-                        पूरा नाम (Full Name) *
+                      <Label htmlFor="fullName" className="text-sm font-semibold text-ink">
+                        पूरा नाम *
                       </Label>
                       <Input
                         id="fullName"
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         placeholder="उदा. राहुल कुमार"
-                        className="rounded-xl text-sm"
+                        className="h-12 rounded-xl border-ink/15 bg-paper/60 text-base"
                         required
                       />
                     </div>
-
                     <div className="space-y-1.5">
-                      <Label htmlFor="phone" className="text-xs font-semibold">
+                      <Label htmlFor="phone" className="text-sm font-semibold text-ink">
                         मोबाइल नंबर / WhatsApp *
                       </Label>
                       <Input
                         id="phone"
                         type="tel"
+                        inputMode="numeric"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="उदा. 9876543210"
-                        className="rounded-xl text-sm"
+                        className="h-12 rounded-xl border-ink/15 bg-paper/60 text-base"
                         required
                       />
                     </div>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="wardOrPanchayat" className="text-xs font-semibold">
-                        ग्राम / पंचायत / वार्ड संख्या
-                      </Label>
-                      <Input
-                        id="wardOrPanchayat"
-                        value={formData.wardOrPanchayat}
-                        onChange={(e) => setFormData({ ...formData, wardOrPanchayat: e.target.value })}
-                        placeholder="उदा. वार्ड 12 / पंचायत नाम"
-                        className="rounded-xl text-sm"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="wing" className="text-xs font-semibold">
-                        सहयोग का पसंदीदा क्षेत्र (Wing)
-                      </Label>
-                      <Select
-                        value={formData.wing}
-                        onValueChange={(val) => setFormData({ ...formData, wing: val })}
-                      >
-                        <SelectTrigger className="rounded-xl text-sm">
-                          <SelectValue placeholder="विंग चुनें" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="youth">युवा विंग (Youth Wing)</SelectItem>
-                          <SelectItem value="digital">आईटी एवं सोशल मीडिया सेल (Digital Team)</SelectItem>
-                          <SelectItem value="ground">जनसंवाद एवं फील्ड टीम (Ground Team)</SelectItem>
-                          <SelectItem value="women">महिला सशक्तिकरण (Women Wing)</SelectItem>
-                          <SelectItem value="events">सांस्कृतिक एवं सेवा कार्य (Events)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="wardOrPanchayat" className="text-sm font-semibold text-ink">
+                      ग्राम / पंचायत / वार्ड संख्या
+                    </Label>
+                    <Input
+                      id="wardOrPanchayat"
+                      value={formData.wardOrPanchayat}
+                      onChange={(e) => setFormData({ ...formData, wardOrPanchayat: e.target.value })}
+                      placeholder="उदा. वार्ड 12 / पंचायत नाम"
+                      className="h-12 rounded-xl border-ink/15 bg-paper/60 text-base"
+                    />
                   </div>
 
+                  <fieldset>
+                    <legend className="mb-2 text-sm font-semibold text-ink">सहयोग का पसंदीदा क्षेत्र</legend>
+                    <div className="flex flex-wrap gap-2">
+                      {WINGS.map((wing) => (
+                        <label key={wing.value} className="cursor-pointer">
+                          <input
+                            type="radio"
+                            name="wing"
+                            value={wing.value}
+                            checked={formData.wing === wing.value}
+                            onChange={() => setFormData({ ...formData, wing: wing.value })}
+                            className="peer sr-only"
+                          />
+                          <span className="inline-flex h-10 items-center rounded-full border border-ink/15 px-4 text-[15px] font-semibold text-ink/70 transition-colors hover:border-ink/40 peer-checked:border-ink peer-checked:bg-ink peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-kesar peer-focus-visible:ring-offset-2">
+                            {wing.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
                   <div className="space-y-1.5">
-                    <Label htmlFor="message" className="text-xs font-semibold">
+                    <Label htmlFor="message" className="text-sm font-semibold text-ink">
                       कोई विशेष संदेश या सुझाव (वैकल्पिक)
                     </Label>
                     <Textarea
@@ -271,31 +237,29 @@ export const JoinTeamSection: React.FC<JoinTeamSectionProps> = ({ phone }) => {
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       placeholder="आप टीम के साथ किस प्रकार सहयोग करना चाहते हैं..."
                       rows={3}
-                      className="rounded-xl text-sm resize-none"
+                      className="resize-none rounded-xl border-ink/15 bg-paper/60 text-base"
                     />
                   </div>
 
-                  <Button
+                  <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-6 rounded-xl bg-gradient-to-r from-victory-saffron to-amber-600 hover:from-amber-600 hover:to-victory-saffron text-white font-bold text-sm shadow-md transition-all"
+                    className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-kesar-deep text-base font-bold text-white shadow-[0_14px_30px_-14px_rgba(201,74,8,0.8)] transition-colors hover:bg-[#B43F05] disabled:opacity-70"
                   >
                     {isSubmitting ? (
                       'कृपया प्रतीक्षा करें...'
                     ) : (
                       <>
-                        <Send className="w-4 h-4 mr-2" />
-                        टीम SPS से जुड़ें (Submit Application)
+                        <Send className="h-4 w-4" />
+                        Team SPS से जुड़ें
                       </>
                     )}
-                  </Button>
+                  </button>
                 </form>
               )}
             </div>
           </div>
-
-        </div>
-
+        </Reveal>
       </div>
     </section>
   );
