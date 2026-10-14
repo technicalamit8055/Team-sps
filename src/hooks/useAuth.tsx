@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, createContext, useContext, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -518,58 +518,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetchUserData(session.user.id);
     };
 
-    // Set up Supabase auth listener — the only source of truth for a session.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // Sign-ins are handled end-to-end by signIn() itself (it awaits
-        // fetchUserData before returning), so skip this event here to avoid
-        // a second, racing fetch that can overwrite state mid-navigation.
-        if (event === 'SIGNED_IN') {
+    // Handles one auth event. Runs outside the listener callback — see below.
+    const handleAuthEvent = async (event: AuthChangeEvent, session: Session | null) => {
+      if (cancelled) return;
+
+      // Sign-ins are handled end-to-end by signIn() itself (it awaits
+      // fetchUserData before returning), so skip this event here to avoid
+      // a second, racing fetch that can overwrite state mid-navigation.
+      if (event === 'SIGNED_IN') {
+        return;
+      }
+
+      if (session) {
+        // The initial session replayed to a new listener is the same one
+        // getSession() returns. Let whichever arrives first own it, so the
+        // startup lookups are not issued twice over the network. A stored
+        // session whose access token had expired arrives as TOKEN_REFRESHED
+        // before INITIAL_SESSION, so that event can own startup too.
+        if (event === 'INITIAL_SESSION' || !didInitRef.current) {
+          if (didInitRef.current) return;
+          didInitRef.current = true;
+          await initializeSession(session);
+          finishLoading();
           return;
         }
 
-        if (session) {
-          // The initial session replayed to a new listener is the same one
-          // getSession() returns. Let whichever arrives first own it, so the
-          // startup lookups are not issued twice over the network.
-          if (event === 'INITIAL_SESSION') {
-            if (didInitRef.current) return;
-            didInitRef.current = true;
-            await initializeSession(session);
-            finishLoading();
-            return;
-          }
-
-          // Re-check on every token refresh: this is the point at which an
-          // account deleted while the app was open gets thrown out, without
-          // waiting for the user to reload.
-          if (event === 'TOKEN_REFRESHED' && !(await isAccountStillValid())) {
-            await clearLocalSession();
-            finishLoading();
-            toast.error('यह खाता अब मौजूद नहीं है। कृपया व्यवस्थापक से संपर्क करें।');
-            return;
-          }
-
-          setSession(session);
-          setUser(session.user);
-          // Stay in the loading state until role + unit assignment are known,
-          // so route guards never evaluate against a half-populated session
-          // and briefly render the wrong dashboard.
-          await fetchUserData(session.user.id);
-        } else {
-          // A signed-out event settles startup too — there is nothing to fetch.
-          didInitRef.current = true;
-          clearCachedProfile();
-          setSession(null);
-          setUser(null);
-          setRole(null);
-          setProfile(null);
-          setAssignedWorkspaceId(null);
-          setIsCollector(false);
-          setCanChooseCollectorName(false);
-          setRoleResolved(true);
+        // Re-check on every token refresh: this is the point at which an
+        // account deleted while the app was open gets thrown out, without
+        // waiting for the user to reload.
+        if (event === 'TOKEN_REFRESHED' && !(await isAccountStillValid())) {
+          await clearLocalSession();
+          finishLoading();
+          toast.error('यह खाता अब मौजूद नहीं है। कृपया व्यवस्थापक से संपर्क करें।');
+          return;
         }
-        finishLoading();
+
+        setSession(session);
+        setUser(session.user);
+        // Stay in the loading state until role + unit assignment are known,
+        // so route guards never evaluate against a half-populated session
+        // and briefly render the wrong dashboard.
+        await fetchUserData(session.user.id);
+      } else {
+        // A signed-out event settles startup too — there is nothing to fetch.
+        didInitRef.current = true;
+        clearCachedProfile();
+        setSession(null);
+        setUser(null);
+        setRole(null);
+        setProfile(null);
+        setAssignedWorkspaceId(null);
+        setIsCollector(false);
+        setCanChooseCollectorName(false);
+        setRoleResolved(true);
+      }
+      finishLoading();
+    };
+
+    // Set up Supabase auth listener — the only source of truth for a session.
+    //
+    // supabase-js invokes this callback while holding its internal auth lock,
+    // and waits for it before releasing. Any Supabase call awaited inside it —
+    // getUser(), or a table query, which reads the session first — queues
+    // behind that same lock and never resolves. That deadlocked every launch
+    // where the stored access token had expired (TOKEN_REFRESHED fires inside
+    // the lock): role resolution never finished, so the route guards sat on
+    // the spinner until a manual reload found the freshly refreshed token. The
+    // callback therefore only schedules the work and returns at once.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setTimeout(() => {
+          void handleAuthEvent(event, session);
+        }, 0);
       }
     );
 
